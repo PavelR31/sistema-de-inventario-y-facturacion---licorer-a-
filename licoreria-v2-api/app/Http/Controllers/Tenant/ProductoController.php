@@ -39,9 +39,6 @@ class ProductoController extends Controller
                 $producto->precio_compra = $branchData?->pivot?->precio_compra ?? 0;
             }
             $producto->stock_total = $producto->sucursales->sum('pivot.stock_actual');
-            if ($producto->imagen_ruta) {
-                $producto->imagen_url = asset('storage/' . $producto->imagen_ruta);
-            }
             return $producto;
         });
 

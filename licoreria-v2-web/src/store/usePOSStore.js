@@ -16,7 +16,7 @@ export const usePOSStore = create((set, get) => ({
         ),
       });
     } else {
-      set({ cart: [...cart, { ...product, quantity: 1 }] });
+      set({ cart: [...cart, { ...product, quantity: 1, discount: 0 }] });
     }
   },
   
@@ -35,13 +35,22 @@ export const usePOSStore = create((set, get) => ({
       ),
     });
   },
+
+  updateDiscount: (productId, discount) => {
+    set({
+      cart: get().cart.map((item) =>
+        item.id === productId ? { ...item, discount: parseFloat(discount) || 0 } : item
+      ),
+    });
+  },
   
   clearCart: () => set({ cart: [] }),
   
   getTotal: () => {
     return get().cart.reduce((total, item) => {
         const price = parseFloat(item.precio_venta || item.precio) || 0;
-        return total + (price * item.quantity);
+        const discount = parseFloat(item.discount) || 0;
+        return total + (price * item.quantity) - discount;
     }, 0);
   },
 }));

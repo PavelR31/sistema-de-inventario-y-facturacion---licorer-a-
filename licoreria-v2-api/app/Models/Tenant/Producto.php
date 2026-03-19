@@ -30,4 +30,19 @@ class Producto extends Model
             ->withPivot('stock_actual', 'stock_minimo', 'precio_compra', 'precio_venta')
             ->withTimestamps();
     }
+
+    /**
+     * Accessor para la URL de la imagen.
+     */
+    public function getImagenUrlAttribute()
+    {
+        if (!$this->imagen_ruta) {
+            return null;
+        }
+        
+        // Usar tenant_asset() para que Stancl/Tenancy maneje la ruta correcta del inquilino
+        return tenant_asset($this->imagen_ruta);
+    }
+
+    protected $appends = ['imagen_url'];
 }

@@ -40,6 +40,9 @@ export default function SettingsPage() {
   
   const [isNewRoleOpen, setIsNewRoleOpen] = useState(false);
   const [newRoleName, setNewRoleName] = useState('');
+  
+  const [ivaPorcentaje, setIvaPorcentaje] = useState(0);
+  const [logoBase64, setLogoBase64] = useState(null);
 
   useEffect(() => {
     fetchData();
@@ -58,6 +61,14 @@ export default function SettingsPage() {
       
       if (configRes.data?.moneda) {
         setCurrency(configRes.data.moneda);
+      }
+
+      if (configRes.data?.iva_porcentaje) {
+        setIvaPorcentaje(configRes.data.iva_porcentaje);
+      }
+
+      if (configRes.data?.logo_empresa) {
+        setLogoBase64(configRes.data.logo_empresa);
       }
       
       if (rolesRes.data.length > 0 && !selectedRole) {
@@ -139,6 +150,38 @@ export default function SettingsPage() {
     } catch (error) {
       toast.error('No se pudo guardar la configuración de moneda');
     }
+  };
+
+  const handleIvaChange = async (value) => {
+    try {
+      await api.put('/api/configuraciones', { clave: 'iva_porcentaje', valor: value });
+      setIvaPorcentaje(value);
+      toast.success('Porcentaje de IVA actualizado');
+    } catch (error) {
+      toast.error('Error al guardar el IVA');
+    }
+  };
+
+  const handleLogoUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (file.size > 1024 * 1024) { // 1MB limit
+      return toast.error("La imagen es demasiado grande. Máximo 1MB.");
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      const base64String = reader.result;
+      try {
+        await api.put('/api/configuraciones', { clave: 'logo_empresa', valor: base64String });
+        setLogoBase64(base64String);
+        toast.success('Logo de empresa actualizado');
+      } catch (error) {
+        toast.error('Error al subir el logo');
+      }
+    };
+    reader.readAsDataURL(file);
   };
 
   // Mapa explícito: permiso → grupo de módulo
@@ -284,6 +327,37 @@ export default function SettingsPage() {
                     </SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+
+              <div className="space-y-3 pt-4 border-t border-slate-100">
+                <label className="text-xs font-black uppercase text-slate-500 tracking-wider">Impuesto (IVA %)</label>
+                <Input 
+                   type="number"
+                   value={ivaPorcentaje}
+                   onChange={(e) => setIvaPorcentaje(e.target.value)}
+                   onBlur={(e) => handleIvaChange(e.target.value)}
+                   className="h-12 border-slate-200 focus:ring-primary"
+                   placeholder="Ej. 15"
+                />
+              </div>
+
+              <div className="space-y-3 pt-4 border-t border-slate-100">
+                <label className="text-xs font-black uppercase text-slate-500 tracking-wider">Logo del Negocio</label>
+                <div className="flex flex-col items-center gap-4 p-4 border-2 border-dashed border-slate-100 rounded-xl bg-slate-50/50">
+                    {logoBase64 ? (
+                        <img src={logoBase64} alt="Logo" className="h-20 w-auto object-contain rounded-lg shadow-sm" />
+                    ) : (
+                        <div className="h-20 w-20 rounded-lg bg-slate-200 flex items-center justify-center text-slate-400">
+                            <Storefront size={40} weight="thin" />
+                        </div>
+                    )}
+                    <label className="w-full">
+                        <Button variant="outline" className="w-full h-9 text-xs font-bold" asChild>
+                            <span>Subir Logo</span>
+                        </Button>
+                        <input type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
+                    </label>
+                </div>
               </div>
             </CardContent>
           </Card>

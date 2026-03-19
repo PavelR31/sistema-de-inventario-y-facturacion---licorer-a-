@@ -42,6 +42,9 @@ class VentaController extends Controller
             'items' => 'required|array|min:1',
             'items.*.producto_id' => 'required|exists:productos,id',
             'items.*.cantidad' => 'required|integer|min:1',
+            'items.*.descuento' => 'nullable|numeric|min:0',
+            'descuento_global' => 'nullable|numeric|min:0',
+            'impuesto_porcentaje' => 'nullable|numeric|min:0',
             'metodo_pago' => 'required|in:efectivo,tarjeta,transferencia,mixto',
             'monto_pagado' => 'required|numeric|min:0',
             'cliente_id' => 'nullable|exists:clientes,id',
@@ -59,7 +62,7 @@ class VentaController extends Controller
 
         return DB::transaction(function () use ($request, $caja) {
             // 2. Calcular Totales y Validar Stock
-            $total = 0;
+            $subtotalAcumulado = 0;
             $itemsData = [];
 
             foreach ($request->items as $item) {
@@ -77,34 +80,48 @@ class VentaController extends Controller
                 }
 
                 $precioUnitario = $pivot->pivot->precio_venta;
-                $subtotal = $precioUnitario * $item['cantidad'];
-                $total += $subtotal;
+                $descuentoItem = $item['descuento'] ?? 0;
+                $lineSubtotal = ($precioUnitario * $item['cantidad']) - $descuentoItem;
+                
+                $subtotalAcumulado += $lineSubtotal;
 
                 $itemsData[] = [
                     'producto_id' => $producto->id,
                     'cantidad' => $item['cantidad'],
+                    'descuento' => $descuentoItem,
                     'precio_unitario' => $precioUnitario,
-                    'subtotal' => $subtotal,
+                    'subtotal' => $lineSubtotal,
                 ];
             }
 
-            // 3. Generar número de factura (Ticket)
+            // 3. Aplicar Descuento Global y Calcular Impuestos
+            $descuentoGlobal = $request->descuento_global ?? 0;
+            $montoImponible = max(0, $subtotalAcumulado - $descuentoGlobal);
+            
+            $porcentajeImpuesto = $request->impuesto_porcentaje ?? 0;
+            $montoImpuesto = round($montoImponible * ($porcentajeImpuesto / 100), 2);
+            
+            $totalFinal = $montoImponible + $montoImpuesto;
+
+            // 4. Generar número de factura (Ticket)
             $count = Venta::count() + 1;
             $numeroFactura = 'TK-' . str_pad((string)$count, 8, '0', STR_PAD_LEFT);
 
-            // 4. Crear la Venta
+            // 5. Crear la Venta
             $venta = Venta::create([
                 'sucursal_id' => $request->sucursal_id,
                 'caja_id' => $caja->id,
                 'cliente_id' => $request->cliente_id,
                 'user_id' => auth()->id(),
                 'numero_factura' => $numeroFactura,
-                'subtotal' => $total, // Por ahora asumimos subtotal = total (sin impuestos calculados aparte)
-                'impuesto' => 0,
-                'total' => $total,
+                'subtotal' => $subtotalAcumulado,
+                'descuento' => $descuentoGlobal,
+                'impuesto' => $montoImpuesto,
+                'impuesto_porcentaje' => $porcentajeImpuesto,
+                'total' => $totalFinal,
                 'metodo_pago' => $request->metodo_pago,
                 'monto_pagado' => $request->monto_pagado,
-                'cambio' => max(0, $request->monto_pagado - $total),
+                'cambio' => max(0, $request->monto_pagado - $totalFinal),
                 'estado' => 'vigente',
             ]);
 
@@ -132,7 +149,10 @@ class VentaController extends Controller
     public function print($id)
     {
         $venta = Venta::with(['detalles.producto', 'user', 'sucursal', 'cliente'])->findOrFail($id);
-        return view('tickets.receipt', compact('venta'));
+        $logo = \App\Models\Tenant\Configuracion::getVal('logo_empresa');
+        $moneda = \App\Models\Tenant\Configuracion::getVal('simbolo_moneda', 'C$');
+        
+        return view('tickets.receipt', compact('venta', 'logo', 'moneda'));
     }
 
     public function anular(Request $request, $id)

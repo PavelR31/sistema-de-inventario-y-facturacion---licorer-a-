@@ -39,6 +39,9 @@
 </head>
 <body onload="window.print();">
     <div class="header text-center">
+        @if($logo)
+            <img src="{{ $logo }}" style="max-width: 150px; h-auto; margin-bottom: 10px;">
+        @endif
         <h1 class="font-bold uppercase">{{ $venta->sucursal->nombre ?? 'LICORA' }}</h1>
         <p>{{ $venta->sucursal->direccion ?? 'Dirección no disponible' }}</p>
         <p>TEL: {{ $venta->sucursal->telefono ?? 'N/A' }}</p>
@@ -50,6 +53,9 @@
         <p><strong>FOLIO:</strong> {{ $venta->numero_factura }}</p>
         <p><strong>FECHA:</strong> {{ $venta->created_at->format('d/m/Y H:i') }}</p>
         <p><strong>CAJERO:</strong> {{ $venta->user->name ?? 'Sistema' }}</p>
+        @if($venta->cliente)
+        <p><strong>CLIENTE:</strong> {{ $venta->cliente->nombre }}</p>
+        @endif
     </div>
 
     <div class="divider"></div>
@@ -58,7 +64,7 @@
         <thead>
             <tr>
                 <th>DESCRIPCIÓN</th>
-                <th class="text-right">SUBTOTAL</th>
+                <th class="text-right">TOTAL</th>
             </tr>
         </thead>
         <tbody>
@@ -66,9 +72,14 @@
             <tr>
                 <td>
                     {{ $detalle->producto->nombre }}<br>
-                    <small>{{ $detalle->cantidad }} x C$ {{ number_format($detalle->precio_unitario, 2) }}</small>
+                    <small>
+                        {{ $detalle->cantidad }} x {{ $moneda }} {{ number_format($detalle->precio_unitario, 2) }}
+                        @if($detalle->descuento > 0)
+                            <br>(Desc: -{{ $moneda }} {{ number_format($detalle->descuento, 2) }})
+                        @endif
+                    </small>
                 </td>
-                <td class="text-right">C$ {{ number_format($detalle->subtotal, 2) }}</td>
+                <td class="text-right">{{ $moneda }} {{ number_format($detalle->subtotal, 2) }}</td>
             </tr>
             @endforeach
         </tbody>
@@ -78,25 +89,36 @@
 
     <div class="totals">
         <div class="totals-row">
-            <span>SUBTOTAL:</span>
-            <span>C$ {{ number_format($venta->total, 2) }}</span>
+            <span>SUBTOTAL BRUTO:</span>
+            <span>{{ $moneda }} {{ number_format($venta->subtotal, 2) }}</span>
         </div>
+        
+        @if($venta->descuento > 0)
         <div class="totals-row">
-            <span>IMPUESTOS (0%):</span>
-            <span>C$ 0.00</span>
+            <span>DESC. GLOBAL:</span>
+            <span>-{{ $moneda }} {{ number_format($venta->descuento, 2) }}</span>
         </div>
+        @endif
+
+        <div class="totals-row">
+            <span>IMPUESTOS ({{ number_format($venta->impuesto_porcentaje, 0) }}%):</span>
+            <span>{{ $moneda }} {{ number_format($venta->impuesto, 2) }}</span>
+        </div>
+        
         <div class="totals-row total-final">
             <span>TOTAL A PAGAR:</span>
-            <span>C$ {{ number_format($venta->total, 2) }}</span>
+            <span>{{ $moneda }} {{ number_format($venta->total, 2) }}</span>
         </div>
+        
         <div class="divider" style="margin: 5px 0;"></div>
+        
         <div class="totals-row">
             <span class="uppercase">RECIBIDO ({{ $venta->metodo_pago }}):</span>
-            <span>C$ {{ number_format($venta->monto_pagado, 2) }}</span>
+            <span>{{ $moneda }} {{ number_format($venta->monto_pagado, 2) }}</span>
         </div>
         <div class="totals-row border-t">
             <span>SU CAMBIO:</span>
-            <span class="font-bold">C$ {{ number_format($venta->cambio, 2) }}</span>
+            <span class="font-bold">{{ $moneda }} {{ number_format($venta->cambio, 2) }}</span>
         </div>
     </div>
 

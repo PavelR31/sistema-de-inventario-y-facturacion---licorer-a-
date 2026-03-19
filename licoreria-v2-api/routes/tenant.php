@@ -117,7 +117,7 @@ Route::middleware([
         Route::put('configuraciones', [ConfiguracionController::class, 'update']);
         
         // Reportes y Estadísticas
-        Route::prefix('reportes')->middleware(['auth:sanctum', 'token_from_query'])->group(function () {
+        Route::prefix('reportes')->middleware(['token_from_query', 'auth:sanctum'])->group(function () {
             Route::get('ventas',           [ReporteController::class, 'ventasPorPeriodo']);
             Route::get('sucursal',         [ReporteController::class, 'ventasPorSucursal']);
             Route::get('productos-top',    [ReporteController::class, 'productosTop']);
