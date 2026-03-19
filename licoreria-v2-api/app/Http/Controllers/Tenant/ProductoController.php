@@ -22,25 +22,30 @@ class ProductoController extends Controller
             $query->where('activo', $request->activo);
         }
 
-        $productos = $query->get()->map(function ($producto) use ($sucursalId) {
-            // Si hay sucursal_id, extraemos el stock y precio de esa sucursal
+        if ($request->search) {
+            $query->where(function($q) use ($request) {
+                $q->where('nombre', 'like', "%{$request->search}%")
+                  ->orWhere('codigo', 'like', "%{$request->search}%");
+            });
+        }
+
+        $paginated = $query->paginate($request->per_page ?? 15);
+
+        $paginated->getCollection()->transform(function ($producto) use ($sucursalId) {
             if ($sucursalId) {
                 $branchData = $producto->sucursales->first();
-                $producto->stock_actual = $branchData->pivot->stock_actual ?? 0;
-                $producto->precio_venta = $branchData->pivot->precio_venta ?? 0;
-                $producto->precio_compra = $branchData->pivot->precio_compra ?? 0;
+                $producto->stock_actual  = $branchData?->pivot?->stock_actual ?? 0;
+                $producto->precio_venta  = $branchData?->pivot?->precio_venta ?? 0;
+                $producto->precio_compra = $branchData?->pivot?->precio_compra ?? 0;
             }
-
             $producto->stock_total = $producto->sucursales->sum('pivot.stock_actual');
-            
             if ($producto->imagen_ruta) {
                 $producto->imagen_url = asset('storage/' . $producto->imagen_ruta);
             }
-            
             return $producto;
         });
 
-        return response()->json($productos);
+        return response()->json($paginated);
     }
 
     public function store(Request $request)

@@ -48,4 +48,9 @@ class Venta extends Model
     {
         return $this->hasMany(DetalleVenta::class);
     }
+
+    public function ventas_anuladas(): HasMany
+    {
+        return $this->hasMany(VentaAnulada::class);
+    }
 }

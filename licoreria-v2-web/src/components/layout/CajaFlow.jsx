@@ -16,6 +16,8 @@ export default function CajaFlow({ children }) {
   useEffect(() => {
     if (branch?.id) {
       checkCajaStatus(branch.id);
+    } else {
+      useCajaStore.setState({ isLoading: false });
     }
   }, [branch?.id]);
 

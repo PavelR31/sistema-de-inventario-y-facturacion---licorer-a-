@@ -8,9 +8,12 @@ import { Plus, RefreshCcw, MapPin, Phone, Store, Pencil, Trash2 } from 'lucide-r
 import { toast } from 'sonner';
 import api from '@/lib/api';
 import { useAuthStore } from '@/store/useAuthStore';
+import Can from '@/components/auth/Can';
+import DataPagination from '@/components/ui/data-pagination';
 
 export default function SucursalesList() {
   const [sucursales, setSucursales] = useState([]);
+  const [meta, setMeta] = useState({ current_page: 1, last_page: 1, total: 0 });
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
@@ -18,19 +21,21 @@ export default function SucursalesList() {
   const [editingSucursal, setEditingSucursal] = useState(null);
   const tenant = useAuthStore((state) => state.tenant);
 
-  const fetchSucursales = async () => {
+  const fetchSucursales = async (page = 1) => {
     setIsLoading(true);
     try {
-      const response = await api.get('/api/sucursales');
-      setSucursales(response.data.data || response.data);
+      const response = await api.get('/api/sucursales', { params: { page } });
+      setSucursales(response.data.data ?? response.data);
+      if (response.data.last_page) {
+        setMeta({
+          current_page: response.data.current_page,
+          last_page: response.data.last_page,
+          total: response.data.total
+        });
+      }
     } catch (error) {
       console.error(error);
       toast.error('No se pudieron cargar las sucursales');
-      // Mock data for tenant admin
-      setSucursales([
-        { id: 1, nombre: 'Sucursal Matriz', direccion: 'Av. Principal 123', telefono: '555-0101' },
-        { id: 2, nombre: 'Sucursal Norte', direccion: 'Calle Secundaria 456', telefono: '555-0102' },
-      ]);
     } finally {
       setIsLoading(false);
     }
@@ -92,6 +97,7 @@ export default function SucursalesList() {
           <Button variant="outline" size="icon" onClick={fetchSucursales}>
             <RefreshCcw className="h-4 w-4" />
           </Button>
+          <Can permission="crear.sucursal">
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
               <Button>
@@ -135,6 +141,7 @@ export default function SucursalesList() {
               </form>
             </DialogContent>
           </Dialog>
+          </Can>
         </div>
       </div>
 
@@ -157,22 +164,22 @@ export default function SucursalesList() {
                     <Store className="h-5 w-5" />
                   </div>
                   <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="h-8 w-8 p-0"
-                      onClick={() => openEdit(sucursal)}
-                    >
-                      <Pencil className="h-3 w-3" />
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10"
-                      onClick={() => handleDelete(sucursal.id)}
-                    >
-                      <Trash2 className="h-3 w-3" />
-                    </Button>
+                    <Can permission="editar.sucursal">
+                      <Button 
+                        variant="ghost" size="sm" className="h-8 w-8 p-0"
+                        onClick={() => openEdit(sucursal)}
+                      >
+                        <Pencil className="h-3 w-3" />
+                      </Button>
+                    </Can>
+                    <Can permission="eliminar.sucursal">
+                      <Button 
+                        variant="ghost" size="sm" className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10"
+                        onClick={() => handleDelete(sucursal.id)}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </Button>
+                    </Can>
                   </div>
                 </div>
                 <CardTitle className="text-xl font-bold mt-4 leading-none">
@@ -199,6 +206,7 @@ export default function SucursalesList() {
           ))
         )}
       </div>
+      <DataPagination meta={meta} onPageChange={fetchSucursales} />
 
       {/* Dialogo de Edición */}
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>

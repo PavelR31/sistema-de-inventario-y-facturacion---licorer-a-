@@ -10,10 +10,14 @@ use Spatie\Permission\Models\Role;
 
 class UserController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $users = User::with('roles')->get();
-        return response()->json($users);
+        $query = User::with('roles');
+        if ($request->search) {
+            $query->where('name', 'like', "%{$request->search}%")
+                  ->orWhere('email', 'like', "%{$request->search}%");
+        }
+        return response()->json($query->paginate($request->per_page ?? 15));
     }
 
     public function store(Request $request)
@@ -66,6 +70,21 @@ class UserController extends Controller
 
         $user->delete();
         return response()->json(['message' => 'Usuario eliminado correctamente.']);
+    }
+
+    public function toggleActive(User $user)
+    {
+        if (auth()->id() === $user->id) {
+            return response()->json(['message' => 'No puedes desactivar tu propio usuario.'], 422);
+        }
+
+        $user->active = !($user->active ?? true);
+        $user->save();
+
+        return response()->json([
+            'message' => $user->active ? 'Usuario activado' : 'Usuario desactivado',
+            'active'  => $user->active,
+        ]);
     }
 
     public function roles()

@@ -17,7 +17,11 @@ import {
   UserCircle,
   Warning,
   CheckCircle,
-  CurrencyCircleDollar
+  CurrencyCircleDollar,
+  Storefront,
+  ArrowsClockwise,
+  TrendUp,
+  TrendDown
 } from "@phosphor-icons/react";
 import { 
   Area, 
@@ -27,8 +31,16 @@ import {
   XAxis, 
   YAxis 
 } from "recharts";
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import api from "@/lib/api";
 import { useCurrency } from "@/hooks/useCurrency";
 import { toast } from "sonner";
@@ -37,18 +49,52 @@ import { toast } from "sonner";
 const iconMap = {
   ChartLineUp,
   Receipt,
-  Handbag,
+  Handbag: CurrencyCircleDollar, // Cambio visual a moneda para Ticket/Utilidad
+  CurrencyCircleDollar,
   Users
 };
 
+const PRESETS = [
+  { label: 'Últimos 7 días', value: '7d' },
+  { label: 'Últimos 30 días', value: '30d' },
+  { label: 'Este Mes', value: 'month' },
+  { label: 'Este Año', value: 'year' },
+];
+
 export default function AdminDashboard() {
+  const navigate = useNavigate();
   const { formatMoney } = useCurrency();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [sucursales, setSucursales] = useState([]);
+  
+  // Filtros
+  const [sucursalId, setSucursalId] = useState('all');
+  const [fechaInicio, setFechaInicio] = useState(
+    new Date(new Date().setDate(new Date().getDate() - 30)).toISOString().split('T')[0]
+  );
+  const [fechaFin, setFechaFin] = useState(new Date().toISOString().split('T')[0]);
+
+  const fetchSucursales = async () => {
+    try {
+      const res = await api.get('/api/sucursales');
+      // La API devuelve paginación, los datos están en res.data.data
+      setSucursales(res.data.data || res.data || []);
+    } catch (err) {
+      console.error("Error al cargar sucursales");
+    }
+  };
 
   const fetchStats = async () => {
+    setLoading(true);
     try {
-      const res = await api.get('/api/dashboard/stats');
+      const params = {
+        fecha_inicio: fechaInicio,
+        fecha_fin: fechaFin,
+        sucursal_id: sucursalId, // Siempre enviamos sucursalId, incluso si es 'all'
+      };
+
+      const res = await api.get('/api/dashboard/stats', { params });
       setStats(res.data);
     } catch (err) {
       toast.error("Error al cargar estadísticas del panel");
@@ -58,29 +104,69 @@ export default function AdminDashboard() {
   };
 
   useEffect(() => {
-    fetchStats();
+    fetchSucursales();
   }, []);
 
-  if (loading) {
+  useEffect(() => {
+    fetchStats();
+  }, [sucursalId, fechaInicio, fechaFin]);
+
+  if (loading && !stats) {
     return <DashboardSkeleton />;
   }
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-700">
-      {/* Dashboard Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between px-1">
+    <div className="space-y-6 animate-in fade-in duration-700">
+      {/* Dashboard Header & Filters */}
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between px-1">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Vista General</h1>
-          <p className="text-slate-500 text-xs font-medium">Control operativo y financiero en tiempo real.</p>
+          <h1 className="text-2xl font-black tracking-tighter text-slate-900">Dashboard</h1>
+          <p className="text-slate-500 text-[11px] font-bold uppercase tracking-widest mt-0.5">Métricas de rendimiento operativo</p>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" className="h-9 px-4 border-slate-200 text-slate-600 font-medium bg-white hover:bg-slate-50">
-            <CalendarBlank className="mr-2 h-4 w-4" weight="regular" /> 
-            Últimos 30 días
-          </Button>
-          <Button size="sm" className="h-9 px-4 bg-primary hover:bg-primary/90 text-white font-medium shadow-sm">
-            <DownloadSimple className="mr-2 h-4 w-4" weight="regular" /> 
-            Descargar Reporte
+        
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Sucursal Filter */}
+          <Select value={sucursalId} onValueChange={setSucursalId}>
+            <SelectTrigger className="w-[180px] h-9 text-xs font-semibold border-slate-200 bg-white">
+              <div className="flex items-center gap-2">
+                <Storefront size={14} className="text-slate-400" />
+                <SelectValue placeholder="Todas las Sucursales" />
+              </div>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas las Sucursales</SelectItem>
+              {sucursales.map(s => (
+                <SelectItem key={s.id} value={s.id.toString()}>{s.nombre}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          {/* Date Filters */}
+          <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-lg px-2 h-9 shadow-sm">
+            <CalendarBlank size={14} className="text-slate-400 ml-1" />
+            <input 
+              type="date" 
+              value={fechaInicio} 
+              onChange={e => setFechaInicio(e.target.value)}
+              className="text-[10px] font-bold text-slate-700 bg-transparent outline-none w-28 uppercase" 
+            />
+            <span className="text-slate-300 text-[10px] font-black">—</span>
+            <input 
+              type="date" 
+              value={fechaFin} 
+              onChange={e => setFechaFin(e.target.value)}
+              className="text-[10px] font-bold text-slate-700 bg-transparent outline-none w-28 uppercase" 
+            />
+          </div>
+
+          <Button 
+            onClick={fetchStats}
+            disabled={loading}
+            variant="outline" 
+            size="sm" 
+            className="h-9 px-3 border-slate-200 bg-white hover:bg-slate-50"
+          >
+            <ArrowsClockwise size={14} className={loading ? 'animate-spin' : ''} weight="bold" />
           </Button>
         </div>
       </div>
@@ -90,22 +176,27 @@ export default function AdminDashboard() {
         {stats?.kpis.map((kpi, i) => {
           const Icon = iconMap[kpi.icon] || ChartLineUp;
           return (
-            <Card key={i} className="border border-slate-200 shadow-sm bg-white overflow-hidden">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+            <Card key={i} className="border border-slate-200 shadow-sm bg-white overflow-hidden hover:border-indigo-200 transition-colors">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 pt-4">
+                <span className="text-[10px] font-black uppercase tracking-[0.1em] text-slate-400">
                   {kpi.title}
                 </span>
-                <Icon className={`h-4 w-4 ${kpi.color}`} weight="regular" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold tracking-tight text-slate-900">
-                  {kpi.title.includes('Ventas') || kpi.title.includes('Ticket') ? formatMoney(kpi.val) : kpi.val.toLocaleString()}
+                <div className={`p-1.5 rounded-lg ${kpi.color.replace('text-', 'bg-')}/10`}>
+                  <Icon className={`h-4 w-4 ${kpi.color}`} weight="duotone" />
                 </div>
-                <div className="mt-1.5 flex items-center gap-1.5">
-                  <span className={`text-[10px] font-bold ${kpi.isUp ? "text-emerald-600" : "text-rose-600"}`}>
-                    {kpi.trend}
-                  </span>
-                  <span className="text-[10px] font-medium text-slate-400">vs. mes pasado</span>
+              </CardHeader>
+              <CardContent className="pb-4">
+                <div className="text-2xl font-black tracking-tighter text-slate-900 leading-none">
+                  {kpi.title.includes('Ventas') || kpi.title.includes('Utilidad') || kpi.title.includes('Ticket') 
+                    ? formatMoney(kpi.val) 
+                    : kpi.val.toLocaleString()}
+                </div>
+                <div className="mt-2 flex items-center gap-1.5">
+                  <div className={`flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-black ${kpi.isUp ? "text-emerald-600 bg-emerald-50" : "text-rose-600 bg-rose-50"}`}>
+                    {kpi.isUp ? <TrendUp weight="bold" /> : <TrendDown weight="bold" />}
+                    {Math.abs(parseFloat(kpi.trend))}%
+                  </div>
+                  <span className="text-[10px] font-medium text-slate-400">vs período anterior</span>
                 </div>
               </CardContent>
             </Card>
@@ -144,7 +235,7 @@ export default function AdminDashboard() {
                   axisLine={false} 
                   tickLine={false} 
                   tick={{ fontSize: 10, fontWeight: '500', fill: '#94a3b8' }}
-                  tickFormatter={(val) => `C$${val >= 1000 ? (val/1000).toFixed(0)+'k' : val}`}
+                  tickFormatter={(val) => `${formatMoney(val).split(/\d/)[0]}${val >= 1000 ? (val/1000).toFixed(0)+'k' : val}`}
                 />
                 <Tooltip 
                   formatter={(val) => [formatMoney(val), "Ventas"]}
@@ -198,6 +289,14 @@ export default function AdminDashboard() {
                                         <span className={`text-[9px] font-bold px-2 py-0.5 rounded-md ${alert.status === 'Crítico' ? 'bg-rose-50 text-rose-600' : 'bg-amber-50 text-amber-600'}`}>
                                             {alert.status}
                                         </span>
+                                        <Button 
+                                            variant="ghost" 
+                                            size="sm" 
+                                            className="h-7 text-[10px] font-bold uppercase tracking-wider text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
+                                            onClick={() => navigate('/admin/inventario')}
+                                        >
+                                            Ver
+                                        </Button>
                                     </div>
                                 </div>
                             ))
@@ -222,7 +321,14 @@ export default function AdminDashboard() {
                         <span className={`text-[9px] font-bold px-2 py-0.5 rounded-md mb-2 ${stats?.cashStatus.isOpen ? 'text-emerald-600 bg-emerald-50' : 'text-slate-400 bg-slate-100'}`}>
                             {stats?.cashStatus.isOpen ? 'Abierta' : 'Cerrada'}
                         </span>
-                        <Button variant="outline" size="sm" className="h-7 px-3 text-[10px] font-bold border-slate-200">Ver Detalles</Button>
+                        <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="h-7 px-3 text-[10px] font-bold border-slate-200"
+                            onClick={() => navigate('/admin/reportes', { state: { activeTab: 'cajas' } })}
+                        >
+                            Ver Detalles
+                        </Button>
                     </div>
                 </CardContent>
             </Card>
@@ -236,7 +342,7 @@ export default function AdminDashboard() {
             <CardTitle className="text-base font-bold text-slate-900">Últimas Facturas</CardTitle>
             <CardDescription className="text-xs text-slate-500">Movimientos recientes de facturación.</CardDescription>
           </div>
-          <Button variant="ghost" size="sm" className="text-xs font-bold text-primary hover:bg-slate-50">
+          <Button variant="ghost" size="sm" className="text-xs font-bold text-primary hover:bg-slate-50" onClick={() => navigate('/admin/ventas')}>
             Ver Registro Completo
           </Button>
         </CardHeader>

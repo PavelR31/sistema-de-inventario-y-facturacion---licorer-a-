@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from '@/components/ui/table';
-import { Search, Plus, Trash2, Save, Truck, Package, Calculator, Calendar, DollarSign } from 'lucide-react';
+import { Search, Plus, Trash2, Save, Truck, Package, Calculator, Calendar, DollarSign, ChevronDown, ChevronUp } from 'lucide-react';
 import { toast } from 'sonner';
 import api from '@/lib/api';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -26,6 +27,7 @@ export default function NuevaCompra() {
   
   // Búsqueda de producto
   const [searchTerm, setSearchTerm] = useState('');
+  const [showFullList, setShowFullList] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -34,8 +36,8 @@ export default function NuevaCompra() {
           api.get('/api/proveedores'),
           api.get('/api/productos')
         ]);
-        setProveedores(provRes.data);
-        setProductos(prodRes.data);
+        setProveedores(provRes.data.data ?? provRes.data);
+        setProductos(prodRes.data.data ?? prodRes.data);
       } catch (error) {
         toast.error('Error al cargar datos');
       } finally {
@@ -175,13 +177,25 @@ export default function NuevaCompra() {
               <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
               <Input 
                 placeholder="Escribe el nombre o código del producto para agregar..." 
-                className="pl-10 h-11"
+                className="pl-10 h-11 pr-10"
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => { setSearchTerm(e.target.value); if(e.target.value) setShowFullList(false); }}
               />
-              {searchTerm.length > 1 && (
+              <button
+                type="button"
+                className="absolute right-3 top-3 text-muted-foreground hover:text-primary transition-colors"
+                onClick={() => { setShowFullList(p => !p); setSearchTerm(''); }}
+                title="Ver lista completa"
+              >
+                {showFullList ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+              </button>
+
+              {/* Dropdown on search */}
+              {searchTerm.length > 0 && (
                 <div className="absolute z-10 w-full bg-white border mt-1 rounded-lg shadow-xl max-h-60 overflow-auto">
-                  {filteredSearch.map(p => (
+                  {filteredSearch.length === 0 ? (
+                    <div className="p-4 text-center text-sm text-muted-foreground">Sin resultados</div>
+                  ) : filteredSearch.map(p => (
                     <div 
                       key={p.id} 
                       className="p-3 hover:bg-slate-50 cursor-pointer flex justify-between items-center border-b last:border-0"
@@ -189,7 +203,7 @@ export default function NuevaCompra() {
                     >
                       <div>
                         <p className="font-bold text-sm text-slate-800">{p.nombre}</p>
-                        <p className="text-[10px] text-muted-foreground uppercase">COD: {p.codigo || 'S/C'}</p>
+                        <p className="text-[10px] text-muted-foreground uppercase">COD: {p.codigo || 'S/C'} &bull; Stock: {p.stock}</p>
                       </div>
                       <Plus className="h-4 w-4 text-primary" />
                     </div>
@@ -197,6 +211,41 @@ export default function NuevaCompra() {
                 </div>
               )}
             </div>
+
+            {/* Short product list (up to 15) */}
+            {showFullList && (
+              <div className="border rounded-lg overflow-hidden">
+                <div className="max-h-48 overflow-auto divide-y divide-slate-50">
+                  {productos.slice(0, 15).map(p => {
+                    const inCart = cart.some(i => i.id === p.id);
+                    return (
+                      <div
+                        key={p.id}
+                        className={`px-4 py-2.5 flex items-center justify-between cursor-pointer transition-colors ${
+                          inCart ? 'bg-green-50 opacity-60 cursor-default' : 'hover:bg-slate-50'
+                        }`}
+                        onClick={() => !inCart && addToCart(p)}
+                      >
+                        <div className="min-w-0">
+                          <p className="font-medium text-sm text-slate-800 truncate">{p.nombre}</p>
+                          <p className="text-[10px] text-muted-foreground">{p.categoria?.nombre || 'General'} &bull; Stock: {p.stock}</p>
+                        </div>
+                        {inCart ? (
+                          <Badge className="ml-2 bg-green-100 text-green-700 border-0 text-[10px] shrink-0">Añadido</Badge>
+                        ) : (
+                          <Plus className="h-4 w-4 text-primary shrink-0 ml-2" />
+                        )}
+                      </div>
+                    );
+                  })}
+                  {productos.length > 15 && (
+                    <div className="px-4 py-2 text-center text-[11px] text-muted-foreground bg-slate-50">
+                      Usa el buscador para encontrar más productos
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
 
             <div className="border rounded-lg overflow-hidden">
               <Table>

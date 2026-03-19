@@ -8,9 +8,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Plus, Package, Search, Tag, DollarSign, Layers, ImageIcon, ImagePlus, Trash2, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
 import api from '@/lib/api';
+import Can from '@/components/auth/Can';
+import DataPagination from '@/components/ui/data-pagination';
 
 export default function ProductosList() {
   const [productos, setProductos] = useState([]);
+  const [meta, setMeta] = useState({ current_page: 1, last_page: 1, total: 0 });
   const [categorias, setCategorias] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -21,15 +24,22 @@ export default function ProductosList() {
   const [imagePreview, setImagePreview] = useState(null);
   const fileInputRef = useRef(null);
 
-  const fetchData = async () => {
+  const fetchData = async (page = 1) => {
     setIsLoading(true);
     try {
       const [prodRes, catRes] = await Promise.all([
-        api.get('/api/productos'),
-        api.get('/api/categorias')
+        api.get('/api/productos', { params: { page, search: searchTerm } }),
+        api.get('/api/categorias', { params: { per_page: 100 } })
       ]);
-      setProductos(prodRes.data);
-      setCategorias(catRes.data);
+      setProductos(prodRes.data.data ?? prodRes.data);
+      if (prodRes.data.last_page) {
+        setMeta({
+          current_page: prodRes.data.current_page,
+          last_page: prodRes.data.last_page,
+          total: prodRes.data.total
+        });
+      }
+      setCategorias(catRes.data.data ?? catRes.data);
     } catch (error) {
       toast.error('Error al cargar datos');
     } finally {
@@ -140,6 +150,7 @@ export default function ProductosList() {
           <p className="text-muted-foreground text-sm">Gestiona tus productos globales y categorías del negocio.</p>
         </div>
         <div className="flex gap-2">
+          <Can permission="crear.producto">
           <Dialog open={isDialogOpen} onOpenChange={(open) => { setIsDialogOpen(open); if(!open) resetForm(); }}>
             <DialogTrigger asChild>
               <Button>
@@ -200,6 +211,7 @@ export default function ProductosList() {
               </form>
             </DialogContent>
           </Dialog>
+          </Can>
         </div>
       </div>
 
@@ -266,12 +278,16 @@ export default function ProductosList() {
                     </TableCell>
                     <TableCell className="text-right px-6">
                       <div className="flex justify-end gap-1">
-                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(p)}>
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDelete(p.id)}>
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        <Can permission="editar.producto">
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEdit(p)}>
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                        </Can>
+                        <Can permission="eliminar.producto">
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDelete(p.id)}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </Can>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -279,6 +295,7 @@ export default function ProductosList() {
               </TableBody>
             </Table>
           </div>
+          <DataPagination meta={meta} onPageChange={fetchData} />
         </CardContent>
       </Card>
 

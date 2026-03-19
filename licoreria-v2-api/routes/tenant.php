@@ -16,6 +16,8 @@ use App\Http\Controllers\Tenant\UserController;
 use App\Http\Controllers\Tenant\RoleController;
 use App\Http\Controllers\Tenant\CajaController;
 use App\Http\Controllers\Tenant\DashboardController;
+use App\Http\Controllers\Tenant\ReporteController;
+use App\Http\Controllers\Tenant\ConfiguracionController;
 use Illuminate\Http\Request;
 
 /*
@@ -46,28 +48,99 @@ Route::middleware([
         Route::post('/update-password', [TenantAuthController::class, 'updatePassword']);
 
         // Dashboard
-        Route::get('dashboard/stats', [DashboardController::class, 'getStats']);
+        Route::get('dashboard/stats', [DashboardController::class, 'getStats'])
+            ->middleware('permission:ver.reporte-diario');
 
-        // Catálogos
-        Route::apiResource('sucursales', SucursalController::class);
-        Route::apiResource('categorias', CategoriaController::class);
-        Route::apiResource('productos', ProductoController::class);
-        Route::apiResource('ventas', VentaController::class);
-        Route::post('ventas/{id}/anular', [VentaController::class, 'anular']);
-        Route::apiResource('proveedores', ProveedorController::class);
-        Route::apiResource('compras', CompraController::class);
-        Route::apiResource('users', UserController::class);
-        
+        // Sucursales
+        Route::get('sucursales', [SucursalController::class, 'index'])->middleware('permission:ver.sucursales');
+        Route::post('sucursales', [SucursalController::class, 'store'])->middleware('permission:crear.sucursal');
+        Route::get('sucursales/{sucursal}', [SucursalController::class, 'show'])->middleware('permission:ver.sucursales');
+        Route::put('sucursales/{sucursal}', [SucursalController::class, 'update'])->middleware('permission:editar.sucursal');
+        Route::delete('sucursales/{sucursal}', [SucursalController::class, 'destroy'])->middleware('permission:eliminar.sucursal');
+
+        // Categorias
+        Route::get('categorias', [CategoriaController::class, 'index']);
+        Route::post('categorias', [CategoriaController::class, 'store'])->middleware('permission:crear.categoria');
+        Route::get('categorias/{categoria}', [CategoriaController::class, 'show']);
+        Route::put('categorias/{categoria}', [CategoriaController::class, 'update'])->middleware('permission:editar.categoria');
+        Route::delete('categorias/{categoria}', [CategoriaController::class, 'destroy'])->middleware('permission:eliminar.categoria');
+
+        // Productos
+        Route::get('productos', [ProductoController::class, 'index'])->middleware('permission:ver.productos');
+        Route::post('productos', [ProductoController::class, 'store'])->middleware('permission:crear.producto');
+        Route::get('productos/{producto}', [ProductoController::class, 'show'])->middleware('permission:ver.productos');
+        Route::post('productos/{producto}', [ProductoController::class, 'update'])->middleware('permission:editar.producto'); // POST con _method=PUT
+        Route::put('productos/{producto}', [ProductoController::class, 'update'])->middleware('permission:editar.producto');
+        Route::delete('productos/{producto}', [ProductoController::class, 'destroy'])->middleware('permission:eliminar.producto');
+
+        // Ventas
+        Route::get('ventas', [VentaController::class, 'index'])->middleware('permission:ver.historial-ventas');
+        Route::post('ventas', [VentaController::class, 'store'])->middleware('permission:crear.venta');
+        Route::get('ventas/{venta}', [VentaController::class, 'show'])->middleware('permission:ver.historial-ventas');
+        Route::post('ventas/{id}/anular', [VentaController::class, 'anular'])->middleware('permission:anular.venta');
+
+        // Proveedores
+        Route::get('proveedores', [ProveedorController::class, 'index'])->middleware('permission:ver.proveedores');
+        Route::post('proveedores', [ProveedorController::class, 'store'])->middleware('permission:crear.proveedor');
+        Route::get('proveedores/{proveedor}', [ProveedorController::class, 'show'])->middleware('permission:ver.proveedores');
+        Route::put('proveedores/{proveedor}', [ProveedorController::class, 'update'])->middleware('permission:editar.proveedor');
+        Route::delete('proveedores/{proveedor}', [ProveedorController::class, 'destroy'])->middleware('permission:eliminar.proveedor');
+
+        // Compras
+        Route::get('compras', [CompraController::class, 'index'])->middleware('permission:ver.historial-compras');
+        Route::post('compras', [CompraController::class, 'store'])->middleware('permission:registrar.compra');
+        Route::get('compras/{compra}', [CompraController::class, 'show'])->middleware('permission:ver.historial-compras');
+
+        // Usuarios
+        Route::get('users', [UserController::class, 'index'])->middleware('permission:ver.usuarios');
+        Route::post('users', [UserController::class, 'store'])->middleware('permission:crear.usuario');
+        Route::get('users/{user}', [UserController::class, 'show'])->middleware('permission:ver.usuarios');
+        Route::put('users/{user}', [UserController::class, 'update'])->middleware('permission:editar.usuario');
+        Route::patch('users/{user}/toggle-active', [UserController::class, 'toggleActive'])->middleware('permission:editar.usuario');
+        Route::delete('users/{user}', [UserController::class, 'destroy'])->middleware('permission:eliminar.usuario');
+
         // Roles y Permisos
-        Route::get('permissions', [RoleController::class, 'permissions']);
-        Route::apiResource('roles', RoleController::class);
+        Route::get('permissions', [RoleController::class, 'permissions'])->middleware('permission:ver.roles');
+        Route::get('roles', [RoleController::class, 'index'])->middleware('permission:ver.roles');
+        Route::post('roles', [RoleController::class, 'store'])->middleware('permission:crear.rol');
+        Route::get('roles/{role}', [RoleController::class, 'show'])->middleware('permission:ver.roles');
+        Route::put('roles/{role}', [RoleController::class, 'update'])->middleware('permission:editar.rol');
+        Route::delete('roles/{role}', [RoleController::class, 'destroy'])->middleware('permission:eliminar.rol');
 
         // Caja
         Route::get('caja/status', [CajaController::class, 'status']);
-        Route::post('caja/abrir', [CajaController::class, 'abrir']);
-        Route::post('caja/cerrar/{caja}', [CajaController::class, 'cerrar']);
+        Route::post('caja/abrir', [CajaController::class, 'abrir'])->middleware('permission:abrir.caja');
+        Route::post('caja/cerrar/{caja}', [CajaController::class, 'cerrar'])->middleware('permission:cerrar.caja');
         
-        // Más adelante: Cajas, Ventas, Reportes, etc.
+        // Configuraciones del Sistema
+        Route::get('configuraciones', [ConfiguracionController::class, 'index']);
+        Route::put('configuraciones', [ConfiguracionController::class, 'update']);
+        
+        // Reportes y Estadísticas
+        Route::prefix('reportes')->middleware(['auth:sanctum', 'token_from_query'])->group(function () {
+            Route::get('ventas',           [ReporteController::class, 'ventasPorPeriodo']);
+            Route::get('sucursal',         [ReporteController::class, 'ventasPorSucursal']);
+            Route::get('productos-top',    [ReporteController::class, 'productosTop']);
+            Route::get('stock-critico',    [ReporteController::class, 'stockCritico']);
+            Route::get('anulaciones',      [ReporteController::class, 'anulaciones']);
+            Route::get('cajas',            [ReporteController::class, 'historialCajas']);
+            Route::get('arqueo/{cajaId}',  [ReporteController::class, 'arqueoCaja']);
+            Route::get('inventario-maestro', [ReporteController::class, 'inventarioMaestro']);
+            Route::get('ventas-usuario',   [ReporteController::class, 'ventasPorUsuario']);
+            
+            // Exportaciones
+            Route::prefix('exportar')->group(function () {
+                Route::get('ventas',       [ReporteController::class, 'exportarVentas']);
+                Route::get('stock',        [ReporteController::class, 'exportarStock']);
+                Route::get('top',          [ReporteController::class, 'exportarTop']);
+                Route::get('anulaciones',  [ReporteController::class, 'exportarAnulaciones']);
+                Route::get('inventario',   [ReporteController::class, 'exportarInventario']);
+                Route::get('sucursal',     [ReporteController::class, 'exportarSucursal']);
+                Route::get('usuario',      [ReporteController::class, 'exportarUsuario']);
+            });
+
+            Route::get('pdf', [ReporteController::class, 'generarPdf']);
+        });
     });
 
     // Ruta de impresión pública (dentro del inquilino) para permitir window.open

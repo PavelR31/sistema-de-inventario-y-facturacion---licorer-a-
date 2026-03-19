@@ -48,12 +48,17 @@ export default function SettingsPage() {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      const [rolesRes, permsRes] = await Promise.all([
+      const [rolesRes, permsRes, configRes] = await Promise.all([
         api.get('/api/roles'),
-        api.get('/api/permissions')
+        api.get('/api/permissions'),
+        api.get('/api/configuraciones')
       ]);
       setRoles(rolesRes.data);
       setPermissions(permsRes.data);
+      
+      if (configRes.data?.moneda) {
+        setCurrency(configRes.data.moneda);
+      }
       
       if (rolesRes.data.length > 0 && !selectedRole) {
         handleSelectRole(rolesRes.data[0]);
@@ -122,28 +127,122 @@ export default function SettingsPage() {
     }
   };
 
-  const handleCurrencyChange = (value) => {
-    setCurrency(value);
-    toast.success(`Moneda cambiada a ${value === 'NIO' ? 'Córdobas (C$)' : 'Dólares ($)'}`);
+  const handleCurrencyChange = async (value) => {
+    try {
+      const simbolo = value === 'NIO' ? 'C$' : '$';
+      await Promise.all([
+        api.put('/api/configuraciones', { clave: 'moneda', valor: value }),
+        api.put('/api/configuraciones', { clave: 'simbolo_moneda', valor: simbolo })
+      ]);
+      setCurrency(value);
+      toast.success(`Moneda guardada como ${value === 'NIO' ? 'Córdobas (C$)' : 'Dólores ($)'}`);
+    } catch (error) {
+      toast.error('No se pudo guardar la configuración de moneda');
+    }
   };
 
-  const groupedPermissions = permissions.reduce((acc, p) => {
-    const resource = p.name.includes('.') ? p.name.split('.')[1] : (p.name.includes('-') ? p.name.split('-')[1] : 'general');
-    if (!acc[resource]) acc[resource] = [];
-    acc[resource].push(p);
+  // Mapa explícito: permiso → grupo de módulo
+  const PERMISSION_GROUPS = {
+    'Inventario / Productos': [
+      'ver.productos', 'crear.producto', 'editar.producto', 'eliminar.producto',
+      'ajustar.stock', 'ver.costos',
+    ],
+    'Categorías': [
+      'ver.categorias', 'crear.categoria', 'editar.categoria', 'eliminar.categoria',
+    ],
+    'Ventas & POS': [
+      'acceso.pos', 'crear.venta', 'anular.venta', 'aplicar.descuento',
+      'ver.historial-ventas', 'exportar.ventas',
+    ],
+    'Caja': [
+      'abrir.caja', 'cerrar.caja', 'ver.movimientos-caja',
+      'ajustar.saldo-caja', 'realizar.egresos',
+    ],
+    'Compras & Proveedores': [
+      'registrar.compra', 'ver.historial-compras',
+      'ver.proveedores', 'crear.proveedor', 'editar.proveedor', 'eliminar.proveedor',
+    ],
+    'Reportes': [
+      'ver.reporte-diario', 'ver.reporte-mensual',
+      'ver.reporte-utilidades', 'ver.reporte-stock-bajo',
+    ],
+    'Sucursales': [
+      'ver.sucursales', 'crear.sucursal', 'editar.sucursal', 'eliminar.sucursal',
+    ],
+    'Usuarios': [
+      'ver.usuarios', 'crear.usuario', 'editar.usuario', 'eliminar.usuario',
+    ],
+    'Roles & Sistema': [
+      'ver.roles', 'crear.rol', 'editar.rol', 'eliminar.rol', 'ajustes.sistema',
+    ],
+  };
+
+  const groupedPermissions = Object.entries(PERMISSION_GROUPS).reduce((acc, [group, names]) => {
+    const permsInGroup = names
+      .map(name => permissions.find(p => p.name === name))
+      .filter(Boolean);
+    if (permsInGroup.length > 0) acc[group] = permsInGroup;
     return acc;
   }, {});
 
-  const getResourceIcon = (resource) => {
-    switch (resource) {
-      case 'venta': case 'ventas': return <Receipt className="h-4 w-4 text-primary" />;
-      case 'caja': return <Storefront className="h-4 w-4 text-primary" />;
-      case 'producto': case 'catalogo': case 'categorias': return <Package className="h-4 w-4 text-primary" />;
-      case 'compra': case 'compras': case 'proveedores': return <ShoppingCart className="h-4 w-4 text-primary" />;
-      case 'reporte': case 'reportes': return <ChartPieSlice className="h-4 w-4 text-primary" />;
-      case 'usuarios': case 'roles': case 'sucursales': return <Users className="h-4 w-4 text-primary" />;
-      default: return <Gear className="h-4 w-4 text-primary" />;
-    }
+  const PERMISSION_LABELS = {
+    'ver.productos': 'Ver catálogo',
+    'crear.producto': 'Crear productos',
+    'editar.producto': 'Editar productos',
+    'eliminar.producto': 'Eliminar productos',
+    'ajustar.stock': 'Ajustar stock',
+    'ver.costos': 'Ver precios de costo',
+    'ver.categorias': 'Ver categorías',
+    'crear.categoria': 'Crear categorías',
+    'editar.categoria': 'Editar categorías',
+    'eliminar.categoria': 'Eliminar categorías',
+    'acceso.pos': 'Acceso al POS',
+    'crear.venta': 'Registrar ventas',
+    'anular.venta': 'Anular ventas',
+    'aplicar.descuento': 'Aplicar descuentos',
+    'ver.historial-ventas': 'Ver historial de ventas',
+    'exportar.ventas': 'Exportar ventas',
+    'abrir.caja': 'Abrir caja',
+    'cerrar.caja': 'Cerrar caja',
+    'ver.movimientos-caja': 'Ver movimientos de caja',
+    'ajustar.saldo-caja': 'Ajustar saldo de caja',
+    'realizar.egresos': 'Realizar egresos',
+    'registrar.compra': 'Registrar compras',
+    'ver.historial-compras': 'Ver historial de compras',
+    'ver.proveedores': 'Ver proveedores',
+    'crear.proveedor': 'Crear proveedores',
+    'editar.proveedor': 'Editar proveedores',
+    'eliminar.proveedor': 'Eliminar proveedores',
+    'ver.reporte-diario': 'Reporte diario',
+    'ver.reporte-mensual': 'Reporte mensual',
+    'ver.reporte-utilidades': 'Reporte de utilidades',
+    'ver.reporte-stock-bajo': 'Reporte de stock bajo',
+    'ver.sucursales': 'Ver sucursales',
+    'crear.sucursal': 'Crear sucursales',
+    'editar.sucursal': 'Editar sucursales',
+    'eliminar.sucursal': 'Eliminar sucursales',
+    'ver.usuarios': 'Ver usuarios',
+    'crear.usuario': 'Crear usuarios',
+    'editar.usuario': 'Editar usuarios',
+    'eliminar.usuario': 'Eliminar usuarios',
+    'ver.roles': 'Ver roles y permisos',
+    'crear.rol': 'Crear roles',
+    'editar.rol': 'Editar roles',
+    'eliminar.rol': 'Eliminar roles',
+    'ajustes.sistema': 'Ajustes del sistema',
+  };
+
+  const getResourceIcon = (group) => {
+    if (group.includes('Inventario') || group.includes('Producto')) return <Package className="h-4 w-4 text-primary" />;
+    if (group.includes('Categor')) return <Package className="h-4 w-4 text-primary" />;
+    if (group.includes('Ventas') || group.includes('POS')) return <Receipt className="h-4 w-4 text-primary" />;
+    if (group.includes('Caja')) return <Storefront className="h-4 w-4 text-primary" />;
+    if (group.includes('Compras')) return <ShoppingCart className="h-4 w-4 text-primary" />;
+    if (group.includes('Reportes')) return <ChartPieSlice className="h-4 w-4 text-primary" />;
+    if (group.includes('Sucursal')) return <Storefront className="h-4 w-4 text-primary" />;
+    if (group.includes('Usuario')) return <Users className="h-4 w-4 text-primary" />;
+    if (group.includes('Roles') || group.includes('Sistema')) return <ShieldCheck className="h-4 w-4 text-primary" />;
+    return <Gear className="h-4 w-4 text-primary" />;
   };
 
   return (
@@ -155,7 +254,7 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
         <div className="space-y-6">
           <Card className="border-slate-200 shadow-sm overflow-hidden">
             <CardHeader className="bg-slate-50/80 border-b">
@@ -260,8 +359,8 @@ export default function SettingsPage() {
               </CardHeader>
               <CardContent className="pt-6 overflow-y-auto max-h-[600px] bg-slate-50/20">
                 {selectedRole.name === 'Administrador' && (
-                  <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-xl flex gap-3 text-amber-800">
-                    <ShieldCheck className="h-5 w-5 shrink-0" weight="fill" />
+                  <div className="mb-6 p-4 bg-slate-100 border border-slate-200 rounded-xl flex gap-3 text-slate-600">
+                    <ShieldCheck className="h-5 w-5 shrink-0 text-slate-500" weight="fill" />
                     <p className="text-xs font-medium leading-relaxed">
                       <strong>Perfil Maestro:</strong> Este cargo tiene privilegios absolutos. No se pueden restringir sus acciones para garantizar la integridad del sistema.
                     </p>
@@ -290,9 +389,9 @@ export default function SettingsPage() {
                                 htmlFor={p.name}
                                 className="text-[13px] font-bold leading-none cursor-pointer group-hover:text-primary transition-colors capitalize"
                               >
-                                {p.name.split('.')[0].replace(/-/g, ' ')}
+                                {PERMISSION_LABELS[p.name] || p.name}
                               </label>
-                              <p className="text-[10px] text-slate-400 font-medium">Permite ejecutar esta acción en {resource}</p>
+                              <p className="text-[10px] text-slate-400 font-medium font-mono">{p.name}</p>
                             </div>
                           </div>
                         ))}

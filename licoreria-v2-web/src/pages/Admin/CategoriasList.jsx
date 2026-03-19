@@ -7,19 +7,25 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Plus, Pencil, Trash2, Tag } from 'lucide-react';
 import { toast } from 'sonner';
 import api from '@/lib/api';
+import Can from '@/components/auth/Can';
+import DataPagination from '@/components/ui/data-pagination';
 
 export default function CategoriasList() {
   const [categorias, setCategorias] = useState([]);
+  const [meta, setMeta] = useState({ current_page: 1, last_page: 1, total: 0 });
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingCategoria, setEditingCategoria] = useState(null);
   const [formData, setFormData] = useState({ nombre: '', descripcion: '' });
 
-  const fetchCategorias = async () => {
+  const fetchCategorias = async (page = 1) => {
     setIsLoading(true);
     try {
-      const response = await api.get('/api/categorias');
-      setCategorias(response.data);
+      const response = await api.get('/api/categorias', { params: { page } });
+      setCategorias(response.data.data ?? response.data);
+      if (response.data.last_page) {
+        setMeta({ current_page: response.data.current_page, last_page: response.data.last_page, total: response.data.total });
+      }
     } catch (error) {
       toast.error('Error al cargar categorías');
     } finally {
@@ -74,13 +80,15 @@ export default function CategoriasList() {
           <h1 className="text-3xl font-bold tracking-tight">Categorías</h1>
           <p className="text-muted-foreground">Organiza tus productos por tipo o familia.</p>
         </div>
-        <Button onClick={() => {
-          setEditingCategoria(null);
-          setFormData({ nombre: '', descripcion: '' });
-          setIsDialogOpen(true);
-        }}>
-          <Plus className="mr-2 h-4 w-4" /> Nueva Categoría
-        </Button>
+        <Can permission="crear.categoria">
+          <Button onClick={() => {
+            setEditingCategoria(null);
+            setFormData({ nombre: '', descripcion: '' });
+            setIsDialogOpen(true);
+          }}>
+            <Plus className="mr-2 h-4 w-4" /> Nueva Categoría
+          </Button>
+        </Can>
       </div>
 
       <Card>
@@ -115,18 +123,23 @@ export default function CategoriasList() {
                     </TableCell>
                     <TableCell>{cat.descripcion || '-'}</TableCell>
                     <TableCell className="text-right">
-                      <Button variant="ghost" size="icon" onClick={() => handleEdit(cat)}>
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDelete(cat.id)}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      <Can permission="editar.categoria">
+                        <Button variant="ghost" size="icon" onClick={() => handleEdit(cat)}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      </Can>
+                      <Can permission="eliminar.categoria">
+                        <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDelete(cat.id)}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </Can>
                     </TableCell>
                   </TableRow>
                 ))
               )}
             </TableBody>
           </Table>
+          <DataPagination meta={meta} onPageChange={fetchCategorias} />
         </CardContent>
       </Card>
 

@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '@/store/useAuthStore';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { toast } from 'sonner';
+import { CircleNotch } from "@phosphor-icons/react";
 import api from '@/lib/api';
 
 export default function Login() {
@@ -64,81 +66,142 @@ export default function Login() {
     }
   };
 
+  const [isForgotOpen, setIsForgotOpen] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [isSubmittingForgot, setIsSubmittingForgot] = useState(false);
+
+  const handleForgotPassword = (e) => {
+    e.preventDefault();
+    setIsSubmittingForgot(true);
+    // Simular envío de correo
+    setTimeout(() => {
+      toast.success('Correo enviado', {
+        description: `Se ha enviado un enlace de recuperación a ${forgotEmail}`,
+      });
+      setIsSubmittingForgot(false);
+      setIsForgotOpen(false);
+      setForgotEmail('');
+    }, 1500);
+  };
+
   return (
-    <div className="flex items-center justify-center min-h-screen bg-slate-50 p-6 animate-in fade-in duration-700">
-      <div className="w-full max-w-md">
-        <div className="flex flex-col items-center mb-10">
-          <div className="h-14 w-14 rounded-2xl bg-primary flex items-center justify-center shadow-lg shadow-primary/20 mb-6 group hover:rotate-6 transition-transform duration-500">
-             <div className="h-6 w-6 border-2 border-white rounded-md flex items-center justify-center">
-                <div className="h-2 w-2 bg-white rounded-full"></div>
-             </div>
+    <div className="flex items-center justify-center min-h-screen bg-white md:bg-slate-50 p-4">
+      <div className="w-full max-w-[400px] space-y-8 animate-in fade-in duration-500">
+        <div className="text-center space-y-2">
+          <div className="flex justify-center mb-6">
+            <div className="h-12 w-12 rounded-xl bg-slate-900 flex items-center justify-center">
+               <div className="h-5 w-5 border-2 border-white rounded-sm flex items-center justify-center">
+                  <div className="h-1 w-1 bg-white rounded-full"></div>
+               </div>
+            </div>
           </div>
-          <h1 className="text-3xl font-black text-slate-900 tracking-tight leading-none">Licora</h1>
-          <p className="text-xs font-bold text-slate-400 uppercase tracking-[0.2em] mt-3">Smart Business Logic</p>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Licora</h1>
+          <p className="text-sm text-slate-500">Ingrese sus credenciales para continuar</p>
         </div>
 
-        <Card className="border border-slate-200 rounded-[2rem] shadow-2xl shadow-slate-200/50 overflow-hidden bg-white">
-          <CardHeader className="pt-10 pb-6 text-center">
-            <h2 className="text-xl font-bold text-slate-800">Bienvenido</h2>
-            <CardDescription className="text-slate-400 font-medium">
-              Ingrese a su terminal administrativa
-            </CardDescription>
-          </CardHeader>
-          
+        <Card className="border-none shadow-none md:border md:shadow-sm md:rounded-2xl bg-white p-2">
           <form onSubmit={handleLogin}>
-            <CardContent className="px-8 space-y-6">
-              <div className="space-y-2.5">
-                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Correo Corporativo</label>
+            <CardContent className="space-y-4 pt-6">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-slate-700">Email</label>
                 <Input 
                   type="email" 
-                  placeholder="usuario@licora.com" 
+                  placeholder="admin@licora.com" 
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="h-13 bg-slate-50 border-slate-100 rounded-xl focus-visible:ring-primary/20 transition-all font-medium text-slate-900"
+                  className="h-11 rounded-lg border-slate-200 focus-visible:ring-slate-900/5 focus-visible:border-slate-400"
                   required 
                 />
               </div>
-              <div className="space-y-2.5">
+
+              <div className="space-y-2">
                 <div className="flex justify-between items-center">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Contraseña</label>
-                    <button type="button" className="text-[10px] font-bold text-primary hover:underline">¿La olvidó?</button>
+                  <label className="text-sm font-medium text-slate-700">Contraseña</label>
+                  <button 
+                    type="button" 
+                    onClick={() => setIsForgotOpen(true)}
+                    className="text-xs font-semibold text-slate-500 hover:text-slate-900 transition-colors"
+                  >
+                    ¿Olvidó su contraseña?
+                  </button>
                 </div>
                 <Input 
                   type="password" 
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="h-13 bg-slate-50 border-slate-100 rounded-xl focus-visible:ring-primary/20 transition-all font-medium text-slate-900"
+                  className="h-11 rounded-lg border-slate-200 focus-visible:ring-slate-900/5 focus-visible:border-slate-400"
                   required 
                 />
               </div>
             </CardContent>
             
-            <CardFooter className="px-8 pb-10 pt-4 flex flex-col gap-6">
+            <CardFooter className="pt-2 pb-6 flex flex-col gap-4">
               <Button 
-                className="w-full h-14 rounded-2xl bg-primary hover:bg-primary/90 text-white font-bold text-sm shadow-lg shadow-primary/20 transition-all group" 
+                className="w-full h-11 rounded-lg bg-slate-900 hover:bg-slate-800 text-white font-semibold text-sm transition-all" 
                 type="submit" 
                 disabled={isLoading}
               >
                 {isLoading ? (
                   <div className="flex items-center gap-2">
-                    <div className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                    <span>Autenticando...</span>
+                    <CircleNotch className="h-4 w-4 animate-spin" />
+                    <span>Iniciando...</span>
                   </div>
                 ) : (
-                  <div className="flex items-center gap-2">
-                    <span>Acceder al Sistema</span>
-                  </div>
+                  "Iniciar Sesión"
                 )}
               </Button>
-              
-              <p className="text-[10px] text-slate-300 font-medium text-center uppercase tracking-widest">
-                Protegido por Licora Security Layer v2
-              </p>
             </CardFooter>
           </form>
         </Card>
+        
+        <p className="text-center text-xs text-slate-400 font-medium tracking-tight">
+          © 2026 Licora Software
+        </p>
       </div>
+
+      {/* Forgot Password Modal (Simulated) */}
+      <Dialog open={isForgotOpen} onOpenChange={setIsForgotOpen}>
+        <DialogContent className="sm:max-w-[400px] rounded-2xl border-slate-100 p-0 overflow-hidden shadow-2xl">
+          <DialogHeader className="p-6 pb-0">
+            <DialogTitle className="text-xl font-bold tracking-tight">Recuperar Acceso</DialogTitle>
+            <DialogDescription className="text-sm">
+              Le enviaremos un código de seguridad a su casilla de correo corporativa.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleForgotPassword} className="p-6 space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-700">Dirección de correo</label>
+              <Input 
+                type="email" 
+                placeholder="admin@licora.com" 
+                value={forgotEmail}
+                onChange={(e) => setForgotEmail(e.target.value)}
+                className="h-11 rounded-lg border-slate-200"
+                required 
+              />
+            </div>
+            <div className="flex flex-col gap-3 pt-2">
+              <Button 
+                type="submit" 
+                className="h-11 rounded-lg bg-slate-900 font-semibold"
+                disabled={isSubmittingForgot}
+              >
+                {isSubmittingForgot ? <CircleNotch className="h-4 w-4 animate-spin mr-2" /> : null}
+                {isSubmittingForgot ? 'Enviando...' : 'Enviar enlace'}
+              </Button>
+              <Button 
+                variant="ghost" 
+                type="button"
+                className="h-11 text-slate-500 rounded-lg font-medium"
+                onClick={() => setIsForgotOpen(false)}
+              >
+                Cancelar
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

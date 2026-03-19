@@ -8,10 +8,13 @@ import { Search, Download, Calendar, Eye, FileText, User, Store, CreditCard, Ban
 import { toast } from 'sonner';
 import api from '@/lib/api';
 import { useCurrency } from '@/hooks/useCurrency';
+import Can from '@/components/auth/Can';
+import DataPagination from '@/components/ui/data-pagination';
 
 export default function SalesHistory() {
   const { formatMoney } = useCurrency();
   const [ventas, setVentas] = useState([]);
+  const [meta, setMeta] = useState({ current_page: 1, last_page: 1, total: 0 });
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   
@@ -24,12 +27,18 @@ export default function SalesHistory() {
   const [motivoAnulacion, setMotivoAnulacion] = useState('');
   const [isAnulando, setIsAnulando] = useState(false);
 
-  const fetchVentas = async () => {
+  const fetchVentas = async (page = 1) => {
     setIsLoading(true);
     try {
-      const response = await api.get('/api/ventas');
-      // La API retorna paginado: response.data.data
+      const response = await api.get('/api/ventas', { params: { page, search: searchTerm } });
       setVentas(response.data.data || []);
+      if (response.data.last_page) {
+        setMeta({
+          current_page: response.data.current_page,
+          last_page: response.data.last_page,
+          total: response.data.total
+        });
+      }
     } catch (e) {
       toast.error('Error al cargar el historial de ventas');
     } finally {
@@ -163,6 +172,9 @@ export default function SalesHistory() {
               )}
             </TableBody>
           </Table>
+          <div className="p-4 border-t">
+            <DataPagination meta={meta} onPageChange={fetchVentas} />
+          </div>
         </CardContent>
       </Card>
 
@@ -249,9 +261,11 @@ export default function SalesHistory() {
                     <FileText className="h-4 w-4" /> Reimprimir
                 </Button>
                 {selectedVenta?.estado === 'vigente' && (
-                    <Button variant="destructive" className="gap-2" onClick={() => setIsAnularOpen(true)}>
-                        <Trash2 className="h-4 w-4" /> Anular Venta
-                    </Button>
+                    <Can permission="anular.venta">
+                      <Button variant="destructive" className="gap-2" onClick={() => setIsAnularOpen(true)}>
+                          <Trash2 className="h-4 w-4" /> Anular Venta
+                      </Button>
+                    </Can>
                 )}
             </div>
             <Button onClick={() => setIsDetailOpen(false)}>Cerrar</Button>

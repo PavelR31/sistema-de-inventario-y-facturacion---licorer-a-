@@ -21,7 +21,11 @@ class CompraController extends Controller
             $query->where('sucursal_id', $sucursalId);
         }
 
-        return response()->json($query->get());
+        if ($request->fecha) {
+            $query->whereDate('created_at', $request->fecha);
+        }
+
+        return response()->json($query->paginate($request->per_page ?? 15));
     }
 
     public function store(Request $request)

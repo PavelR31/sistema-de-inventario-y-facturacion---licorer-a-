@@ -16,10 +16,11 @@ import {
 } from "@phosphor-icons/react"
 import { toast } from 'sonner';
 import api from '@/lib/api';
+import ArqueoCajaModal from '@/components/pos/ArqueoCajaModal';
 
 export default function POS() {
   const { branch, user } = useAuthStore();
-  const { cerrarCaja } = useCajaStore();
+  const { cerrarCaja, activeCaja, checkCajaStatus } = useCajaStore();
   const { formatMoney, currencySymbol } = useCurrency();
   const { cart, addToCart, removeFromCart, updateQuantity, clearCart, getTotal } = usePOSStore();
   
@@ -47,11 +48,11 @@ export default function POS() {
     setIsLoading(true);
     try {
       const [prodRes, catRes] = await Promise.all([
-        api.get(`/api/productos?sucursal_id=${branch.id}&activo=1`),
-        api.get('/api/categorias')
+        api.get(`/api/productos?sucursal_id=${branch.id}&activo=1&per_page=100`),
+        api.get('/api/categorias', { params: { per_page: 100 } })
       ]);
-      setProducts(prodRes.data);
-      setCategories(catRes.data);
+      setProducts(prodRes.data.data ?? prodRes.data);
+      setCategories(catRes.data.data ?? catRes.data);
     } catch (e) {
       toast.error('Error al cargar datos');
     } finally {
@@ -61,15 +62,17 @@ export default function POS() {
 
   useEffect(() => {
     fetchInitialData();
+    // checkCajaStatus ya lo hace el padre CajaFlow, no llamarlo aquí para evitar bucle
   }, [branch?.id]);
 
-  const handleCerrarCaja = async () => {
+  const handleCerrarCaja = async (montoFinal) => {
       setIsProcessing(true);
-      const result = await cerrarCaja();
+      const result = await cerrarCaja(montoFinal); 
       setIsProcessing(false);
       if (result.success) {
           toast.success('Caja cerrada correctamente. Redirigiendo...');
-          window.location.reload(); // Para que el flujo de CajaFlow lo detecte
+          setIsCloseCajaOpen(false);
+          window.location.reload(); 
       } else {
           toast.error(result.message);
       }
@@ -164,8 +167,11 @@ export default function POS() {
             <Button 
                 variant="outline" 
                 size="sm" 
-                className="h-9 border-slate-200 text-slate-600 font-medium bg-white hover:bg-rose-50 hover:text-rose-600 hover:border-rose-100 transition-all"
-                onClick={() => setIsCloseCajaOpen(true)}
+                className="h-9 border-slate-200 text-slate-600 font-medium bg-white hover:bg-slate-50 transition-all"
+                onClick={() => {
+                    checkCajaStatus(branch.id, true); // Actualización silenciosa (sin loader global)
+                    setIsCloseCajaOpen(true);
+                }}
             >
                 <LockKey className="h-4 w-4 mr-2" />
                 Cerrar Caja
@@ -487,6 +493,15 @@ export default function POS() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <ArqueoCajaModal 
+        isOpen={isCloseCajaOpen}
+        onOpenChange={setIsCloseCajaOpen}
+        activeCaja={activeCaja}
+        formatMoney={formatMoney}
+        isProcessing={isProcessing}
+        onConfirm={handleCerrarCaja}
+      />
       
     </div>
   );

@@ -36,102 +36,62 @@ import { Link, useLocation } from "react-router-dom"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 
-const data = {
-  'super-admin': [
-    {
-      label: "General",
-      items: [
-        { title: "Dashboard", url: "/central", icon: Layout },
-        { title: "Licorerías", url: "/central/tenants", icon: Buildings },
-      ],
-    },
-    {
-      label: "Configuración",
-      items: [
-        { title: "Ajustes Globales", url: "/central/settings", icon: Gear },
-        { title: "Logs del Sistema", url: "/central/logs", icon: ClockCounterClockwise },
-      ],
-    },
-  ],
-  'Administrador': [
-    {
-      label: "Administración",
-      items: [
-        { title: "Escritorio", url: "/admin", icon: House },
-        { title: "Sucursales", url: "/admin/sucursales", icon: Storefront },
-        { title: "Usuarios & Roles", url: "/admin/usuarios", icon: Users },
-      ],
-    },
-    {
-      label: "Inventario",
-      items: [
-        { title: "Productos", url: "/admin/productos", icon: Package },
-        { title: "Categorías", url: "/admin/categorias", icon: ShieldCheck },
-        { title: "Proveedores", url: "/admin/proveedores", icon: Truck },
-        { title: "Ajustes de Stock", url: "/admin/inventario", icon: ClockCounterClockwise },
-      ],
-    },
-    {
-      label: "Compras",
-      items: [
-        { title: "Nueva Compra", url: "/admin/compras/nueva", icon: ShoppingCart },
-        { title: "Historial Compras", url: "/admin/compras", icon: FileText },
-      ],
-    },
-    {
-      label: "Ventas & Caja",
-      items: [
-        { title: "Punto de Venta", url: "/pos", icon: CashRegister },
-        { title: "Historial Ventas", url: "/admin/ventas", icon: Receipt },
-        { title: "Reportes", url: "/admin/reportes", icon: ChartPieSlice },
-      ],
-    },
-    {
-      label: "Configuración",
-      items: [
-        { title: "Seguridad y Ajustes", url: "/admin/settings", icon: Gear },
-      ],
-    },
-  ],
-  'Gerente': [
-    {
-        label: "Administración",
-        items: [
-          { title: "Escritorio", url: "/admin", icon: House },
-        ],
-      },
-      {
-        label: "Inventario",
-        items: [
-          { title: "Productos", url: "/admin/productos", icon: Package },
-          { title: "Categorías", url: "/admin/categorias", icon: ShieldCheck },
-          { title: "Ajustes de Stock", url: "/admin/inventario", icon: ClockCounterClockwise },
-        ],
-      },
-      {
-        label: "Ventas & Caja",
-        items: [
-          { title: "Punto de Venta", url: "/pos", icon: CashRegister },
-          { title: "Historial Ventas", url: "/admin/ventas", icon: Receipt },
-        ],
-      },
-  ],
-  'Cajero': [
-    {
-      label: "Ventas",
-      items: [
-        { title: "Punto de Venta", url: "/pos", icon: CashRegister },
-        { title: "Mis Ventas", url: "/pos/mis-ventas", icon: ClockCounterClockwise },
-      ],
-    },
-  ],
-}
+// Todos los ítems del menú con su permiso requerido.
+// Si permission es null, cualquier usuario autenticado lo ve (ej. el Escritorio básico).
+const ALL_MENU_ITEMS = [
+  // Super Admin
+  { role: 'super-admin', label: "General", title: "Dashboard", url: "/central", icon: Layout },
+  { role: 'super-admin', label: "General", title: "Licorerías", url: "/central/tenants", icon: Buildings },
+  { role: 'super-admin', label: "Configuración", title: "Ajustes Globales", url: "/central/settings", icon: Gear },
+
+  // Administración (acceso al panel)
+  { permission: 'ver.reporte-diario',    label: "Administración", title: "Escritorio",       url: "/admin",            icon: House },
+  { permission: 'gestionar.sucursales',  label: "Administración", title: "Sucursales",        url: "/admin/sucursales", icon: Storefront },
+  { permission: 'gestionar.usuarios',    label: "Administración", title: "Usuarios & Roles",  url: "/admin/usuarios",   icon: Users },
+
+  // Inventario
+  { permission: 'ver.productos',         label: "Inventario", title: "Productos",         url: "/admin/productos",   icon: Package },
+  { permission: 'gestionar.categorias',  label: "Inventario", title: "Categorías",        url: "/admin/categorias",  icon: ShieldCheck },
+  { permission: 'gestionar.proveedores', label: "Inventario", title: "Proveedores",       url: "/admin/proveedores", icon: Truck },
+  { permission: 'ajustar.stock',         label: "Inventario", title: "Ajustes de Stock",  url: "/admin/inventario",  icon: ClockCounterClockwise },
+
+  // Compras
+  { permission: 'registrar.compra',      label: "Compras", title: "Nueva Compra",      url: "/admin/compras/nueva", icon: ShoppingCart },
+  { permission: 'ver.historial-compras', label: "Compras", title: "Historial Compras", url: "/admin/compras",       icon: FileText },
+
+  // Ventas & Caja
+  { permission: 'acceso.pos',            label: "Ventas & Caja", title: "Punto de Venta",   url: "/pos",            icon: CashRegister },
+  { permission: 'crear.venta',           label: "Ventas & Caja", title: "Mis Ventas",        url: "/pos/mis-ventas", icon: Receipt },
+  { permission: 'ver.historial-ventas',  label: "Ventas & Caja", title: "Historial Ventas",  url: "/admin/ventas",   icon: ClockCounterClockwise },
+  { permission: 'ver.reporte-utilidades',label: "Ventas & Caja", title: "Reportes",          url: "/admin/reportes", icon: ChartPieSlice },
+
+  // Configuración
+  { permission: 'gestionar.roles',       label: "Configuración", title: "Seguridad y Ajustes", url: "/admin/settings", icon: Gear },
+];
 
 export function AppSidebar() {
-  const { roles, user, logout, branch } = useAuthStore()
+  const { roles, user, logout, branch, hasPermission, hasRole } = useAuthStore()
   const location = useLocation()
-  const role = roles?.[0] || 'Cajero'
-  const groups = data[role] || []
+  const role = roles?.[0] || ''
+  const isSuperAdmin = hasRole('super-admin')
+
+  // Filtrar ítems según rol de super-admin o permisos individuales
+  const visibleItems = ALL_MENU_ITEMS.filter(item => {
+    if (item.role) return item.role === role
+    if (item.permission) return hasPermission(item.permission)
+    return true
+  })
+
+  // Agrupar los ítems visibles por label
+  const groups = visibleItems.reduce((acc, item) => {
+    const group = acc.find(g => g.label === item.label)
+    if (group) {
+      group.items.push(item)
+    } else {
+      acc.push({ label: item.label, items: [item] })
+    }
+    return acc
+  }, [])
 
   return (
     <Sidebar variant="inset" className="border-r border-sidebar-border bg-sidebar">

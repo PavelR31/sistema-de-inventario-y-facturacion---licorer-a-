@@ -6,22 +6,33 @@ import { Badge } from '@/components/ui/badge';
 import { FileText, Eye, Calendar, User, Truck } from 'lucide-react';
 import api from '@/lib/api';
 import { toast } from 'sonner';
+import DataPagination from '@/components/ui/data-pagination';
 
 export default function ComprasHistory() {
   const [compras, setCompras] = useState([]);
+  const [meta, setMeta] = useState({ current_page: 1, last_page: 1, total: 0 });
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchCompras = async () => {
-      try {
-        const response = await api.get('/api/compras');
-        setCompras(response.data);
-      } catch (error) {
-        toast.error('Error al cargar el historial de compras');
-      } finally {
-        setIsLoading(false);
+  const fetchCompras = async (page = 1) => {
+    setIsLoading(true);
+    try {
+      const response = await api.get('/api/compras', { params: { page } });
+      setCompras(response.data.data ?? response.data);
+      if (response.data.last_page) {
+        setMeta({
+          current_page: response.data.current_page,
+          last_page: response.data.last_page,
+          total: response.data.total
+        });
       }
-    };
+    } catch (error) {
+      toast.error('Error al cargar el historial de compras');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchCompras();
   }, []);
 
@@ -100,6 +111,9 @@ export default function ComprasHistory() {
               )}
             </TableBody>
           </Table>
+          <div className="p-4 border-t">
+            <DataPagination meta={meta} onPageChange={fetchCompras} />
+          </div>
         </CardContent>
       </Card>
     </div>

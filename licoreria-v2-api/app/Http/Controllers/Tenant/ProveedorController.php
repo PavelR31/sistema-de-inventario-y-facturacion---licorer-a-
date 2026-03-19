@@ -8,9 +8,14 @@ use Illuminate\Http\Request;
 
 class ProveedorController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        return response()->json(Proveedor::all());
+        $query = Proveedor::query();
+        if ($request->search) {
+            $query->where('nombre', 'like', "%{$request->search}%")
+                  ->orWhere('ruc', 'like', "%{$request->search}%");
+        }
+        return response()->json($query->paginate($request->per_page ?? 15));
     }
 
     public function store(Request $request)

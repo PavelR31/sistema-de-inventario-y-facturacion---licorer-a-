@@ -7,9 +7,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Plus, Pencil, Trash2, Truck, Phone, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 import api from '@/lib/api';
+import Can from '@/components/auth/Can';
+import DataPagination from '@/components/ui/data-pagination';
 
 export default function ProveedoresList() {
   const [proveedores, setProveedores] = useState([]);
+  const [meta, setMeta] = useState({ current_page: 1, last_page: 1, total: 0 });
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingProveedor, setEditingProveedor] = useState(null);
@@ -20,11 +23,14 @@ export default function ProveedoresList() {
     direccion: '' 
   });
 
-  const fetchProveedores = async () => {
+  const fetchProveedores = async (page = 1) => {
     setIsLoading(true);
     try {
-      const response = await api.get('/api/proveedores');
-      setProveedores(response.data);
+      const response = await api.get('/api/proveedores', { params: { page } });
+      setProveedores(response.data.data ?? response.data);
+      if (response.data.last_page) {
+        setMeta({ current_page: response.data.current_page, last_page: response.data.last_page, total: response.data.total });
+      }
     } catch (error) {
       toast.error('Error al cargar proveedores');
     } finally {
@@ -88,12 +94,11 @@ export default function ProveedoresList() {
           <h1 className="text-3xl font-bold tracking-tight">Proveedores</h1>
           <p className="text-muted-foreground">Gestiona las empresas que abastecen tu inventario.</p>
         </div>
-        <Button onClick={() => {
-          resetForm();
-          setIsDialogOpen(true);
-        }}>
-          <Plus className="mr-2 h-4 w-4" /> Nuevo Proveedor
-        </Button>
+        <Can permission="crear.proveedor">
+          <Button onClick={() => { resetForm(); setIsDialogOpen(true); }}>
+            <Plus className="mr-2 h-4 w-4" /> Nuevo Proveedor
+          </Button>
+        </Can>
       </div>
 
       <Card>
@@ -137,18 +142,23 @@ export default function ProveedoresList() {
                     </TableCell>
                     <TableCell className="max-w-[200px] truncate">{prov.direccion || '-'}</TableCell>
                     <TableCell className="text-right">
-                      <Button variant="ghost" size="icon" onClick={() => handleEdit(prov)}>
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDelete(prov.id)}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      <Can permission="editar.proveedor">
+                        <Button variant="ghost" size="icon" onClick={() => handleEdit(prov)}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      </Can>
+                      <Can permission="eliminar.proveedor">
+                        <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDelete(prov.id)}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </Can>
                     </TableCell>
                   </TableRow>
                 ))
               )}
             </TableBody>
           </Table>
+          <DataPagination meta={meta} onPageChange={fetchProveedores} />
         </CardContent>
       </Card>
 

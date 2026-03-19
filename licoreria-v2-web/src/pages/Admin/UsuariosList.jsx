@@ -5,12 +5,17 @@ import { Input } from '@/components/ui/input';
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
 import { Plus, Pencil, Trash2, Users, Shield, Mail, Key } from 'lucide-react';
 import { toast } from 'sonner';
 import api from '@/lib/api';
+import Can from '@/components/auth/Can';
+import DataPagination from '@/components/ui/data-pagination';
 
 export default function UsuariosList() {
   const [users, setUsers] = useState([]);
+  const [meta, setMeta] = useState({ current_page: 1, last_page: 1, total: 0 });
   const [roles, setRoles] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -22,15 +27,18 @@ export default function UsuariosList() {
     role: '' 
   });
 
-  const fetchData = async () => {
+  const fetchData = async (page = 1) => {
     setIsLoading(true);
     try {
       const [usersRes, rolesRes] = await Promise.all([
-        api.get('/api/users'),
+        api.get('/api/users', { params: { page } }),
         api.get('/api/roles')
       ]);
-      setUsers(usersRes.data);
-      setRoles(rolesRes.data);
+      setUsers(usersRes.data.data ?? usersRes.data);
+      if (usersRes.data.last_page) {
+        setMeta({ current_page: usersRes.data.current_page, last_page: usersRes.data.last_page, total: usersRes.data.total });
+      }
+      setRoles(rolesRes.data.data ?? rolesRes.data);
     } catch (error) {
       toast.error('Error al cargar datos');
     } finally {
@@ -87,6 +95,16 @@ export default function UsuariosList() {
     }
   };
 
+  const handleToggleActive = async (user) => {
+    try {
+      await api.patch(`/api/users/${user.id}/toggle-active`);
+      toast.success(`Usuario ${user.active ? 'desactivado' : 'activado'}`);
+      fetchData();
+    } catch (error) {
+      toast.error('No se pudo cambiar el estado del usuario');
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -94,12 +112,11 @@ export default function UsuariosList() {
           <h1 className="text-3xl font-bold tracking-tight text-slate-900">Usuarios & Personal</h1>
           <p className="text-muted-foreground">Gestiona los accesos de tus cajeros y administradores.</p>
         </div>
-        <Button onClick={() => {
-          resetForm();
-          setIsDialogOpen(true);
-        }}>
-          <Plus className="mr-2 h-4 w-4" /> Nuevo Usuario
-        </Button>
+        <Can permission="crear.usuario">
+          <Button onClick={() => { resetForm(); setIsDialogOpen(true); }}>
+            <Plus className="mr-2 h-4 w-4" /> Nuevo Usuario
+          </Button>
+        </Can>
       </div>
 
       <Card className="border-slate-200 shadow-sm">
@@ -110,6 +127,7 @@ export default function UsuariosList() {
                 <TableHead className="py-4">Nombre</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Rol</TableHead>
+                <TableHead className="text-center">Estado</TableHead>
                 <TableHead className="text-right px-6">Acciones</TableHead>
               </TableRow>
             </TableHeader>
@@ -141,20 +159,38 @@ export default function UsuariosList() {
                             {u.email}
                         </div>
                     </TableCell>
-                    <TableCell>
-                      <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider bg-primary/10 text-primary border border-primary/20">
-                        <Shield className="h-3 w-3" />
-                        {u.roles[0]?.name || 'Sin Rol'}
-                      </span>
-                    </TableCell>
+                     <TableCell>
+                       <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider bg-primary/10 text-primary border border-primary/20">
+                         <Shield className="h-3 w-3" />
+                         {u.roles[0]?.name || 'Sin Rol'}
+                       </span>
+                     </TableCell>
+                     <TableCell className="text-center">
+                       <Can permission="editar.usuario">
+                         <div className="flex flex-col items-center gap-1">
+                           <Switch
+                             checked={u.active !== false}
+                             onCheckedChange={() => handleToggleActive(u)}
+                             className="data-[state=checked]:bg-green-500"
+                           />
+                           <span className={`text-[10px] font-bold uppercase ${ u.active !== false ? 'text-green-600' : 'text-slate-400' }`}>
+                             {u.active !== false ? 'Activo' : 'Inactivo'}
+                           </span>
+                         </div>
+                       </Can>
+                     </TableCell>
                     <TableCell className="text-right px-6">
                       <div className="flex justify-end gap-1">
-                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEdit(u)}>
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:bg-destructive/10" onClick={() => handleDelete(u.id)}>
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        <Can permission="editar.usuario">
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEdit(u)}>
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                        </Can>
+                        <Can permission="eliminar.usuario">
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:bg-destructive/10" onClick={() => handleDelete(u.id)}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </Can>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -162,6 +198,7 @@ export default function UsuariosList() {
               )}
             </TableBody>
           </Table>
+          <DataPagination meta={meta} onPageChange={fetchData} />
         </CardContent>
       </Card>
 

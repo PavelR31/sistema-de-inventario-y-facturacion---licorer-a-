@@ -8,9 +8,13 @@ use Illuminate\Http\Request;
 
 class CategoriaController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        return response()->json(Categoria::all());
+        $query = Categoria::query();
+        if ($request->search) {
+            $query->where('nombre', 'like', "%{$request->search}%");
+        }
+        return response()->json($query->paginate($request->per_page ?? 15));
     }
 
     public function store(Request $request)

@@ -15,67 +15,101 @@ class DashboardController extends Controller
 {
     public function getStats(Request $request)
     {
-        $sucursalId = $request->header('X-Branch-Id') ?? $request->sucursal_id;
-
-        // 1. KPIs (Last 30 days vs Prev 30 days)
-        $now = Carbon::now();
-        $thirtyDaysAgo = $now->copy()->subDays(30);
-        $sixtyDaysAgo = $now->copy()->subDays(60);
-
-        $currentVentas = Venta::where('estado', 'vigente')
-            ->whereBetween('created_at', [$thirtyDaysAgo, $now]);
+        $sucursalId = $request->sucursal_id;
         
-        $prevVentas = Venta::where('estado', 'vigente')
-            ->whereBetween('created_at', [$sixtyDaysAgo, $thirtyDaysAgo]);
+        // Si se pide 'all' explícitamente, ignoramos el header de sucursal activa
+        if ($sucursalId === 'all') {
+            $sucursalId = null;
+        } elseif (!$sucursalId) {
+            // Si no viene parámetro, intentamos usar el header context de la sucursal
+            $sucursalId = $request->header('X-Branch-Id');
+        }
+        
+        // Filtros de fecha
+        $fechaInicio = $request->fecha_inicio ? Carbon::parse($request->fecha_inicio)->startOfDay() : Carbon::now()->subDays(30)->startOfDay();
+        $fechaFin    = $request->fecha_fin ? Carbon::parse($request->fecha_fin)->endOfDay() : Carbon::now()->endOfDay();
+        
+        // Período anterior para trends (mismo número de días)
+        $diffInDays = $fechaInicio->diffInDays($fechaFin) + 1;
+        $prevInicio = $fechaInicio->copy()->subDays($diffInDays);
+        $prevFin    = $fechaInicio->copy()->subSecond();
+
+        // 1. KPIs
+        $queryCurrent = Venta::where('estado', 'vigente')->whereBetween('created_at', [$fechaInicio, $fechaFin]);
+        $queryPrev    = Venta::where('estado', 'vigente')->whereBetween('created_at', [$prevInicio, $prevFin]);
 
         if ($sucursalId) {
-            $currentVentas->where('sucursal_id', $sucursalId);
-            $prevVentas->where('sucursal_id', $sucursalId);
+            $queryCurrent->where('sucursal_id', $sucursalId);
+            $queryPrev->where('sucursal_id', $sucursalId);
         }
 
-        $currentTotal = $currentVentas->sum('total');
-        $prevTotal = $prevVentas->sum('total');
-        $currentCount = $currentVentas->count();
-        $prevCount = $prevVentas->count();
+        $currentTotal = (float) $queryCurrent->sum('total');
+        $prevTotal    = (float) $queryPrev->sum('total');
+        $currentCount = $queryCurrent->count();
+        $prevCount    = $queryPrev->count();
+
+        // Utilidad Bruta (Ventas - Costo de los productos)
+        // Necesitamos unir con detalle_ventas y producto_sucursal para obtener el precio_compra en el momento
+        $currentProfit = (float) DB::table('detalle_ventas')
+            ->join('ventas', 'ventas.id', '=', 'detalle_ventas.venta_id')
+            ->join('producto_sucursal', function($join) {
+                $join->on('producto_sucursal.producto_id', '=', 'detalle_ventas.producto_id')
+                     ->on('producto_sucursal.sucursal_id', '=', 'ventas.sucursal_id');
+            })
+            ->where('ventas.estado', 'vigente')
+            ->whereBetween('ventas.created_at', [$fechaInicio, $fechaFin])
+            ->when($sucursalId, fn($q) => $q->where('ventas.sucursal_id', $sucursalId))
+            ->sum(DB::raw('detalle_ventas.subtotal - (detalle_ventas.cantidad * producto_sucursal.precio_compra)'));
+
+        $prevProfit = (float) DB::table('detalle_ventas')
+            ->join('ventas', 'ventas.id', '=', 'detalle_ventas.venta_id')
+            ->join('producto_sucursal', function($join) {
+                $join->on('producto_sucursal.producto_id', '=', 'detalle_ventas.producto_id')
+                     ->on('producto_sucursal.sucursal_id', '=', 'ventas.sucursal_id');
+            })
+            ->where('ventas.estado', 'vigente')
+            ->whereBetween('ventas.created_at', [$prevInicio, $prevFin])
+            ->when($sucursalId, fn($q) => $q->where('ventas.sucursal_id', $sucursalId))
+            ->sum(DB::raw('detalle_ventas.subtotal - (detalle_ventas.cantidad * producto_sucursal.precio_compra)'));
 
         $ventasTrend = $prevTotal > 0 ? (($currentTotal - $prevTotal) / $prevTotal) * 100 : 100;
-        $ordersTrend = $prevCount > 0 ? (($currentCount - $prevCount) / $prevCount) * 100 : 100;
+        $profitTrend = $prevProfit > 0 ? (($currentProfit - $prevProfit) / $prevProfit) * 100 : 100;
 
         $avgTicket = $currentCount > 0 ? $currentTotal / $currentCount : 0;
         $prevAvgTicket = $prevCount > 0 ? $prevTotal / $prevCount : 0;
         $avgTicketTrend = $prevAvgTicket > 0 ? (($avgTicket - $prevAvgTicket) / $prevAvgTicket) * 100 : 100;
 
-        $activeCustomers = Cliente::whereHas('ventas', function($q) use ($thirtyDaysAgo, $now, $sucursalId) {
-            $q->whereBetween('created_at', [$thirtyDaysAgo, $now]);
-            if ($sucursalId) $q->where('sucursal_id', $sucursalId);
-        })->count();
-
-        // 2. Sales History (Last 6 Months)
+        // 2. Sales History (Agrupado por día o mes dependiendo del rango)
         $salesHistory = [];
-        for ($i = 5; $i >= 0; $i--) {
-            $month = $now->copy()->subMonths($i);
-            $sum = Venta::where('estado', 'vigente')
-                ->whereMonth('created_at', $month->month)
-                ->whereYear('created_at', $month->year);
-            
-            if ($sucursalId) $sum->where('sucursal_id', $sucursalId);
-            
-            $salesHistory[] = [
-                'name' => $month->translatedFormat('M'),
-                'total' => (float) $sum->sum('total')
-            ];
+        if ($diffInDays <= 60) {
+            // Por día
+            $history = (clone $queryCurrent)
+                ->select(DB::raw('DATE(created_at) as date'), DB::raw('SUM(total) as total'))
+                ->groupBy('date')
+                ->orderBy('date')
+                ->get();
+            foreach ($history as $h) {
+                $salesHistory[] = ['name' => Carbon::parse($h->date)->format('d M'), 'total' => (float) $h->total];
+            }
+        } else {
+            // Por mes
+            for ($i = 5; $i >= 0; $i--) {
+                $month = Carbon::now()->subMonths($i);
+                $sum = Venta::where('estado', 'vigente')
+                    ->whereMonth('created_at', $month->month)
+                    ->whereYear('created_at', $month->year);
+                if ($sucursalId) $sum->where('sucursal_id', $sucursalId);
+                $salesHistory[] = ['name' => $month->translatedFormat('M'), 'total' => (float) $sum->sum('total')];
+            }
         }
 
-        // 3. Low Stock Alerts
+        // 3. Low Stock 
         $lowStockQuery = DB::table('producto_sucursal')
             ->join('productos', 'productos.id', '=', 'producto_sucursal.producto_id')
             ->select('productos.nombre', 'producto_sucursal.stock_actual', 'producto_sucursal.stock_minimo')
             ->whereRaw('producto_sucursal.stock_actual <= producto_sucursal.stock_minimo');
-
-        if ($sucursalId) {
-            $lowStockQuery->where('producto_sucursal.sucursal_id', $sucursalId);
-        }
-
+        if ($sucursalId) $lowStockQuery->where('producto_sucursal.sucursal_id', $sucursalId);
+        
         $lowStock = $lowStockQuery->limit(5)->get()->map(function($item) {
             return [
                 'item' => $item->nombre,
@@ -85,14 +119,8 @@ class DashboardController extends Controller
         });
 
         // 4. Recent Sales
-        $recentSalesQuery = Venta::with('sucursal')
-            ->latest()
-            ->limit(5);
-
-        if ($sucursalId) {
-            $recentSalesQuery->where('sucursal_id', $sucursalId);
-        }
-
+        $recentSalesQuery = Venta::with('sucursal')->latest()->limit(5);
+        if ($sucursalId) $recentSalesQuery->where('sucursal_id', $sucursalId);
         $recentSales = $recentSalesQuery->get()->map(function($v) {
             return [
                 'id' => $v->numero_factura,
@@ -104,26 +132,20 @@ class DashboardController extends Controller
 
         // 5. Cash Status
         $openCajasQuery = Caja::where('estado', 'abierta');
-        if ($sucursalId) {
-            $openCajasQuery->where('sucursal_id', $sucursalId);
-        }
-
+        if ($sucursalId) $openCajasQuery->where('sucursal_id', $sucursalId);
         $openCajas = $openCajasQuery->get();
         $cashBalance = 0;
         foreach ($openCajas as $caja) {
-            $ventasEfectivo = Venta::where('caja_id', $caja->id)
-                ->where('metodo_pago', 'efectivo')
-                ->where('estado', 'vigente')
-                ->sum('total');
+            $ventasEfectivo = Venta::where('caja_id', $caja->id)->where('metodo_pago', 'efectivo')->where('estado', 'vigente')->sum('total');
             $cashBalance += $caja->monto_apertura + $ventasEfectivo;
         }
 
         return response()->json([
             'kpis' => [
                 ['title' => 'Ventas Netas', 'val' => $currentTotal, 'trend' => round($ventasTrend, 1).'%', 'isUp' => $ventasTrend >= 0, 'icon' => 'ChartLineUp', 'color' => 'text-emerald-500'],
-                ['title' => 'Órdenes Totales', 'val' => $currentCount, 'trend' => round($ordersTrend, 1).'%', 'isUp' => $ordersTrend >= 0, 'icon' => 'Receipt', 'color' => 'text-blue-500'],
+                ['title' => 'Utilidad Bruta', 'val' => $currentProfit, 'trend' => round($profitTrend, 1).'%', 'isUp' => $profitTrend >= 0, 'icon' => 'CurrencyCircleDollar', 'color' => 'text-indigo-500'],
                 ['title' => 'Ticket Promedio', 'val' => $avgTicket, 'trend' => round($avgTicketTrend, 1).'%', 'isUp' => $avgTicketTrend >= 0, 'icon' => 'Handbag', 'color' => 'text-slate-400'],
-                ['title' => 'Clientes Activos', 'val' => $activeCustomers, 'trend' => '', 'isUp' => true, 'icon' => 'Users', 'color' => 'text-indigo-500'],
+                ['title' => 'Órdenes', 'val' => $currentCount, 'trend' => round($prevCount > 0 ? ($currentCount - $prevCount) : 0, 0), 'isUp' => $currentCount >= $prevCount, 'icon' => 'Receipt', 'color' => 'text-blue-500'],
             ],
             'salesHistory' => $salesHistory,
             'lowStock' => $lowStock,
@@ -135,3 +157,4 @@ class DashboardController extends Controller
         ]);
     }
 }
+

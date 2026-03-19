@@ -15,6 +15,7 @@ import NuevaCompra from "@/pages/Admin/NuevaCompra";
 import ComprasHistory from "@/pages/Admin/ComprasHistory";
 import SalesHistory from "@/pages/Admin/SalesHistory";
 import SettingsPage from "@/pages/Admin/SettingsPage";
+import Reportes from "@/pages/Admin/Reportes";
 import POS from "@/pages/POS/POS";
 import MySales from "@/pages/POS/MySales";
 import CajaFlow from "@/components/layout/CajaFlow";
@@ -32,7 +33,6 @@ const Dashboard = () => {
   return <Navigate to="/pos" replace />;
 };
 const InventarioGlobal = () => <div className="p-4"><h1>Inventario Global</h1></div>;
-const ReportesPage = () => <div className="p-4"><h1>Reportes y Estadísticas</h1></div>;
 
 const SuperAdminDashboard = () => (
   <div className="space-y-8 animate-in fade-in duration-700">
@@ -193,7 +193,7 @@ const router = createBrowserRouter([
       },
       {
         path: "admin/reportes",
-        element: <ProtectedRoute requiredPermission="ver.reporte-utilidades"><ReportesPage /></ProtectedRoute>,
+        element: <ProtectedRoute requiredPermission="ver.reporte-utilidades"><Reportes /></ProtectedRoute>,
       },
       // POS Routes
       {

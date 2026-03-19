@@ -6,9 +6,12 @@ export const useCajaStore = create((set, get) => ({
   activeCaja: null,
   isLoading: true,
 
-  checkCajaStatus: async (sucursalId) => {
-    if (!sucursalId) return;
-    set({ isLoading: true });
+  checkCajaStatus: async (sucursalId, silent = false) => {
+    if (!sucursalId) {
+      set({ isLoading: false });
+      return;
+    }
+    if (!silent) set({ isLoading: true });
     try {
       const response = await api.get(`/api/caja/status?sucursal_id=${sucursalId}`);
       set({ 
