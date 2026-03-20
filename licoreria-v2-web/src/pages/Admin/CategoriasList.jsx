@@ -137,12 +137,12 @@ export default function CategoriasList() {
                       <TableCell className="text-right px-6">
                         <div className="flex justify-end gap-1">
                           <Can permission="editar.categoria">
-                            <Button variant="ghost" size="icon-sm" onClick={() => handleEdit(cat)} className="text-slate-400 hover:text-black hover:bg-slate-100">
+                            <Button variant="ghost" size="icon-sm" onClick={() => handleEdit(cat)} className="text-slate-400 hover:text-black hover:bg-slate-100 rounded-sm">
                               <Pencil className="w-4 h-4" />
                             </Button>
                           </Can>
                           <Can permission="eliminar.categoria">
-                            <Button variant="ghost" size="icon-sm" onClick={() => handleDelete(cat.id)} className="text-slate-400 hover:text-rose-600 hover:bg-rose-50">
+                            <Button variant="ghost" size="icon-sm" onClick={() => handleDelete(cat.id)} className="text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-sm">
                               <Trash2 className="w-4 h-4 text-destructive" />
                             </Button>
                           </Can>
@@ -167,18 +167,18 @@ export default function CategoriasList() {
                  <div className="h-10 w-10 rounded-sm bg-primary/5 text-primary flex items-center justify-center border border-primary/10">
                     <Tag size={20} weight="bold" />
                  </div>
-                 <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <Can permission="editar.categoria">
-                      <Button variant="ghost" size="icon-sm" onClick={() => handleEdit(cat)} className="h-8 w-8 text-slate-400 hover:text-primary">
+                      <Button variant="ghost" size="icon-sm" onClick={() => handleEdit(cat)} className="h-8 w-8 text-slate-400 hover:text-primary rounded-sm">
                         <Pencil className="w-4 h-4" />
                       </Button>
                     </Can>
                     <Can permission="eliminar.categoria">
-                      <Button variant="ghost" size="icon-sm" onClick={() => handleDelete(cat.id)} className="h-8 w-8 text-slate-400 hover:text-rose-500">
-                        <Trash2 className="w-4 h-4" />
+                      <Button variant="ghost" size="icon-sm" onClick={() => handleDelete(cat.id)} className="h-8 w-8 text-slate-400 hover:text-rose-500 rounded-sm">
+                        <Trash2 className="w-4 h-4 text-destructive" />
                       </Button>
                     </Can>
-                 </div>
+                  </div>
               </div>
               <h3 className="font-semibold text-slate-800 truncate">{cat.nombre}</h3>
               <p className="text-[11px] font-medium text-slate-400 mt-1 line-clamp-2 min-h-[32px]">
@@ -226,7 +226,7 @@ export default function CategoriasList() {
               />
             </div>
             <DialogFooter className="pt-6 border-t border-slate-50 gap-2">
-              <Button type="button" variant="ghost" onClick={() => setIsDialogOpen(false)} className="text-slate-500">
+              <Button type="button" variant="ghost" onClick={() => setIsDialogOpen(false)} className="text-slate-500 rounded-sm">
                 Cancelar
               </Button>
               <Button type="submit" className="min-w-[120px] rounded-sm">

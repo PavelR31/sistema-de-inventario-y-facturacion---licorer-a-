@@ -8,47 +8,47 @@
   --font-sans: "Inter", system-ui, sans-serif;
   font-family: var(--sans);
 
-  /* Minimalist SaaS Palette */
-  --background: #fcfcfc;
-  --foreground: #09090b;
+  /* Refined Professional Palette */
+  --background: #F8FAFC; /* Slate 50 - Very Clean */
+  --foreground: #0F172A; /* Midnight Blue */
 
   --card: #ffffff;
-  --card-foreground: #09090b;
+  --card-foreground: #1E293B;
 
   --popover: #ffffff;
-  --popover-foreground: #09090b;
+  --popover-foreground: #1E293B;
 
-  /* Black Primary for Buttons */
-  --primary: #09090b;
+  /* Professional Navy-Blue for Buttons */
+  --primary: #2563EB;
   --primary-foreground: #ffffff;
 
-  --secondary: #f4f4f5;
-  --secondary-foreground: #09090b;
+  --secondary: #F1F5F9;
+  --secondary-foreground: #2563EB;
 
-  --muted: #f4f4f5;
-  --muted-foreground: #71717a;
+  --muted: #F8FAFC;
+  --muted-foreground: #64748B;
 
-  --accent: #f4f4f5;
-  --accent-foreground: #09090b;
+  --accent: #3B82F6;
+  --accent-foreground: #ffffff;
 
-  --destructive: #ef4444;
+  --destructive: #EF4444;
   --destructive-foreground: #fafafa;
 
-  --border: #e4e4e7;
-  --input: #e4e4e7;
-  --ring: #18181b;
+  --border: #E2E8F0;
+  --input: #E2E8F0;
+  --ring: #3B82F6;
 
   --radius: 0.25rem;
 
-  /* Sidebar - Solid Zinc-950 */
-  --sidebar: #09090b;
-  --sidebar-foreground: #a1a1aa;
-  --sidebar-primary: #ffffff;
-  --sidebar-primary-foreground: #09090b;
-  --sidebar-accent: rgba(255, 255, 255, 0.05);
+  /* Sidebar - Professional Slate Blue */
+  --sidebar: #1E293B;
+  --sidebar-foreground: #F1F5F9;
+  --sidebar-primary: #3B82F6;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #3B82F6;
   --sidebar-accent-foreground: #ffffff;
   --sidebar-border: rgba(255, 255, 255, 0.05);
-  --sidebar-ring: #ffffff;
+  --sidebar-ring: #3B82F6;
 }
 
 /* Glassmorphism Utility */

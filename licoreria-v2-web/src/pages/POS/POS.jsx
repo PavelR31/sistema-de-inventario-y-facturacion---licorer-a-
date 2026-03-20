@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { usePOSStore } from '@/store/usePOSStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useCajaStore } from '@/store/useCajaStore';
@@ -85,9 +85,9 @@ export default function POS() {
     }
   };
 
-  const fetchInitialData = async () => {
+  const fetchInitialData = async (silent = false) => {
     if (!branch?.id) return;
-    setIsLoading(true);
+    if (!silent) setIsLoading(true);
     try {
       const [prodRes, catRes, configRes] = await Promise.all([
         api.get(`/api/productos?sucursal_id=${branch.id}&activo=1&per_page=100`),
@@ -164,10 +164,14 @@ export default function POS() {
       
       setLastSale(response.data);
       toast.success('Venta realizada con éxito');
-      clearCart();
+      // NO clearCart here to avoid UI flash in background
       setIsPaymentModalOpen(false);
       setIsReceiptModalOpen(true);
-      fetchInitialData(); // Refresh stock
+      
+      // Delay fetch slightly but it's now mostly background and silent
+      setTimeout(() => {
+        fetchInitialData(true);
+      }, 2000);
     } catch (e) {
       toast.error(e.response?.data?.message || 'Error al procesar la venta');
     } finally {
@@ -179,26 +183,31 @@ export default function POS() {
       setMontoPagado(amount.toString());
   };
 
-  const filteredProducts = products.filter(p => {
-    const matchesSearch = p.nombre.toLowerCase().includes(searchTerm.toLowerCase()) || p.codigo?.includes(searchTerm);
-    const matchesCategory = selectedCategory ? p.categoria_id === selectedCategory : true;
-    return matchesSearch && matchesCategory;
-  });
+  const filteredProducts = useMemo(() => {
+    return products.filter(p => {
+      const matchesSearch = p.nombre.toLowerCase().includes(searchTerm.toLowerCase()) || p.codigo?.includes(searchTerm);
+      const matchesCategory = selectedCategory ? p.categoria_id === selectedCategory : true;
+      return matchesSearch && matchesCategory;
+    });
+  }, [products, searchTerm, selectedCategory]);
 
   // Pagination Logic
   const totalPages = Math.ceil(filteredProducts.length / itemsPerPage);
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentProducts = filteredProducts.slice(indexOfFirstItem, indexOfLastItem);
+  
+  const currentProducts = useMemo(() => {
+    return filteredProducts.slice(indexOfFirstItem, indexOfLastItem);
+  }, [filteredProducts, indexOfFirstItem, indexOfLastItem]);
 
   useEffect(() => {
     setCurrentPage(1); // Reset page on filter change
   }, [searchTerm, selectedCategory, viewMode]);
 
-  const subtotalCart = getTotal(); // Engloba (precio * qty) - descuentos_ite
-  const montoImponible = Math.max(0, subtotalCart - globalDiscount);
-  const montoIVA = Math.round(montoImponible * (ivaPorcentaje / 100) * 100) / 100;
-  const totalFinal = montoImponible + montoIVA;
+  const subtotalCart = useMemo(() => getTotal(), [cart]);
+  const montoImponible = useMemo(() => Math.max(0, subtotalCart - globalDiscount), [subtotalCart, globalDiscount]);
+  const montoIVA = useMemo(() => Math.round(montoImponible * (ivaPorcentaje / 100) * 100) / 100, [montoImponible, ivaPorcentaje]);
+  const totalFinal = useMemo(() => montoImponible + montoIVA, [montoImponible, montoIVA]);
 
   const cambio = Math.max(0, (parseFloat(montoPagado) || 0) - totalFinal);
 
@@ -209,7 +218,25 @@ export default function POS() {
       if (!lastSale) return;
       const hostname = window.location.hostname;
       const printUrl = `http://${hostname}:8000/api/ventas/${lastSale.id}/print`;
-      window.open(printUrl, '_blank');
+      
+      // Create hidden iframe for printing to avoid window.open "freeze"
+      const iframe = document.createElement('iframe');
+      iframe.style.position = 'fixed';
+      iframe.style.right = '0';
+      iframe.style.bottom = '0';
+      iframe.style.width = '0';
+      iframe.style.height = '0';
+      iframe.style.border = 'none';
+      iframe.src = printUrl;
+      
+      document.body.appendChild(iframe);
+      
+      // Cleanup after a reasonable time
+      setTimeout(() => {
+          if (document.body.contains(iframe)) {
+              document.body.removeChild(iframe);
+          }
+      }, 5000);
   };
 
   return (
@@ -331,7 +358,7 @@ export default function POS() {
                       <p className="text-sm font-bold text-slate-400">No se encontraron productos</p>
                   </div>
               ) : viewMode === 'grid' ? (
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-5 animate-in fade-in zoom-in duration-300">
+                <div key={`grid-${selectedCategory || 'all'}`} className="grid grid-cols-2 lg:grid-cols-4 gap-5 animate-in fade-in zoom-in duration-300">
                   {currentProducts.map(product => (
                     <Card 
                       key={product.id}
@@ -366,7 +393,7 @@ export default function POS() {
                   ))}
                 </div>
               ) : (
-                <div className="space-y-3 animate-in fade-in slide-in-from-bottom-4 duration-300">
+                <div key={`list-${selectedCategory || 'all'}`} className="space-y-3 animate-in fade-in slide-in-from-bottom-4 duration-300">
                    {currentProducts.map(product => (
                      <div 
                       key={product.id}
@@ -592,7 +619,7 @@ export default function POS() {
 
       {/* Payment Modal Redesign */}
       <Dialog open={isPaymentModalOpen} onOpenChange={setIsPaymentModalOpen}>
-        <DialogContent className="sm:max-w-md border-none shadow-3xl rounded-[2.5rem] p-0 overflow-hidden bg-white">
+        <DialogContent className="sm:max-w-md border-none shadow-2xl rounded-[2.5rem] p-0 overflow-hidden bg-white">
           <div className="p-10 space-y-8">
             <div className="text-center space-y-3">
               <div className="h-16 w-16 bg-slate-50 text-primary rounded-[1.5rem] flex items-center justify-center mx-auto mb-4 border border-slate-100">
@@ -670,15 +697,15 @@ export default function POS() {
 
       {/* Receipt Modal: Formal & Clean */}
       <Dialog open={isReceiptModalOpen} onOpenChange={setIsReceiptModalOpen}>
-        <DialogContent className="sm:max-w-md border-none shadow-3xl rounded-[3rem] p-0 overflow-hidden bg-white">
+        <DialogContent className="sm:max-w-md border-none shadow-2xl rounded-sm p-0 overflow-hidden bg-white">
           <div className="p-10 flex flex-col items-center text-center">
-            <div className="h-20 w-20 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center mb-6 animate-in zoom-in duration-700">
+            <div className="h-20 w-20 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center mb-6 animate-in fade-in duration-500">
                <CheckCircle className="h-12 w-12" weight="fill" />
             </div>
             <h2 className="text-2xl font-black text-slate-900 tracking-tight">Venta Completada</h2>
             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-2">{new Date().toLocaleString()}</p>
             
-            <div className="w-full mt-10 p-8 rounded-3xl bg-slate-50 border border-slate-100 space-y-4">
+            <div className="w-full mt-10 p-8 rounded-sm bg-slate-50 border border-slate-100 space-y-4">
                 <div className="flex justify-between items-center text-[10px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-200 pb-3">
                     <span>Folio</span>
                     <span className="text-slate-900">{lastSale?.numero_factura || '#----'}</span>
@@ -693,7 +720,11 @@ export default function POS() {
                 <Button variant="outline" className="h-14 rounded-2xl border-slate-200 font-bold uppercase tracking-widest text-[10px] gap-2" onClick={handlePrint}>
                     <Printer className="h-4 w-4" /> Imprimir Ticket
                 </Button>
-                <Button className="h-14 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-bold uppercase tracking-widest text-[10px]" onClick={() => { setIsReceiptModalOpen(false); clearCart(); }}>
+                <Button className="h-14 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-bold uppercase tracking-widest text-[10px]" onClick={() => { 
+                    setIsReceiptModalOpen(false); 
+                    clearCart(); 
+                    // Stock is already being fetched or will be fetched here if needed
+                }}>
                     Nueva Venta
                 </Button>
             </div>

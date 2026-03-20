@@ -11,7 +11,7 @@ export default function MainLayout() {
       <div className="flex min-h-screen w-full bg-background text-foreground whitespace-normal text-left">
         <AppSidebar />
         <div className="flex flex-1 flex-col overflow-hidden">
-          <header className="flex h-14 shrink-0 items-center justify-between gap-2 border-b border-slate-200 px-6 bg-white sticky top-0 z-10">
+          <header className="flex h-14 shrink-0 items-center justify-between gap-2 border-b border-slate-200/60 px-6 bg-white sticky top-0 z-10">
             <div className="flex items-center gap-2">
               <SidebarTrigger className="-ml-1 text-slate-400 hover:text-slate-900 transition-colors" />
               <div className="h-4 w-px bg-slate-200 mx-2" />
@@ -22,7 +22,7 @@ export default function MainLayout() {
               </div>
             </div>
           </header>
-          <main className="flex-1 overflow-auto p-6 lg:p-8 max-w-full bg-[#fcfcfc]">
+          <main className="flex-1 overflow-auto p-6 lg:p-8 max-w-full bg-background">
             <Outlet />
           </main>
         </div>

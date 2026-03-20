@@ -212,12 +212,12 @@ export default function UsuariosList() {
                       <TableCell className="text-right px-6">
                         <div className="flex justify-end gap-1">
                           <Can permission="editar.usuario">
-                            <Button variant="ghost" size="icon-sm" onClick={() => handleEdit(user)} className="text-slate-400 hover:text-black hover:bg-slate-100">
+                            <Button variant="ghost" size="icon-sm" onClick={() => handleEdit(user)} className="text-slate-400 hover:text-black hover:bg-slate-100 rounded-sm">
                               <Pencil className="w-4 h-4" />
                             </Button>
                           </Can>
                           <Can permission="eliminar.usuario">
-                            <Button variant="ghost" size="icon-sm" onClick={() => handleDelete(user.id)} className="text-slate-400 hover:text-rose-600 hover:bg-rose-100 font-bold">
+                            <Button variant="ghost" size="icon-sm" onClick={() => handleDelete(user.id)} className="text-slate-400 hover:text-rose-600 hover:bg-rose-100 font-bold rounded-sm">
                               <Trash2 className="w-4 h-4 text-destructive" />
                             </Button>
                           </Can>
@@ -246,12 +246,12 @@ export default function UsuariosList() {
                    </div>
                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <Can permission="editar.usuario">
-                        <Button variant="ghost" size="icon-sm" onClick={() => handleEdit(user)} className="h-8 w-8 text-slate-400 hover:text-black">
+                        <Button variant="ghost" size="icon-sm" onClick={() => handleEdit(user)} className="h-8 w-8 text-slate-400 hover:text-black rounded-sm">
                           <Pencil className="w-4 h-4" />
                         </Button>
                       </Can>
                       <Can permission="eliminar.usuario">
-                        <Button variant="ghost" size="icon-sm" onClick={() => handleDelete(user.id)} className="h-8 w-8 text-slate-400 hover:text-rose-600">
+                        <Button variant="ghost" size="icon-sm" onClick={() => handleDelete(user.id)} className="h-8 w-8 text-slate-400 hover:text-rose-600 rounded-sm">
                           <Trash2 className="w-4 h-4 text-destructive" />
                         </Button>
                       </Can>

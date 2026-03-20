@@ -150,7 +150,7 @@ export default function CajasList() {
                 <label htmlFor="activa" className="text-sm font-medium text-slate-700">Caja Activa (Disponible para check-in)</label>
               </div>
               <DialogFooter className="pt-6 border-t border-slate-50 gap-2">
-                <Button type="button" variant="ghost" className="text-slate-500" onClick={() => setIsOpen(false)}>Cancelar</Button>
+                <Button type="button" variant="ghost" className="text-slate-500 rounded-sm" onClick={() => setIsOpen(false)}>Cancelar</Button>
                 <Button type="submit" className="min-w-[120px] rounded-sm">
                   {editingCaja ? 'Guardar Cambios' : 'Registrar Caja'}
                 </Button>
@@ -209,18 +209,18 @@ export default function CajasList() {
                     <Button
                       variant="ghost"
                       size="icon-sm"
-                      className="text-slate-400 hover:text-black hover:bg-slate-100"
+                      className="text-slate-400 hover:text-black hover:bg-slate-100 rounded-sm"
                       onClick={() => openEdit(caja)}
                     >
-                      <Pencil className="h-4 w-4" />
+                      <Pencil className="w-4 h-4" />
                     </Button>
                     <Button
                       variant="ghost"
                       size="icon-sm"
-                      className="text-slate-400 hover:text-rose-600 hover:bg-rose-50"
+                      className="text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-sm"
                       onClick={() => handleDelete(caja.id)}
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Trash2 className="w-4 h-4 text-destructive" />
                     </Button>
                   </div>
                 </TableCell>

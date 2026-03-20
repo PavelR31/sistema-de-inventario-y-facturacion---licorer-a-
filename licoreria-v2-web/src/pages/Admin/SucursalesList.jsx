@@ -123,7 +123,7 @@ export default function SucursalesList() {
                     <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-all">
                       <Can permission="editar.sucursal">
                         <Button 
-                          variant="ghost" size="icon-sm" className="h-8 w-8 text-slate-400 hover:text-black hover:bg-slate-100"
+                          variant="ghost" size="icon-sm" className="h-8 w-8 text-slate-400 hover:text-black hover:bg-slate-100 rounded-sm"
                           onClick={() => openEdit(sucursal)}
                         >
                           <Pencil className="w-4 h-4" />
@@ -131,10 +131,10 @@ export default function SucursalesList() {
                       </Can>
                       <Can permission="eliminar.sucursal">
                         <Button 
-                          variant="ghost" size="icon-sm" className="h-8 w-8 text-slate-400 hover:text-rose-600 hover:bg-rose-50"
+                          variant="ghost" size="icon-sm" className="h-8 w-8 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-sm"
                           onClick={() => handleDelete(sucursal.id)}
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Trash2 className="w-4 h-4 text-destructive" />
                         </Button>
                       </Can>
                     </div>
@@ -203,7 +203,7 @@ export default function SucursalesList() {
               />
             </div>
             <DialogFooter className="pt-6 border-t border-slate-50 gap-2">
-              <Button type="button" variant="ghost" onClick={() => setIsDialogOpen(false)} className="text-slate-500">
+              <Button type="button" variant="ghost" onClick={() => setIsDialogOpen(false)} className="text-slate-500 rounded-sm">
                 Cancelar
               </Button>
               <Button type="submit" className="min-w-[120px] rounded-sm">

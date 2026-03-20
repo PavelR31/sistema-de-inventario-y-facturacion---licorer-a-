@@ -231,12 +231,12 @@ export default function ProductosList() {
                       <TableCell className="text-right px-6">
                         <div className="flex justify-end gap-1">
                           <Can permission="editar.producto">
-                            <Button variant="ghost" size="icon-sm" onClick={() => openEdit(p)} className="text-slate-400 hover:text-black hover:bg-slate-100">
+                            <Button variant="ghost" size="icon-sm" onClick={() => openEdit(p)} className="text-slate-400 hover:text-black hover:bg-slate-100 rounded-sm">
                               <Pencil className="w-4 h-4" />
                             </Button>
                           </Can>
                           <Can permission="eliminar.producto">
-                            <Button variant="ghost" size="icon-sm" onClick={() => handleDelete(p.id)} className="text-slate-400 hover:text-rose-600 hover:bg-rose-50">
+                            <Button variant="ghost" size="icon-sm" onClick={() => handleDelete(p.id)} className="text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-sm">
                               <Trash2 className="w-4 h-4 text-destructive" />
                             </Button>
                           </Can>
@@ -394,10 +394,10 @@ export default function ProductosList() {
             </div>
 
             <DialogFooter className="pt-6 border-t border-slate-50 gap-2">
-              <Button type="button" variant="ghost" onClick={() => setIsDialogOpen(false)} className="text-slate-500">
+              <Button type="button" variant="ghost" onClick={() => setIsDialogOpen(false)} className="text-slate-500 rounded-sm">
                 Cancelar
               </Button>
-              <Button type="submit" className="min-w-[120px] shadow-lg shadow-primary/20">
+              <Button type="submit" className="min-w-[120px] shadow-lg shadow-primary/20 rounded-sm">
                 Guardar Producto
               </Button>
             </DialogFooter>
@@ -483,7 +483,7 @@ export default function ProductosList() {
             </div>
 
             <DialogFooter className="pt-6 border-t border-slate-50 gap-2">
-              <Button type="button" variant="ghost" onClick={() => setIsEditOpen(false)} className="text-slate-500">
+              <Button type="button" variant="ghost" onClick={() => setIsEditOpen(false)} className="text-slate-500 rounded-sm">
                 Cancelar
               </Button>
               <Button type="submit" className="min-w-[120px] rounded-sm">

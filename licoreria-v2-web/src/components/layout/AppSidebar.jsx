@@ -95,8 +95,8 @@ export function AppSidebar() {
   }, [])
 
   return (
-    <Sidebar variant="inset" className="border-r border-white/5 bg-black">
-      <SidebarHeader className="h-20 border-b border-white/5 px-6 flex flex-col justify-center bg-black">
+    <Sidebar variant="inset" className="border-r border-sidebar-border bg-sidebar">
+      <SidebarHeader className="h-20 border-b border-sidebar-border px-6 flex flex-col justify-center bg-sidebar">
         <div className="flex items-center gap-3">
           <div className="flex h-8 w-8 items-center justify-center rounded-sm bg-white">
             <Buildings className="h-5 w-5 text-black" weight="bold" />
@@ -108,7 +108,7 @@ export function AppSidebar() {
         </div>
       </SidebarHeader>
       
-      <SidebarContent className="px-4 py-8 bg-black space-y-8">
+      <SidebarContent className="px-4 py-8 bg-sidebar space-y-8">
         {groups.map((group) => (
           <SidebarGroup key={group.label} className="p-0">
             <SidebarGroupLabel className="px-3 text-[9px] font-bold uppercase tracking-[0.2em] text-white/30 mb-4">
@@ -121,11 +121,11 @@ export function AppSidebar() {
                     <SidebarMenuButton 
                       asChild 
                       isActive={location.pathname === item.url}
-                      className={`h-10 transition-all duration-150 rounded-sm hover:bg-white/5 group ${location.pathname === item.url ? 'bg-white text-black hover:bg-white/90' : 'text-white/60 hover:text-white'}`}
+                      className={`h-10 transition-all duration-150 rounded-sm hover:bg-sidebar-accent/10 group ${location.pathname === item.url ? 'bg-sidebar-accent text-white hover:bg-sidebar-accent/90' : 'text-sidebar-foreground/60 hover:text-white'}`}
                     >
                       <Link to={item.url} className="flex items-center gap-3">
                         <item.icon 
-                          className={`h-4 w-4 transition-colors ${location.pathname === item.url ? 'text-black' : 'text-white/30 group-hover:text-white'}`} 
+                          className={`h-4 w-4 transition-colors ${location.pathname === item.url ? 'text-white' : 'text-sidebar-foreground/30 group-hover:text-white'}`} 
                           weight={location.pathname === item.url ? 'bold' : 'regular'}
                         />
                         <span className="text-xs font-bold uppercase tracking-wider">
@@ -141,7 +141,7 @@ export function AppSidebar() {
         ))}
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-white/5 p-6 bg-black">
+      <SidebarFooter className="border-t border-sidebar-border p-6 bg-sidebar">
         <div className="flex items-center gap-3 mb-6">
           <Avatar className="h-9 w-9 border border-white/10 bg-white/5 rounded-sm">
             <AvatarFallback className="bg-transparent text-white font-bold text-[10px]">

@@ -131,13 +131,17 @@ class DashboardController extends Controller
         });
 
         // 5. Cash Status
-        $openCajasQuery = Caja::where('estado', 'abierta');
+        $openCajasQuery = Caja::where('activa', true);
         if ($sucursalId) $openCajasQuery->where('sucursal_id', $sucursalId);
         $openCajas = $openCajasQuery->get();
         $cashBalance = 0;
         foreach ($openCajas as $caja) {
-            $ventasEfectivo = Venta::where('caja_id', $caja->id)->where('metodo_pago', 'efectivo')->where('estado', 'vigente')->sum('total');
-            $cashBalance += $caja->monto_apertura + $ventasEfectivo;
+            // Obtener ventas en efectivo de la sesión activa de esta caja
+            $ventasEfectivo = Venta::whereHas('session', function($q) use ($caja) {
+                $q->where('caja_id', $caja->id)->where('estado', 'abierta');
+            })->where('metodo_pago', 'efectivo')->where('estado', 'vigente')->sum('total');
+            
+            $cashBalance += $caja->balance_actual + $ventasEfectivo;
         }
 
         return response()->json([

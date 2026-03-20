@@ -31,7 +31,7 @@ class Venta extends Model
         return $this->belongsTo(Sucursal::class);
     }
 
-    public function sesión(): BelongsTo
+    public function session(): BelongsTo
     {
         return $this->belongsTo(CajaSesion::class, 'caja_sesion_id');
     }
