@@ -116,46 +116,46 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-700">
+    <div className="space-y-6 animate-in fade-in duration-1000">
       {/* Dashboard Header & Filters */}
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between px-1">
         <div>
-          <h1 className="text-2xl font-black tracking-tighter text-slate-900">Dashboard</h1>
-          <p className="text-slate-500 text-[11px] font-bold uppercase tracking-widest mt-0.5">Métricas de rendimiento operativo</p>
+          <h1 className="text-3xl font-black tracking-tight text-slate-900">Dashboard</h1>
+          <p className="text-slate-500 text-[11px] font-bold uppercase tracking-widest mt-1 opacity-70">Métricas de rendimiento operativo</p>
         </div>
         
         <div className="flex flex-wrap items-center gap-2">
           {/* Sucursal Filter */}
           <Select value={sucursalId} onValueChange={setSucursalId}>
-            <SelectTrigger className="w-[180px] h-9 text-xs font-semibold border-slate-200 bg-white">
+            <SelectTrigger className="w-[200px] h-10 text-xs font-bold uppercase tracking-wider border border-slate-200 bg-white shadow-sm transition-all rounded-sm">
               <div className="flex items-center gap-2">
-                <Storefront size={14} className="text-slate-400" />
+                <Storefront size={16} className="text-slate-400" />
                 <SelectValue placeholder="Todas las Sucursales" />
               </div>
             </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todas las Sucursales</SelectItem>
+            <SelectContent className="border-slate-100 shadow-xl rounded-sm">
+              <SelectItem value="all" className="text-xs font-bold uppercase tracking-wider">Todas las Sucursales</SelectItem>
               {sucursales.map(s => (
-                <SelectItem key={s.id} value={s.id.toString()}>{s.nombre}</SelectItem>
+                <SelectItem key={s.id} value={s.id.toString()} className="text-xs font-bold uppercase tracking-wider">{s.nombre}</SelectItem>
               ))}
             </SelectContent>
           </Select>
 
           {/* Date Filters */}
-          <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-lg px-2 h-9 shadow-sm">
-            <CalendarBlank size={14} className="text-slate-400 ml-1" />
+          <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-sm px-3 h-10 shadow-sm transition-all focus-within:ring-2 focus-within:ring-primary/10">
+            <CalendarBlank size={16} className="text-slate-400" />
             <input 
               type="date" 
               value={fechaInicio} 
               onChange={e => setFechaInicio(e.target.value)}
-              className="text-[10px] font-bold text-slate-700 bg-transparent outline-none w-28 uppercase" 
+              className="text-[11px] font-black text-slate-600 bg-transparent outline-none w-28 uppercase tracking-tighter" 
             />
             <span className="text-slate-300 text-[10px] font-black">—</span>
             <input 
               type="date" 
               value={fechaFin} 
               onChange={e => setFechaFin(e.target.value)}
-              className="text-[10px] font-bold text-slate-700 bg-transparent outline-none w-28 uppercase" 
+              className="text-[11px] font-black text-slate-600 bg-transparent outline-none w-28 uppercase tracking-tighter" 
             />
           </div>
 
@@ -164,7 +164,7 @@ export default function AdminDashboard() {
             disabled={loading}
             variant="outline" 
             size="sm" 
-            className="h-9 px-3 border-slate-200 bg-white hover:bg-slate-50"
+            className="h-9 px-3 border-slate-200 bg-white hover:bg-slate-50 rounded-sm"
           >
             <ArrowsClockwise size={14} className={loading ? 'animate-spin' : ''} weight="bold" />
           </Button>
@@ -176,27 +176,27 @@ export default function AdminDashboard() {
         {stats?.kpis.map((kpi, i) => {
           const Icon = iconMap[kpi.icon] || ChartLineUp;
           return (
-            <Card key={i} className="border border-slate-200 shadow-sm bg-white overflow-hidden hover:border-indigo-200 transition-colors">
+            <Card key={i} className="border-none shadow-sm bg-white overflow-hidden hover:shadow-md transition-all duration-300 rounded-sm group">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 pt-4">
-                <span className="text-[10px] font-black uppercase tracking-[0.1em] text-slate-400">
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 group-hover:text-primary transition-colors">
                   {kpi.title}
                 </span>
-                <div className={`p-1.5 rounded-lg ${kpi.color.replace('text-', 'bg-')}/10`}>
-                  <Icon className={`h-4 w-4 ${kpi.color}`} weight="duotone" />
+                <div className={`p-2 rounded-sm ${kpi.color.replace('text-', 'bg-')}/10 group-hover:scale-110 transition-transform`}>
+                  <Icon size={20} className={kpi.color} />
                 </div>
               </CardHeader>
-              <CardContent className="pb-4">
-                <div className="text-2xl font-black tracking-tighter text-slate-900 leading-none">
+              <CardContent className="pb-5">
+                <div className="text-3xl font-black tracking-tight text-slate-900 leading-none mb-2">
                   {kpi.title.includes('Ventas') || kpi.title.includes('Utilidad') || kpi.title.includes('Ticket') 
                     ? formatMoney(kpi.val) 
                     : kpi.val.toLocaleString()}
                 </div>
-                <div className="mt-2 flex items-center gap-1.5">
-                  <div className={`flex items-center px-1.5 py-0.5 rounded-full text-[9px] font-black ${kpi.isUp ? "text-emerald-600 bg-emerald-50" : "text-rose-600 bg-rose-50"}`}>
-                    {kpi.isUp ? <TrendUp weight="bold" /> : <TrendDown weight="bold" />}
+                <div className="flex items-center gap-2">
+                  <div className={`flex items-center px-2 py-0.5 rounded-lg text-[10px] font-black ${kpi.isUp ? "text-emerald-600 bg-emerald-50" : "text-rose-600 bg-rose-50"}`}>
+                    {kpi.isUp ? <TrendUp weight="bold" className="mr-1" /> : <TrendDown weight="bold" className="mr-1" />}
                     {Math.abs(parseFloat(kpi.trend))}%
                   </div>
-                  <span className="text-[10px] font-medium text-slate-400">vs período anterior</span>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter opacity-60">vs anterior</span>
                 </div>
               </CardContent>
             </Card>
@@ -206,12 +206,12 @@ export default function AdminDashboard() {
 
       {/* Main Analysis Section */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
-        <Card className="col-span-full lg:col-span-4 border border-slate-200 shadow-sm">
-          <CardHeader className="border-b border-slate-100 pb-4">
+        <Card className="col-span-full lg:col-span-4 border-none shadow-sm bg-white rounded-sm">
+          <CardHeader className="border-b border-slate-50/50 pb-4">
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle className="text-base font-bold text-slate-900">Rendimiento de Ventas</CardTitle>
-                <CardDescription className="text-xs text-slate-500">Ingresos históricos por mes.</CardDescription>
+                <CardTitle className="text-base font-bold text-slate-800">Rendimiento de Ventas</CardTitle>
+                <CardDescription className="text-xs text-slate-500 font-medium">Ingresos históricos por período seleccionado.</CardDescription>
               </div>
             </div>
           </CardHeader>
@@ -264,12 +264,12 @@ export default function AdminDashboard() {
 
         {/* Operational Widgets */}
         <div className="col-span-full lg:col-span-3 space-y-6">
-            <Card className="border border-slate-200 shadow-sm overflow-hidden">
-                <CardHeader className="bg-slate-50/50 border-b border-slate-100 py-3">
+            <Card className="border-none shadow-sm bg-white overflow-hidden rounded-sm group">
+                <CardHeader className="bg-slate-50/30 border-b border-slate-50 py-3">
                     <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-slate-800">Alertas de Stock</span>
-                        <div className="h-5 w-5 rounded-full bg-rose-50 flex items-center justify-center">
-                            <Warning className="h-3 w-3 text-rose-600" weight="bold" />
+                        <span className="text-xs font-black uppercase tracking-widest text-slate-400">Alertas de Stock</span>
+                        <div className="h-6 w-6 rounded-sm bg-rose-50 flex items-center justify-center group-hover:rotate-12 transition-transform">
+                            <Warning size={14} className="text-rose-500" weight="bold" />
                         </div>
                     </div>
                 </CardHeader>
@@ -305,11 +305,11 @@ export default function AdminDashboard() {
                 </CardContent>
             </Card>
 
-            <Card className="border border-slate-200 shadow-sm overflow-hidden">
-                <CardHeader className="bg-slate-50/50 border-b border-slate-100 py-3">
+            <Card className="border-none shadow-sm bg-white overflow-hidden rounded-sm">
+                <CardHeader className="bg-slate-50/30 border-b border-slate-50 py-3">
                     <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-slate-800">Estado de Caja (Hoy)</span>
-                        <CurrencyCircleDollar className="h-4 w-4 text-emerald-500" />
+                        <span className="text-xs font-black uppercase tracking-widest text-slate-400">Estado de Caja (Hoy)</span>
+                        <CurrencyCircleDollar size={18} className="text-emerald-500" weight="duotone" />
                     </div>
                 </CardHeader>
                 <CardContent className="p-5 flex items-center justify-between">
@@ -336,14 +336,14 @@ export default function AdminDashboard() {
       </div>
 
       {/* Transactional Activity */}
-      <Card className="border border-slate-200 shadow-sm overflow-hidden">
-        <CardHeader className="flex flex-row items-center justify-between border-b border-slate-100 pb-4 px-6">
+      <Card className="border-none shadow-sm bg-white overflow-hidden rounded-sm">
+        <CardHeader className="flex flex-row items-center justify-between border-b border-slate-50 pb-4 px-6 pt-6">
           <div>
-            <CardTitle className="text-base font-bold text-slate-900">Últimas Facturas</CardTitle>
-            <CardDescription className="text-xs text-slate-500">Movimientos recientes de facturación.</CardDescription>
+            <CardTitle className="text-lg font-bold text-slate-800">Últimas Facturas</CardTitle>
+            <CardDescription className="text-xs text-slate-500 font-medium">Movimientos recientes de facturación en tiempo real.</CardDescription>
           </div>
-          <Button variant="ghost" size="sm" className="text-xs font-bold text-primary hover:bg-slate-50" onClick={() => navigate('/admin/ventas')}>
-            Ver Registro Completo
+          <Button variant="ghost" size="sm" className="text-xs font-bold uppercase tracking-wider text-primary hover:bg-primary/5 px-4 rounded-sm" onClick={() => navigate('/admin/ventas')}>
+            Ver Todo
           </Button>
         </CardHeader>
         <CardContent className="p-0">
@@ -365,11 +365,11 @@ export default function AdminDashboard() {
                     <tr key={i} className="border-b border-slate-50 hover:bg-slate-50/50 transition-colors group">
                         <td className="px-6 py-4 font-mono text-[10px] font-semibold text-slate-500">{sale.id}</td>
                         <td className="px-6 py-4">
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-md ${sale.color} bg-current/5`}>{sale.status}</span>
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-sm ${sale.color} bg-current/5`}>{sale.status}</span>
                         </td>
                         <td className="px-6 py-4 text-right font-bold text-slate-900 text-xs tracking-tight">{formatMoney(sale.amount)}</td>
                         <td className="px-6 py-4 text-right">
-                        <Button variant="ghost" size="icon" className="h-7 w-7 rounded-md text-slate-300 hover:text-primary">
+                        <Button variant="ghost" size="icon" className="h-7 w-7 rounded-sm text-slate-300 hover:text-primary">
                             <ArrowUpRight weight="bold" />
                         </Button>
                         </td>

@@ -4,11 +4,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
-import { Plus, Pencil, Trash2, Truck, Phone, FileText } from 'lucide-react';
+import { Plus, Pencil, Trash2, Truck, Phone, FileText, RefreshCcw } from 'lucide-react';
 import { toast } from 'sonner';
 import api from '@/lib/api';
 import Can from '@/components/auth/Can';
 import DataPagination from '@/components/ui/data-pagination';
+import PageHeader from '@/components/layout/PageHeader';
 
 export default function ProveedoresList() {
   const [proveedores, setProveedores] = useState([]);
@@ -89,41 +90,43 @@ export default function ProveedoresList() {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-700 pb-12">
-      <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between px-2">
-        <div>
-          <h1 className="text-3xl font-black tracking-tight text-slate-900 uppercase">Socios Comerciales</h1>
-          <p className="text-slate-500 text-xs font-medium mt-1">Gestión de proveedores y cadenas de abastecimiento.</p>
-        </div>
-        <div className="flex items-center gap-3 bg-white p-1.5 rounded-2xl border shadow-sm">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-10 w-10 rounded-xl hover:bg-slate-50 text-slate-400"
-            onClick={() => fetchProveedores()}
-            disabled={isLoading}
-          >
-            <RefreshCcw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-          </Button>
-          <Can permission="crear.proveedor">
+      <PageHeader 
+        title="Socios Comerciales"
+        subtitle="Gestión de proveedores"
+        icon={Truck}
+        action={
+          <div className="flex items-center gap-2">
             <Button
-              className="rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold uppercase tracking-widest text-[10px] h-10 px-6 shadow-lg shadow-slate-200 transition-all active:scale-95"
-              onClick={() => { resetForm(); setIsDialogOpen(true); }}
+              variant="outline"
+              size="icon"
+              className="h-10 w-10 rounded-sm border-slate-200 text-slate-400"
+              onClick={() => fetchProveedores()}
+              disabled={isLoading}
             >
-              <Plus className="mr-2 h-4 w-4" /> Nuevo Proveedor
+              <RefreshCcw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
             </Button>
-          </Can>
-        </div>
-      </div>
+            <Can permission="crear.proveedor">
+              <Button
+                className="rounded-sm"
+                onClick={() => { resetForm(); setIsDialogOpen(true); }}
+              >
+                <Plus className="mr-2 h-4 w-4" /> Nuevo Proveedor
+              </Button>
+            </Can>
+          </div>
+        }
+      />
 
-      <div className="bg-white rounded-[2rem] border-none shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden">
+      <Card className="border-none shadow-sm bg-white/50 backdrop-blur-sm overflow-hidden">
+        <CardContent className="p-0">
         <Table>
           <TableHeader className="bg-slate-50/50">
-            <TableRow className="border-none">
-              <TableHead className="font-black text-slate-400 uppercase tracking-widest text-[10px] py-6 pl-10">Entidad / Razón Social</TableHead>
-              <TableHead className="font-black text-slate-400 uppercase tracking-widest text-[10px] py-6">RUC / Registro</TableHead>
-              <TableHead className="font-black text-slate-400 uppercase tracking-widest text-[10px] py-6">Contacto Directo</TableHead>
-              <TableHead className="font-black text-slate-400 uppercase tracking-widest text-[10px] py-6">Ubicación</TableHead>
-              <TableHead className="font-black text-slate-400 uppercase tracking-widest text-[10px] py-6 text-right pr-10">Acciones</TableHead>
+            <TableRow>
+              <TableHead className="py-4 px-6">Entidad</TableHead>
+              <TableHead>RUC</TableHead>
+              <TableHead>Contacto</TableHead>
+              <TableHead>Ubicación</TableHead>
+              <TableHead className="text-right px-6">Acciones</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody className="divide-y divide-slate-50">
@@ -145,15 +148,15 @@ export default function ProveedoresList() {
               </TableRow>
             ) : (
               proveedores.map((prov) => (
-                <TableRow key={prov.id} className="hover:bg-slate-50/50 transition-colors group cursor-default">
-                  <TableCell className="py-6 pl-10">
-                    <div className="flex items-center gap-5">
-                      <div className="h-14 w-14 rounded-2xl bg-slate-900 text-white flex items-center justify-center shadow-lg transition-transform group-hover:scale-110">
-                        <Truck size={24} weight="duotone" />
+                <TableRow key={prov.id} className="hover:bg-slate-50/50 transition-colors group">
+                  <TableCell className="py-4 px-6">
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-sm bg-primary/5 text-primary flex items-center justify-center border border-primary/10 transition-colors">
+                        <Truck size={18} />
                       </div>
-                      <div className="flex flex-col gap-0.5">
-                        <span className="font-black text-slate-900 text-sm uppercase tracking-tight">{prov.nombre}</span>
-                        <span className="text-[9px] font-black text-slate-400 tracking-[0.2em] uppercase">PROV-ID: {prov.id.toString().padStart(3, '0')}</span>
+                      <div className="flex flex-col">
+                        <span className="font-bold text-slate-900 text-sm tracking-tight">{prov.nombre}</span>
+                        <span className="text-[10px] text-slate-400 uppercase">ID: {prov.id.toString().padStart(3, '0')}</span>
                       </div>
                     </div>
                   </TableCell>
@@ -167,11 +170,11 @@ export default function ProveedoresList() {
                   <TableCell className="max-w-[180px] truncate text-[10px] font-bold text-slate-400 uppercase tracking-tight">
                     {prov.direccion || 'DIRECCIÓN NO DISPONIBLE'}
                   </TableCell>
-                  <TableCell className="text-right pr-10">
-                    <div className="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-all translate-x-4 group-hover:translate-x-0">
+                  <TableCell className="text-right px-6">
+                    <div className="flex justify-end gap-1">
                       <Can permission="editar.proveedor">
                         <Button
-                          variant="ghost" size="icon" className="h-10 w-10 rounded-xl hover:bg-white hover:shadow-md text-slate-400 hover:text-slate-900"
+                          variant="ghost" size="icon-sm" className="text-slate-400 hover:text-black hover:bg-slate-100"
                           onClick={() => handleEdit(prov)}
                         >
                           <Pencil className="h-4 w-4" />
@@ -179,7 +182,7 @@ export default function ProveedoresList() {
                       </Can>
                       <Can permission="eliminar.proveedor">
                         <Button
-                          variant="ghost" size="icon" className="h-10 w-10 rounded-xl hover:bg-rose-50 text-slate-400 hover:text-rose-600"
+                          variant="ghost" size="icon-sm" className="text-slate-400 hover:text-rose-600 hover:bg-rose-50"
                           onClick={() => handleDelete(prov.id)}
                         >
                           <Trash2 className="h-4 w-4" />
@@ -192,27 +195,20 @@ export default function ProveedoresList() {
             )}
           </TableBody>
         </Table>
-        <div className="p-6 border-t border-slate-50 bg-slate-50/30 flex justify-center">
-          <DataPagination meta={meta} onPageChange={fetchProveedores} />
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       {/* Modal de Registro/Edición */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="rounded-[2.5rem] border-none p-0 overflow-hidden shadow-2xl bg-white max-w-lg">
-          <div className="bg-slate-900 p-8 relative overflow-hidden">
-            <div className="absolute top-0 right-0 p-4 opacity-5 translate-x-4 -translate-y-4">
-              <Truck size={120} weight="fill" className="text-white" />
-            </div>
-            <div className="relative z-10">
-              <DialogTitle className="text-2xl font-black text-white uppercase tracking-tight">
-                {editingProveedor ? 'Modificar Registro' : 'Nuevo Socio'}
-              </DialogTitle>
-              <DialogDescription className="text-xs font-bold text-white/40 uppercase tracking-[0.2em] mt-2">
-                Ficha maestra de proveedor del negocio
-              </DialogDescription>
-            </div>
-          </div>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-semibold text-slate-800">
+              {editingProveedor ? 'Modificar Registro' : 'Nuevo Socio'}
+            </DialogTitle>
+            <DialogDescription className="text-slate-500">
+              Ficha maestra de proveedor del negocio
+            </DialogDescription>
+          </DialogHeader>
           <form onSubmit={handleSubmit} className="p-8 space-y-6">
             <div className="space-y-2">
               <label className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 ml-1">Razón Social</label>
@@ -220,7 +216,7 @@ export default function ProveedoresList() {
                 placeholder="Ej. DISTRIBUIDORA CENTRAL S.A."
                 value={formData.nombre}
                 onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-                className="h-12 rounded-xl border-slate-100 bg-slate-50 focus-visible:ring-slate-900 font-bold uppercase transition-all"
+                className="h-10 rounded-sm border-slate-200 bg-slate-50/50"
                 required
               />
             </div>
@@ -231,7 +227,7 @@ export default function ProveedoresList() {
                   placeholder="000-000-000"
                   value={formData.ruc}
                   onChange={(e) => setFormData({ ...formData, ruc: e.target.value })}
-                  className="h-12 rounded-xl border-slate-100 bg-slate-50 focus-visible:ring-slate-900 font-bold uppercase transition-all"
+                  className="h-10 rounded-sm border-slate-200 bg-slate-50/50"
                 />
               </div>
               <div className="space-y-2">
@@ -240,7 +236,7 @@ export default function ProveedoresList() {
                   placeholder="555-0000"
                   value={formData.telefono}
                   onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
-                  className="h-12 rounded-xl border-slate-100 bg-slate-50 focus-visible:ring-slate-900 font-bold uppercase transition-all"
+                  className="h-10 rounded-sm border-slate-200 bg-slate-50/50"
                 />
               </div>
             </div>
@@ -250,17 +246,17 @@ export default function ProveedoresList() {
                 placeholder="Calle comercial #123"
                 value={formData.direccion}
                 onChange={(e) => setFormData({ ...formData, direccion: e.target.value })}
-                className="h-12 rounded-xl border-slate-100 bg-slate-50 focus-visible:ring-slate-900 font-bold uppercase transition-all"
+                className="h-10 rounded-sm border-slate-200 bg-slate-50/50"
               />
             </div>
-            <div className="pt-4 grid grid-cols-2 gap-4">
-              <Button type="button" variant="ghost" className="h-14 rounded-2xl font-black uppercase tracking-[0.2em] text-[10px]" onClick={() => setIsDialogOpen(false)}>
+            <DialogFooter className="pt-6 border-t border-slate-50 gap-2">
+              <Button type="button" variant="ghost" className="text-slate-500" onClick={() => setIsDialogOpen(false)}>
                 Cancelar
               </Button>
-              <Button type="submit" className="h-14 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-black uppercase tracking-[0.3em] text-[10px] shadow-xl shadow-slate-100 active:scale-95 transition-all">
+              <Button type="submit" className="min-w-[120px] rounded-sm">
                 {editingProveedor ? 'Actualizar Ficha' : 'Vincular Socio'}
               </Button>
-            </div>
+            </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>

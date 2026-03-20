@@ -7,11 +7,13 @@ import { FileText, Eye, Calendar, User, Truck } from 'lucide-react';
 import api from '@/lib/api';
 import { toast } from 'sonner';
 import DataPagination from '@/components/ui/data-pagination';
+import PageHeader from '@/components/layout/PageHeader';
 
 export default function ComprasHistory() {
   const [compras, setCompras] = useState([]);
   const [meta, setMeta] = useState({ current_page: 1, last_page: 1, total: 0 });
   const [isLoading, setIsLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
 
   const fetchCompras = async (page = 1) => {
     setIsLoading(true);
@@ -38,20 +40,27 @@ export default function ComprasHistory() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Historial de Compras</h1>
-          <p className="text-muted-foreground">Consulta todos los registros de abastecimiento realizados.</p>
-        </div>
-      </div>
+      <PageHeader 
+        title="Historial de Compras"
+        subtitle="Abastecimiento de inventario"
+        icon={FileText}
+        searchValue={searchTerm}
+        onSearchChange={setSearchTerm}
+        searchPlaceholder="Buscar por factura o proveedor..."
+        action={
+          <Button variant="outline" className="gap-2 rounded-sm h-10 border-slate-200">
+             <Truck className="h-4 w-4" /> Nueva Orden
+          </Button>
+        }
+      />
 
-      <Card className="border-slate-200 shadow-sm">
+      <Card className="border-none shadow-sm bg-white/50 backdrop-blur-sm overflow-hidden">
         <CardContent className="p-0">
           <Table>
             <TableHeader className="bg-slate-50/50">
               <TableRow>
-                <TableHead className="py-4">Fecha</TableHead>
-                <TableHead>Factura / Ref</TableHead>
+                <TableHead className="py-4 px-6">Fecha</TableHead>
+                <TableHead>Factura</TableHead>
                 <TableHead>Proveedor</TableHead>
                 <TableHead>Sucursal</TableHead>
                 <TableHead>Total</TableHead>
@@ -75,10 +84,10 @@ export default function ComprasHistory() {
               ) : (
                 compras.map((compra) => (
                   <TableRow key={compra.id} className="hover:bg-slate-50/50 transition-colors">
-                    <TableCell>
+                    <TableCell className="px-6">
                       <div className="flex items-center gap-2 text-slate-600">
                         <Calendar className="h-3.5 w-3.5" />
-                        {new Date(compra.fecha_compra).toLocaleDateString()}
+                        <span className="font-medium">{new Date(compra.fecha_compra).toLocaleDateString()}</span>
                       </div>
                     </TableCell>
                     <TableCell className="font-mono text-xs font-bold">
@@ -97,13 +106,13 @@ export default function ComprasHistory() {
                       ${compra.total}
                     </TableCell>
                     <TableCell>
-                      <Badge variant={compra.estado === 'completado' ? 'default' : 'outline'} className="capitalize">
+                      <Badge variant={compra.estado === 'completado' ? 'default' : 'outline'} className="capitalize rounded-sm">
                         {compra.estado}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right px-6">
-                      <Button variant="ghost" size="sm" className="gap-1">
-                        <Eye className="h-4 w-4" /> Ver Detalle
+                      <Button variant="ghost" size="icon-sm" className="h-8 w-8 text-slate-400 hover:text-black hover:bg-slate-100">
+                        <Eye className="w-4 h-4" />
                       </Button>
                     </TableCell>
                   </TableRow>

@@ -14,17 +14,17 @@ import { useNavigate } from 'react-router-dom';
 export default function NuevaCompra() {
   const { branch } = useAuthStore();
   const navigate = useNavigate();
-  
+
   const [proveedores, setProveedores] = useState([]);
   const [productos, setProductos] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  
+
   // Datos de la compra
   const [selectedProveedor, setSelectedProveedor] = useState('');
   const [numeroFactura, setNumeroFactura] = useState('');
   const [fechaCompra, setFechaCompra] = useState(new Date().toISOString().split('T')[0]);
   const [cart, setCart] = useState([]);
-  
+
   // Búsqueda de producto
   const [searchTerm, setSearchTerm] = useState('');
   const [showFullList, setShowFullList] = useState(false);
@@ -62,7 +62,7 @@ export default function NuevaCompra() {
   };
 
   const updateItem = (id, field, value) => {
-    setCart(cart.map(item => 
+    setCart(cart.map(item =>
       item.id === id ? { ...item, [field]: parseFloat(value) || 0 } : item
     ));
   };
@@ -94,36 +94,38 @@ export default function NuevaCompra() {
     }
   };
 
-  const filteredSearch = productos.filter(p => 
-    p.nombre.toLowerCase().includes(searchTerm.toLowerCase()) || 
+  const filteredSearch = productos.filter(p =>
+    p.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
     p.codigo?.includes(searchTerm)
   );
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex justify-between items-center px-1">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Abastecimiento</h1>
-          <p className="text-muted-foreground">Registra compras a proveedores para cargar stock en <strong>{branch?.nombre}</strong>.</p>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900">Abastecimiento</h1>
+          <p className="text-slate-500 text-[11px] font-bold uppercase tracking-widest mt-1 opacity-70">
+            Registrar compras para cargar stock en <strong>{branch?.nombre}</strong>
+          </p>
         </div>
-        <Button size="lg" className="gap-2" onClick={handleSubmit}>
-          <Save className="h-5 w-5" /> Finalizar Compra
+        <Button size="lg" className="gap-2 rounded-sm" onClick={handleSubmit}>
+          <Save className="h-4 w-4" /> Finalizar Compra
         </Button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Cabecera de Compra */}
-        <Card className="lg:col-span-1 shadow-sm border-slate-200">
-          <CardHeader className="bg-slate-50/50">
-            <CardTitle className="text-lg flex items-center gap-2">
-                <Truck className="h-5 w-5 text-primary" /> Datos del Proveedor
+        <Card className="lg:col-span-1 shadow-sm border-slate-200 rounded-sm">
+          <CardHeader className="bg-slate-50/50 border-b border-slate-100">
+            <CardTitle className="text-sm font-bold flex items-center gap-2">
+              <Truck className="h-4 w-4 text-primary" /> Datos del Proveedor
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4 pt-6">
             <div className="space-y-1.5">
               <label className="text-xs font-bold uppercase text-slate-500">Proveedor</label>
               <Select value={selectedProveedor} onValueChange={setSelectedProveedor}>
-                <SelectTrigger>
+              <SelectTrigger className="rounded-sm">
                   <SelectValue placeholder="Seleccionar proveedor" />
                 </SelectTrigger>
                 <SelectContent>
@@ -133,53 +135,54 @@ export default function NuevaCompra() {
             </div>
             <div className="space-y-1.5">
               <label className="text-xs font-bold uppercase text-slate-500">Número de Factura</label>
-              <Input 
-                placeholder="Ej. F-001-992" 
-                value={numeroFactura} 
-                onChange={(e) => setNumeroFactura(e.target.value)} 
+              <Input
+                placeholder="Ej. F-001-992"
+                className="rounded-sm"
+                value={numeroFactura}
+                onChange={(e) => setNumeroFactura(e.target.value)}
               />
             </div>
             <div className="space-y-1.5">
               <label className="text-xs font-bold uppercase text-slate-500">Fecha de Compra</label>
               <div className="relative">
                 <Calendar className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input 
-                  type="date" 
-                  className="pl-10"
-                  value={fechaCompra} 
-                  onChange={(e) => setFechaCompra(e.target.value)} 
+                <Input
+                  type="date"
+                  className="pl-10 rounded-sm"
+                  value={fechaCompra}
+                  onChange={(e) => setFechaCompra(e.target.value)}
                 />
-              </div>
+                              </div>
             </div>
-            
+
             <div className="pt-4 border-t mt-6">
-                <div className="flex justify-between items-center mb-2">
-                    <span className="text-sm text-slate-500 font-medium">Total de Artículos:</span>
-                    <span className="font-bold">{cart.length}</span>
-                </div>
-                <div className="flex justify-between items-center text-xl">
-                    <span className="font-bold text-slate-900">TOTAL:</span>
-                    <span className="font-black text-primary">${totalCompra.toFixed(2)}</span>
-                </div>
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-sm text-slate-500 font-medium">Total de Artículos:</span>
+                <span className="font-bold">{cart.length}</span>
+              </div>
+              <div className="flex justify-between items-center text-xl">
+                <span className="font-bold text-slate-900">TOTAL:</span>
+                <span className="font-black text-primary">${totalCompra.toFixed(2)}</span>
+              </div>
             </div>
           </CardContent>
         </Card>
 
         {/* Detalle de Productos */}
-        <Card className="lg:col-span-2 shadow-sm border-slate-200">
-          <CardHeader className="bg-slate-50/50">
-            <CardTitle className="text-lg flex items-center gap-2">
-                <Package className="h-5 w-5 text-primary" /> Items de la Compra
+        <Card className="lg:col-span-2 shadow-sm border-slate-200 rounded-sm">
+          <CardHeader className="bg-slate-50/50 border-b border-slate-100">
+            <CardTitle className="text-sm font-bold flex items-center gap-2">
+              <Package className="h-5 w-5 text-primary" /> Items de la Compra
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-6 space-y-4">
             <div className="relative">
               <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-              <Input 
-                placeholder="Escribe el nombre o código del producto para agregar..." 
-                className="pl-10 h-11 pr-10"
+              <Input
+                placeholder="Escribe el nombre o código del producto para agregar..."
+                className="pl-10 h-11 pr-10 rounded-sm"
                 value={searchTerm}
-                onChange={(e) => { setSearchTerm(e.target.value); if(e.target.value) setShowFullList(false); }}
+                onChange={(e) => { setSearchTerm(e.target.value); if (e.target.value) setShowFullList(false); }}
               />
               <button
                 type="button"
@@ -196,8 +199,8 @@ export default function NuevaCompra() {
                   {filteredSearch.length === 0 ? (
                     <div className="p-4 text-center text-sm text-muted-foreground">Sin resultados</div>
                   ) : filteredSearch.map(p => (
-                    <div 
-                      key={p.id} 
+                    <div
+                      key={p.id}
                       className="p-3 hover:bg-slate-50 cursor-pointer flex justify-between items-center border-b last:border-0"
                       onClick={() => addToCart(p)}
                     >
@@ -214,16 +217,15 @@ export default function NuevaCompra() {
 
             {/* Short product list (up to 15) */}
             {showFullList && (
-              <div className="border rounded-lg overflow-hidden">
+              <div className="border border-slate-200 rounded-sm overflow-hidden shadow-sm">
                 <div className="max-h-48 overflow-auto divide-y divide-slate-50">
                   {productos.slice(0, 15).map(p => {
                     const inCart = cart.some(i => i.id === p.id);
                     return (
                       <div
                         key={p.id}
-                        className={`px-4 py-2.5 flex items-center justify-between cursor-pointer transition-colors ${
-                          inCart ? 'bg-green-50 opacity-60 cursor-default' : 'hover:bg-slate-50'
-                        }`}
+                        className={`px-4 py-2.5 flex items-center justify-between cursor-pointer transition-colors ${inCart ? 'bg-green-50 opacity-60 cursor-default' : 'hover:bg-slate-50'
+                          }`}
                         onClick={() => !inCart && addToCart(p)}
                       >
                         <div className="min-w-0">
@@ -273,23 +275,23 @@ export default function NuevaCompra() {
                           <p className="text-[10px] text-muted-foreground">{item.categoria?.nombre || 'General'}</p>
                         </TableCell>
                         <TableCell>
-                          <Input 
-                            type="number" 
-                            min="1" 
-                            className="h-8"
-                            value={item.cantidad} 
-                            onChange={(e) => updateItem(item.id, 'cantidad', e.target.value)} 
+                          <Input
+                            type="number"
+                            min="1"
+                            className="h-8 rounded-sm"
+                            value={item.cantidad}
+                            onChange={(e) => updateItem(item.id, 'cantidad', e.target.value)}
                           />
                         </TableCell>
                         <TableCell>
                           <div className="relative">
                             <DollarSign className="absolute left-2 top-2 h-3 w-3 text-muted-foreground" />
-                            <Input 
-                              type="number" 
-                              step="0.01" 
-                              className="pl-6 h-8 font-mono"
-                              value={item.costo} 
-                              onChange={(e) => updateItem(item.id, 'costo', e.target.value)} 
+                            <Input
+                              type="number"
+                              step="0.01"
+                              className="pl-6 h-8 font-mono rounded-sm"
+                              value={item.costo}
+                              onChange={(e) => updateItem(item.id, 'costo', e.target.value)}
                             />
                           </div>
                         </TableCell>
@@ -297,7 +299,7 @@ export default function NuevaCompra() {
                           ${(item.cantidad * item.costo).toFixed(2)}
                         </TableCell>
                         <TableCell>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => removeFromCart(item.id)}>
+                          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive rounded-sm" onClick={() => removeFromCart(item.id)}>
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </TableCell>

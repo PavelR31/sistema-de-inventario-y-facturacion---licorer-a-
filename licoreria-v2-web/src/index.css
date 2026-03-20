@@ -7,48 +7,48 @@
   --sans: "Inter", system-ui, sans-serif;
   --font-sans: "Inter", system-ui, sans-serif;
   font-family: var(--sans);
-  
+
   /* Minimalist SaaS Palette */
-  --background: #f8fafc;
-  --foreground: #0f172a;
-  
+  --background: #fcfcfc;
+  --foreground: #09090b;
+
   --card: #ffffff;
-  --card-foreground: #0f172a;
-  
+  --card-foreground: #09090b;
+
   --popover: #ffffff;
-  --popover-foreground: #0f172a;
-  
-  /* Sober Blue Primary (Financial Style) */
-  --primary: #2563eb;
+  --popover-foreground: #09090b;
+
+  /* Black Primary for Buttons */
+  --primary: #09090b;
   --primary-foreground: #ffffff;
-  
-  --secondary: #f1f5f9;
-  --secondary-foreground: #475569;
-  
-  --muted: #f1f5f9;
-  --muted-foreground: #64748b;
-  
-  --accent: #f8fafc;
-  --accent-foreground: #0f172a;
-  
+
+  --secondary: #f4f4f5;
+  --secondary-foreground: #09090b;
+
+  --muted: #f4f4f5;
+  --muted-foreground: #71717a;
+
+  --accent: #f4f4f5;
+  --accent-foreground: #09090b;
+
   --destructive: #ef4444;
-  --destructive-foreground: #ffffff;
-  
-  --border: #e2e8f0;
-  --input: #e2e8f0;
-  --ring: #3b82f6;
+  --destructive-foreground: #fafafa;
 
-  --radius: 0.75rem;
+  --border: #e4e4e7;
+  --input: #e4e4e7;
+  --ring: #18181b;
 
-  /* Sidebar - Professional Flat Dark */
-  --sidebar: #0f172a;
-  --sidebar-foreground: #94a3b8;
-  --sidebar-primary: #2563eb;
-  --sidebar-primary-foreground: #ffffff;
+  --radius: 0.25rem;
+
+  /* Sidebar - Solid Zinc-950 */
+  --sidebar: #09090b;
+  --sidebar-foreground: #a1a1aa;
+  --sidebar-primary: #ffffff;
+  --sidebar-primary-foreground: #09090b;
   --sidebar-accent: rgba(255, 255, 255, 0.05);
   --sidebar-accent-foreground: #ffffff;
   --sidebar-border: rgba(255, 255, 255, 0.05);
-  --sidebar-ring: #2563eb;
+  --sidebar-ring: #ffffff;
 }
 
 /* Glassmorphism Utility */
@@ -220,8 +220,14 @@ code {
 
 @layer base {
   * {
-    @apply border-border outline-ring/50;}
+    @apply border-border outline-ring/50;
+  }
+
   body {
-    @apply bg-background text-foreground;}
+    @apply bg-background text-foreground;
+  }
+
   html {
-    @apply font-mono;}}
+    @apply font-mono;
+  }
+}

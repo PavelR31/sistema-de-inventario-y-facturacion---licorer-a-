@@ -146,19 +146,19 @@ function VentasPeriodoTab() {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <DateFilter inicio={inicio} fin={fin} onInicioChange={setInicio}
           onFinChange={setFin} onRefresh={fetchData} loading={loading} />
-        
+
         <div className="flex gap-2">
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             className="border-rose-200 text-rose-600 hover:bg-rose-50 text-xs h-9"
             onClick={() => downloadPDF('ventas', `ventas_${inicio}_${fin}.pdf`, { fecha_inicio: inicio, fecha_fin: fin })}
           >
             <FilePdf className="mr-2 h-4 w-4" />
             Ver PDF
           </Button>
-          <Button 
-            variant="outline" 
-            size="sm" 
+          <Button
+            variant="outline"
+            size="sm"
             className="gap-2 border-emerald-200 text-emerald-700 hover:bg-emerald-50 h-9"
             onClick={() => downloadExcel('/api/reportes/exportar/ventas', `ventas_${inicio}_${fin}.xlsx`, { fecha_inicio: inicio, fecha_fin: fin })}
           >
@@ -228,8 +228,8 @@ function VentasPeriodoTab() {
 
           <Card className="border-none shadow-sm">
             <CardHeader className="pb-0 pt-4 px-4 flex flex-row items-center justify-between">
-               <CardTitle className="text-sm font-bold text-slate-700">Resumen Diario</CardTitle>
-               <Badge variant="outline" className="text-[10px] font-bold text-slate-400">Agrupado por día</Badge>
+              <CardTitle className="text-sm font-bold text-slate-700">Resumen Diario</CardTitle>
+              <Badge variant="outline" className="text-[10px] font-bold text-slate-400">Agrupado por día</Badge>
             </CardHeader>
             <CardContent className="p-0">
               <div className="overflow-x-auto">
@@ -267,41 +267,41 @@ function VentasPeriodoTab() {
               <CardDescription className="text-xs">Últimos movimientos detectados en el período seleccionado.</CardDescription>
             </CardHeader>
             <CardContent className="p-0">
-                <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                        <thead className="bg-slate-50/50">
-                            <tr className="border-b border-slate-100">
-                                {['Folio', 'Fecha/Hora', 'Sucursal', 'Vendedor', 'Pago', 'Total'].map(h => (
-                                    <th key={h} className="px-4 py-3 text-left text-[10px] font-black uppercase tracking-[0.1em] text-slate-400">{h}</th>
-                                ))}
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {(data?.transacciones || []).length === 0 ? (
-                                <tr><td colSpan={6} className="text-center py-10 text-slate-400 text-xs font-medium">No hay transacciones individuales para este rango</td></tr>
-                            ) : (
-                                data.transacciones.map((t, idx) => (
-                                    <tr key={idx} className="border-b border-slate-50 hover:bg-indigo-50/30 transition-colors group">
-                                        <td className="px-4 py-3">
-                                            <code className="text-[11px] font-bold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded">{t.numero_factura}</code>
-                                        </td>
-                                        <td className="px-4 py-3 text-slate-500 text-[11px] font-medium">
-                                            {t.created_at ? new Date(t.created_at).toLocaleString('es-ES', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' }) : '—'}
-                                        </td>
-                                        <td className="px-4 py-3 text-slate-700 font-semibold">{t.sucursal?.nombre || '—'}</td>
-                                        <td className="px-4 py-3 text-slate-500 text-[11px] font-medium">{t.user?.name || '—'}</td>
-                                        <td className="px-4 py-3">
-                                            <Badge variant="outline" className="text-[9px] font-black uppercase border-slate-200 text-slate-500 bg-white">
-                                                {t.metodo_pago}
-                                            </Badge>
-                                        </td>
-                                        <td className="px-4 py-3 text-right font-black text-slate-900">{formatMoney(t.total)}</td>
-                                    </tr>
-                                ))
-                            )}
-                        </tbody>
-                    </table>
-                </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-slate-50/50">
+                    <tr className="border-b border-slate-100">
+                      {['Folio', 'Fecha/Hora', 'Sucursal', 'Vendedor', 'Pago', 'Total'].map(h => (
+                        <th key={h} className="px-4 py-3 text-left text-[10px] font-black uppercase tracking-[0.1em] text-slate-400">{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(data?.transacciones || []).length === 0 ? (
+                      <tr><td colSpan={6} className="text-center py-10 text-slate-400 text-xs font-medium">No hay transacciones individuales para este rango</td></tr>
+                    ) : (
+                      data.transacciones.map((t, idx) => (
+                        <tr key={idx} className="border-b border-slate-50 hover:bg-indigo-50/30 transition-colors group">
+                          <td className="px-4 py-3">
+                            <code className="text-[11px] font-bold text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded">{t.numero_factura}</code>
+                          </td>
+                          <td className="px-4 py-3 text-slate-500 text-[11px] font-medium">
+                            {t.created_at ? new Date(t.created_at).toLocaleString('es-ES', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) : '—'}
+                          </td>
+                          <td className="px-4 py-3 text-slate-700 font-semibold">{t.sucursal?.nombre || '—'}</td>
+                          <td className="px-4 py-3 text-slate-500 text-[11px] font-medium">{t.user?.name || '—'}</td>
+                          <td className="px-4 py-3">
+                            <Badge variant="outline" className="text-[9px] font-black uppercase border-slate-200 text-slate-500 bg-white">
+                              {t.metodo_pago}
+                            </Badge>
+                          </td>
+                          <td className="px-4 py-3 text-right font-black text-slate-900">{formatMoney(t.total)}</td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </CardContent>
           </Card>
         </>
@@ -346,19 +346,19 @@ function VentasSucursalTab() {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <DateFilter inicio={inicio} fin={fin} onInicioChange={setInicio}
           onFinChange={setFin} onRefresh={fetchData} loading={loading} />
-        
+
         <div className="flex gap-2">
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             className="border-rose-200 text-rose-600 hover:bg-rose-50 text-xs h-9"
             onClick={() => downloadPDF('sucursal', `ventas_sucursal_${inicio}_${fin}.pdf`, { fecha_inicio: inicio, fecha_fin: fin })}
           >
             <FilePdf className="mr-2 h-4 w-4" />
             Ver PDF
           </Button>
-          <Button 
-            variant="outline" 
-            size="sm" 
+          <Button
+            variant="outline"
+            size="sm"
             className="gap-2 border-emerald-200 text-emerald-700 hover:bg-emerald-50 h-9"
             onClick={() => downloadExcel('/api/reportes/exportar/sucursal', `ventas_sucursal_${inicio}_${fin}.xlsx`, { fecha_inicio: inicio, fecha_fin: fin })}
           >
@@ -471,26 +471,26 @@ function ProductosTopTab() {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <DateFilter inicio={inicio} fin={fin} onInicioChange={setInicio}
           onFinChange={setFin} onRefresh={fetchData} loading={loading} />
-        
+
         <div className="flex gap-2">
-            <Button 
-              variant="outline" 
-              className="border-rose-200 text-rose-600 hover:bg-rose-50 text-xs h-9"
-              onClick={handleDownloadPDF}
-            >
-              <FilePdf className="mr-2 h-4 w-4" />
-              Ver PDF
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="gap-2 border-emerald-200 text-emerald-700 hover:bg-emerald-50 h-9"
-              onClick={() => downloadExcel('/api/reportes/exportar/top', `productos_top_${inicio}_${fin}.xlsx`, { fecha_inicio: inicio, fecha_fin: fin })}
-            >
-              <DownloadSimple size={14} weight="bold" />
-              Excel
-            </Button>
-          </div>
+          <Button
+            variant="outline"
+            className="border-rose-200 text-rose-600 hover:bg-rose-50 text-xs h-9"
+            onClick={handleDownloadPDF}
+          >
+            <FilePdf className="mr-2 h-4 w-4" />
+            Ver PDF
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2 border-emerald-200 text-emerald-700 hover:bg-emerald-50 h-9"
+            onClick={() => downloadExcel('/api/reportes/exportar/top', `productos_top_${inicio}_${fin}.xlsx`, { fecha_inicio: inicio, fecha_fin: fin })}
+          >
+            <DownloadSimple size={14} weight="bold" />
+            Excel
+          </Button>
+        </div>
       </div>
 
       {loading ? (
@@ -592,17 +592,17 @@ function StockCriticoTab() {
             {loading ? <Loader2 size={14} className="animate-spin" /> : <ArrowsClockwise size={14} weight="bold" />}
             Refrescar
           </Button>
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             className="border-rose-200 text-rose-600 hover:bg-rose-50 text-xs h-9"
             onClick={handleDownloadPDF}
           >
             <FilePdf className="mr-2 h-4 w-4" />
             Ver PDF
           </Button>
-          <Button 
-            variant="outline" 
-            size="sm" 
+          <Button
+            variant="outline"
+            size="sm"
             className="gap-2 h-9 border-emerald-200 text-emerald-700 hover:bg-emerald-50 text-xs"
             onClick={() => downloadExcel('/api/reportes/exportar/stock', `stock_critico_${today}.xlsx`)}
           >
@@ -691,7 +691,6 @@ function ArqueoCajaTab() {
   useEffect(() => { fetchCajas(); }, [fetchCajas]);
 
   const selectCaja = async (caja) => {
-    if (!caja?.id || caja.id === 'undefined') return;
     setSelectedCaja(caja);
     setLoadingArqueo(true);
     try {
@@ -858,26 +857,26 @@ function AnulacionesTab() {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <DateFilter inicio={inicio} fin={fin} onInicioChange={setInicio}
           onFinChange={setFin} onRefresh={fetchData} loading={loading} />
-        
+
         <div className="flex gap-2">
-            <Button 
-              variant="outline" 
-              className="border-rose-200 text-rose-600 hover:bg-rose-50 text-xs h-9"
-              onClick={handleDownloadPDF}
-            >
-              <FilePdf className="mr-2 h-4 w-4" />
-              Ver PDF
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="gap-2 border-emerald-200 text-emerald-700 hover:bg-emerald-50 h-9"
-              onClick={() => downloadExcel('/api/reportes/exportar/anulaciones', `anulaciones_${inicio}_${fin}.xlsx`, { fecha_inicio: inicio, fecha_fin: fin })}
-            >
-              <DownloadSimple size={14} weight="bold" />
-              Excel
-            </Button>
-          </div>
+          <Button
+            variant="outline"
+            className="border-rose-200 text-rose-600 hover:bg-rose-50 text-xs h-9"
+            onClick={handleDownloadPDF}
+          >
+            <FilePdf className="mr-2 h-4 w-4" />
+            Ver PDF
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2 border-emerald-200 text-emerald-700 hover:bg-emerald-50 h-9"
+            onClick={() => downloadExcel('/api/reportes/exportar/anulaciones', `anulaciones_${inicio}_${fin}.xlsx`, { fecha_inicio: inicio, fecha_fin: fin })}
+          >
+            <DownloadSimple size={14} weight="bold" />
+            Excel
+          </Button>
+        </div>
       </div>
 
       {loading ? (
@@ -968,17 +967,17 @@ function InventarioMaestroTab() {
             {loading ? <Loader2 size={14} className="animate-spin" /> : <ArrowsClockwise size={14} weight="bold" />}
             Actualizar
           </Button>
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             className="border-rose-200 text-rose-600 hover:bg-rose-50 text-xs h-9"
             onClick={handleDownloadPDF}
           >
             <FilePdf className="mr-2 h-4 w-4" />
             Ver PDF
           </Button>
-          <Button 
-            variant="outline" 
-            size="sm" 
+          <Button
+            variant="outline"
+            size="sm"
             className="gap-2 h-9 border-emerald-200 text-emerald-700 hover:bg-emerald-50 text-xs font-bold"
             onClick={() => downloadExcel('/api/reportes/exportar/inventario', `inventario_maestro_${today}.xlsx`)}
           >
@@ -1062,26 +1061,26 @@ function VentasUsuarioTab() {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <DateFilter inicio={inicio} fin={fin} onInicioChange={setInicio}
           onFinChange={setFin} onRefresh={fetchData} loading={loading} />
-        
+
         <div className="flex gap-2">
-            <Button 
-              variant="outline" 
-              className="border-rose-200 text-rose-600 hover:bg-rose-50 text-xs h-9"
-              onClick={handleDownloadPDF}
-            >
-              <FilePdf className="mr-2 h-4 w-4" />
-              Ver PDF
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="gap-2 border-emerald-200 text-emerald-700 hover:bg-emerald-50 h-9"
-              onClick={() => downloadExcel('/api/reportes/exportar/usuario', `ventas_usuarios_${inicio}_${fin}.xlsx`, { fecha_inicio: inicio, fecha_fin: fin })}
-            >
-              <DownloadSimple size={14} weight="bold" />
-              Excel
-            </Button>
-          </div>
+          <Button
+            variant="outline"
+            className="border-rose-200 text-rose-600 hover:bg-rose-50 text-xs h-9"
+            onClick={handleDownloadPDF}
+          >
+            <FilePdf className="mr-2 h-4 w-4" />
+            Ver PDF
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2 border-emerald-200 text-emerald-700 hover:bg-emerald-50 h-9"
+            onClick={() => downloadExcel('/api/reportes/exportar/usuario', `ventas_usuarios_${inicio}_${fin}.xlsx`, { fecha_inicio: inicio, fecha_fin: fin })}
+          >
+            <DownloadSimple size={14} weight="bold" />
+            Excel
+          </Button>
+        </div>
       </div>
 
       {loading ? (
@@ -1135,14 +1134,14 @@ function VentasUsuarioTab() {
 
 // ─── Página Principal ─────────────────────────────────────────────────────────
 const TABS = [
-  { value: 'ventas',      label: 'Ventas por Período', icon: Money },
-  { value: 'sucursal',    label: 'Por Sucursal',        icon: Storefront },
-  { value: 'usuario',     label: 'Por Usuario',         icon: SpinnerGap }, // Assuming SpinnerGap is the intended icon for user sales
-  { value: 'productos',   label: 'Productos Top',       icon: Package },
-  { value: 'inventario',  label: 'Inventario Maestro',  icon: Package },
-  { value: 'stock',       label: 'Stock Crítico',       icon: Warning },
-  { value: 'arqueo',      label: 'Arqueo de Caja',      icon: CashRegister },
-  { value: 'anulaciones', label: 'Anulaciones',         icon: XCircle },
+  { value: 'ventas', label: 'Ventas por Período', icon: Money },
+  { value: 'sucursal', label: 'Por Sucursal', icon: Storefront },
+  { value: 'usuario', label: 'Por Usuario', icon: SpinnerGap }, // Assuming SpinnerGap is the intended icon for user sales
+  { value: 'productos', label: 'Productos Top', icon: Package },
+  { value: 'inventario', label: 'Inventario Maestro', icon: Package },
+  { value: 'stock', label: 'Stock Crítico', icon: Warning },
+  { value: 'arqueo', label: 'Arqueo de Caja', icon: CashRegister },
+  { value: 'anulaciones', label: 'Anulaciones', icon: XCircle },
 ];
 
 export default function Reportes() {
@@ -1171,13 +1170,13 @@ export default function Reportes() {
         </TabsList>
 
         <div className="mt-6">
-          <TabsContent value="ventas"      className="mt-0"><VentasPeriodoTab /></TabsContent>
-          <TabsContent value="sucursal"    className="mt-0"><VentasSucursalTab /></TabsContent>
-          <TabsContent value="usuario"     className="mt-0"><VentasUsuarioTab /></TabsContent>
-          <TabsContent value="productos"   className="mt-0"><ProductosTopTab /></TabsContent>
-          <TabsContent value="inventario"  className="mt-0"><InventarioMaestroTab /></TabsContent>
-          <TabsContent value="stock"       className="mt-0"><StockCriticoTab /></TabsContent>
-          <TabsContent value="arqueo"      className="mt-0"><ArqueoCajaTab /></TabsContent>
+          <TabsContent value="ventas" className="mt-0"><VentasPeriodoTab /></TabsContent>
+          <TabsContent value="sucursal" className="mt-0"><VentasSucursalTab /></TabsContent>
+          <TabsContent value="usuario" className="mt-0"><VentasUsuarioTab /></TabsContent>
+          <TabsContent value="productos" className="mt-0"><ProductosTopTab /></TabsContent>
+          <TabsContent value="inventario" className="mt-0"><InventarioMaestroTab /></TabsContent>
+          <TabsContent value="stock" className="mt-0"><StockCriticoTab /></TabsContent>
+          <TabsContent value="arqueo" className="mt-0"><ArqueoCajaTab /></TabsContent>
           <TabsContent value="anulaciones" className="mt-0"><AnulacionesTab /></TabsContent>
         </div>
       </Tabs>
