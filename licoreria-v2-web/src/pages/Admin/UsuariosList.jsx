@@ -17,6 +17,7 @@ export default function UsuariosList() {
   const [users, setUsers] = useState([]);
   const [meta, setMeta] = useState({ current_page: 1, last_page: 1, total: 0 });
   const [roles, setRoles] = useState([]);
+  const [sucursales, setSucursales] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
@@ -24,21 +25,24 @@ export default function UsuariosList() {
     name: '', 
     email: '', 
     password: '', 
-    role: '' 
+    role: '',
+    sucursal_id: 'none'
   });
 
   const fetchData = async (page = 1) => {
     setIsLoading(true);
     try {
-      const [usersRes, rolesRes] = await Promise.all([
+      const [usersRes, rolesRes, sucursalesRes] = await Promise.all([
         api.get('/api/users', { params: { page } }),
-        api.get('/api/roles')
+        api.get('/api/roles'),
+        api.get('/api/sucursales', { params: { all: true } })
       ]);
       setUsers(usersRes.data.data ?? usersRes.data);
       if (usersRes.data.last_page) {
         setMeta({ current_page: usersRes.data.current_page, last_page: usersRes.data.last_page, total: usersRes.data.total });
       }
       setRoles(rolesRes.data.data ?? rolesRes.data);
+      setSucursales(sucursalesRes.data.data ?? sucursalesRes.data);
     } catch (error) {
       toast.error('Error al cargar datos');
     } finally {
@@ -53,11 +57,16 @@ export default function UsuariosList() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      const payload = { 
+        ...formData, 
+        sucursal_id: formData.sucursal_id === 'none' ? null : formData.sucursal_id 
+      };
+      
       if (editingUser) {
-        await api.put(`/api/users/${editingUser.id}`, formData);
+        await api.put(`/api/users/${editingUser.id}`, payload);
         toast.success('Usuario actualizado');
       } else {
-        await api.post('/api/users', formData);
+        await api.post('/api/users', payload);
         toast.success('Usuario creado');
       }
       setIsDialogOpen(false);
@@ -69,7 +78,7 @@ export default function UsuariosList() {
   };
 
   const resetForm = () => {
-    setFormData({ name: '', email: '', password: '', role: '' });
+    setFormData({ name: '', email: '', password: '', role: '', sucursal_id: 'none' });
     setEditingUser(null);
   };
 
@@ -79,7 +88,8 @@ export default function UsuariosList() {
       name: user.name, 
       email: user.email, 
       password: '', // Password se deja vacío si no se va a cambiar
-      role: user.roles[0]?.name || '' 
+      role: user.roles[0]?.name || '',
+      sucursal_id: user.sucursal_id?.toString() || 'none' 
     });
     setIsDialogOpen(true);
   };
@@ -127,6 +137,7 @@ export default function UsuariosList() {
                 <TableHead className="py-4">Nombre</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Rol</TableHead>
+                <TableHead>Sucursal</TableHead>
                 <TableHead className="text-center">Estado</TableHead>
                 <TableHead className="text-right px-6">Acciones</TableHead>
               </TableRow>
@@ -163,6 +174,11 @@ export default function UsuariosList() {
                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider bg-primary/10 text-primary border border-primary/20">
                          <Shield className="h-3 w-3" />
                          {u.roles[0]?.name || 'Sin Rol'}
+                       </span>
+                     </TableCell>
+                     <TableCell>
+                       <span className="text-xs font-medium text-slate-600">
+                         {u.sucursal?.nombre || 'Todas (Admin)'}
                        </span>
                      </TableCell>
                      <TableCell className="text-center">
@@ -258,6 +274,21 @@ export default function UsuariosList() {
                 </SelectTrigger>
                 <SelectContent>
                   {roles.map(r => <SelectItem key={r.id} value={r.name}>{r.name}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold uppercase text-slate-500">Sucursal Asignada</label>
+              <Select 
+                value={formData.sucursal_id} 
+                onValueChange={(v) => setFormData({...formData, sucursal_id: v})}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="--- Selecciona una sucursal ---" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Sin asignar (Ver todas)</SelectItem>
+                  {sucursales.map(s => <SelectItem key={s.id} value={s.id.toString()}>{s.nombre}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>

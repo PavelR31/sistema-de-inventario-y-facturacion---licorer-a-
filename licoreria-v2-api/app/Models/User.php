@@ -24,7 +24,13 @@ class User extends Authenticatable
         'password',
         'must_change_password',
         'is_super_admin',
+        'sucursal_id',
     ];
+
+    public function sucursal()
+    {
+        return $this->belongsTo(\App\Models\Tenant\Sucursal::class);
+    }
 
     /**
      * The attributes that should be hidden for serialization.

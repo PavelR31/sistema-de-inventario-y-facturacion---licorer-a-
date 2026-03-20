@@ -15,14 +15,16 @@ use Barryvdh\DomPDF\Facade\Pdf;
 class ReporteController extends Controller
 {
     /**
-     * Arqueo detallado de una caja específica.
-     * Calcula dinámicamente el resumen completo del turno.
+     * Arqueo detallado de una SESIÓN específica.
      */
-    public function arqueoCaja(Request $request, $cajaId)
+    public function arqueoCaja(Request $request, $sesionId)
     {
-        $caja = Caja::with(['sucursal', 'user'])->findOrFail($cajaId);
+        if (!is_numeric($sesionId)) {
+            return response()->json(['message' => 'ID de sesión inválido'], 400);
+        }
+        $sesion = \App\Models\Tenant\CajaSesion::with(['caja', 'user'])->findOrFail($sesionId);
 
-        $ventas = Venta::where('caja_id', $cajaId)->with('ventas_anuladas')->get();
+        $ventas = Venta::where('caja_sesion_id', $sesionId)->with('ventas_anuladas')->get();
 
         $vigentes  = $ventas->where('estado', 'vigente');
         $anuladas  = $ventas->where('estado', 'anulada');
@@ -33,12 +35,16 @@ class ReporteController extends Controller
         $totalMixto         = $vigentes->where('metodo_pago', 'mixto')->sum('total');
         $totalVentas        = $vigentes->sum('total');
 
-        // Efectivo esperado en caja = apertura + ventas en efectivo
-        $efectivoEsperado = $caja->monto_apertura + $totalEfectivo;
-        $diferencia       = $caja->monto_cierre ? ($caja->monto_cierre - $efectivoEsperado) : null;
+        $egresos = \App\Models\Tenant\CajaEgreso::where('caja_sesion_id', $sesionId)->get();
+        $totalEgresos = $egresos->sum('monto');
+
+        // Efectivo esperado = apertura_real + ventas_efectivo - egresos
+        $efectivoEsperado = (float) $sesion->apertura_real + (float) $totalEfectivo - (float) $totalEgresos; 
+        $diferencia       = $sesion->cierre_real ? ($sesion->cierre_real - $efectivoEsperado) : null;
 
         return response()->json([
-            'caja'                => $caja,
+            'sesion'              => $sesion,
+            'egresos'             => $egresos,
             'resumen'             => [
                 'num_transacciones'   => $vigentes->count(),
                 'total_ventas'        => round($totalVentas, 2),
@@ -46,46 +52,43 @@ class ReporteController extends Controller
                 'total_tarjeta'       => round($totalTarjeta, 2),
                 'total_transferencia' => round($totalTransferencia, 2),
                 'total_mixto'         => round($totalMixto, 2),
-                'monto_apertura'      => round($caja->monto_apertura, 2),
-                'efectivo_esperado'   => round($efectivoEsperado, 2),
-                'monto_cierre'        => $caja->monto_cierre ? round($caja->monto_cierre, 2) : null,
-                'diferencia'          => $diferencia !== null ? round($diferencia, 2) : null,
+                'total_egresos'       => round($totalEgresos, 2),
+                'monto_apertura'      => round((float) $sesion->apertura_real, 2),
+                'efectivo_esperado'   => round((float) $efectivoEsperado, 2),
+                'monto_cierre'        => $sesion->cierre_real ? round((float) $sesion->cierre_real, 2) : null,
+                'diferencia'          => $diferencia !== null ? round((float) $diferencia, 2) : null,
                 'ventas_anuladas'     => $anuladas->count(),
             ],
         ]);
     }
 
     /**
-     * Historial de cajas cerradas para elegir en el arqueo.
+     * Historial de SESIONES cerradas.
      */
     public function historialCajas(Request $request)
     {
-        $sucursalId = $request->sucursal_id;
-        if ($sucursalId === 'all') {
-            $sucursalId = null;
-        } elseif (!$sucursalId) {
-            $sucursalId = $request->header('X-Branch-Id');
-        }
+        $sucursalId = $request->header('X-Sucursal-Id') ?? $request->sucursal_id;
 
-        $query = Caja::with(['sucursal', 'user'])
+        $query = \App\Models\Tenant\CajaSesion::with(['caja', 'user'])
             ->where('estado', 'cerrada')
             ->latest('fecha_cierre');
 
-        if ($sucursalId) {
-            $query->where('sucursal_id', $sucursalId);
+        if ($sucursalId && $sucursalId !== 'all') {
+            $query->whereHas('caja', function($q) use ($sucursalId) {
+                $q->where('sucursal_id', $sucursalId);
+            });
         }
 
-        $cajas = $query->paginate(15);
+        $sesiones = $query->paginate(15);
 
-        // Agregar resumen básico a cada caja
-        $cajas->getCollection()->transform(function ($caja) {
-            $ventasVigentes = Venta::where('caja_id', $caja->id)->where('estado', 'vigente');
-            $caja->total_ventas      = round($ventasVigentes->sum('total'), 2);
-            $caja->num_transacciones = $ventasVigentes->count();
-            return $caja;
+        $sesiones->getCollection()->transform(function ($sesion) {
+            $ventasVigentes = Venta::where('caja_sesion_id', $sesion->id)->where('estado', 'vigente');
+            $sesion->total_ventas      = round($ventasVigentes->sum('total'), 2);
+            $sesion->num_transacciones = $ventasVigentes->count();
+            return $sesion;
         });
 
-        return response()->json($cajas);
+        return response()->json($sesiones);
     }
 
     /**

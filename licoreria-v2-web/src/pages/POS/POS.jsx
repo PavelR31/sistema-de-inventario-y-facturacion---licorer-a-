@@ -21,7 +21,7 @@ import ArqueoCajaModal from '@/components/pos/ArqueoCajaModal';
 
 export default function POS() {
   const { branch, user } = useAuthStore();
-  const { cerrarCaja, activeCaja, checkCajaStatus } = useCajaStore();
+  const { cerrarCaja, activeSesion, checkCajaStatus } = useCajaStore();
   const { formatMoney, currencySymbol } = useCurrency();
   const { cart, addToCart, removeFromCart, updateQuantity, clearCart, getTotal } = usePOSStore();
   
@@ -52,6 +52,38 @@ export default function POS() {
 
   // Close Box State
   const [isCloseCajaOpen, setIsCloseCajaOpen] = useState(false);
+
+  // Egresos State
+  const [isEgresoModalOpen, setIsEgresoModalOpen] = useState(false);
+  const [egresoMonto, setEgresoMonto] = useState('');
+  const [egresoMotivo, setEgresoMotivo] = useState('');
+  const [isRecordingEgreso, setIsRecordingEgreso] = useState(false);
+
+  const handleEgresoSubmit = async (e) => {
+    e.preventDefault();
+    if (!egresoMonto || !egresoMotivo) return;
+    
+    setIsRecordingEgreso(true);
+    try {
+      const { registrarEgreso } = useCajaStore.getState();
+      const result = await registrarEgreso(parseFloat(egresoMonto), egresoMotivo);
+      
+      if (result.success) {
+        toast.success('Egreso registrado correctamente');
+        setIsEgresoModalOpen(false);
+        setEgresoMonto('');
+        setEgresoMotivo('');
+        // Recargar el estado de la sesión si es necesario
+        checkCajaStatus(branch.id, true);
+      } else {
+        toast.error(result.message);
+      }
+    } catch (error) {
+      toast.error('Error al registrar egreso');
+    } finally {
+      setIsRecordingEgreso(false);
+    }
+  };
 
   const fetchInitialData = async () => {
     if (!branch?.id) return;
@@ -199,12 +231,23 @@ export default function POS() {
                 <div className="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_5px] shadow-emerald-500/50"></div>
                 <span className="text-[10px] font-bold text-slate-600 uppercase">Sistema Online</span>
             </div>
+            
+            <Button 
+                variant="outline" 
+                size="sm" 
+                className="h-9 border-rose-100 text-rose-600 font-bold bg-rose-50/50 hover:bg-rose-50 transition-all"
+                onClick={() => setIsEgresoModalOpen(true)}
+            >
+                <Money className="h-4 w-4 mr-2" />
+                Registrar Egreso
+            </Button>
+
             <Button 
                 variant="outline" 
                 size="sm" 
                 className="h-9 border-slate-200 text-slate-600 font-medium bg-white hover:bg-slate-50 transition-all"
                 onClick={() => {
-                    checkCajaStatus(branch.id, true); // Actualización silenciosa (sin loader global)
+                    checkCajaStatus(branch.id, true);
                     setIsCloseCajaOpen(true);
                 }}
             >
@@ -663,11 +706,66 @@ export default function POS() {
       <ArqueoCajaModal 
         isOpen={isCloseCajaOpen}
         onOpenChange={setIsCloseCajaOpen}
-        activeCaja={activeCaja}
+        activeCaja={activeSesion}
         formatMoney={formatMoney}
         isProcessing={isProcessing}
         onConfirm={handleCerrarCaja}
       />
+
+      {/* Modal de Egresos */}
+      <Dialog open={isEgresoModalOpen} onOpenChange={setIsEgresoModalOpen}>
+        <DialogContent className="sm:max-w-[400px] border-none shadow-2xl rounded-[2rem] p-0 overflow-hidden">
+          <div className="p-8 space-y-6">
+            <div className="flex items-center gap-4">
+              <div className="h-12 w-12 rounded-2xl bg-rose-50 text-rose-500 flex items-center justify-center">
+                <Money className="h-6 w-6" weight="fill" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-xl font-black text-slate-900 leading-none">Registrar Egreso</h3>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-2 px-0.5">Salida de efectivo de gaveta</p>
+              </div>
+            </div>
+
+            <form onSubmit={handleEgresoSubmit} className="space-y-6 pt-2">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] px-1">Monto a Retirar</label>
+                <div className="relative group">
+                  <span className="absolute left-6 top-1/2 -translate-y-1/2 text-xl font-black text-slate-300 group-focus-within:text-rose-500 transition-colors">{currencySymbol}</span>
+                  <Input 
+                    type="number" 
+                    step="0.01"
+                    placeholder="0.00"
+                    className="h-14 bg-slate-50 border-none text-2xl font-black text-slate-900 pl-12 rounded-xl focus-visible:ring-rose-500/20"
+                    value={egresoMonto}
+                    onChange={(e) => setEgresoMonto(e.target.value)}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] px-1">Motivo / Descripción</label>
+                <Input 
+                  placeholder="Ej. Pago de hielo, proveedores..."
+                  className="h-14 bg-slate-50 border-none text-sm font-bold text-slate-900 rounded-xl focus-visible:ring-rose-500/20"
+                  value={egresoMotivo}
+                  onChange={(e) => setEgresoMotivo(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <Button type="button" variant="ghost" className="flex-1 h-12 rounded-xl text-xs font-bold text-slate-400" onClick={() => setIsEgresoModalOpen(false)}>
+                  Cancelar
+                </Button>
+                <Button type="submit" variant="destructive" className="flex-[2] h-12 rounded-xl bg-rose-500 hover:bg-rose-600 font-black uppercase tracking-widest text-[10px] shadow-lg shadow-rose-200" disabled={isRecordingEgreso}>
+                  {isRecordingEgreso ? <CircleNotch className="h-4 w-4 animate-spin" /> : 'Confirmar Salida'}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </DialogContent>
+      </Dialog>
       
     </div>
   );

@@ -11,7 +11,7 @@ class Venta extends Model
 {
     protected $fillable = [
         'sucursal_id',
-        'caja_id',
+        'caja_sesion_id',
         'cliente_id',
         'user_id',
         'numero_factura',
@@ -31,9 +31,9 @@ class Venta extends Model
         return $this->belongsTo(Sucursal::class);
     }
 
-    public function caja(): BelongsTo
+    public function sesión(): BelongsTo
     {
-        return $this->belongsTo(Caja::class);
+        return $this->belongsTo(CajaSesion::class, 'caja_sesion_id');
     }
 
     public function cliente(): BelongsTo

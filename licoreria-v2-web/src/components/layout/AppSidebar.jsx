@@ -47,6 +47,7 @@ const ALL_MENU_ITEMS = [
   // Administración (acceso al panel)
   { permission: 'ver.reporte-diario',    label: "Administración", title: "Escritorio",       url: "/admin",            icon: House },
   { permission: 'gestionar.sucursales',  label: "Administración", title: "Sucursales",        url: "/admin/sucursales", icon: Storefront },
+  { permission: 'gestionar.sucursales',  label: "Administración", title: "Cajas Físicas",      url: "/admin/cajas",      icon: CashRegister },
   { permission: 'gestionar.usuarios',    label: "Administración", title: "Usuarios & Roles",  url: "/admin/usuarios",   icon: Users },
 
   // Inventario

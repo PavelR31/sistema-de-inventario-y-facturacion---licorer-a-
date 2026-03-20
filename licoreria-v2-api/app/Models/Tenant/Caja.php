@@ -11,17 +11,14 @@ class Caja extends Model
 {
     protected $fillable = [
         'sucursal_id',
-        'user_id',
-        'monto_apertura',
-        'monto_cierre',
-        'estado',
-        'fecha_apertura',
-        'fecha_cierre',
+        'nombre',
+        'balance_actual',
+        'activa',
     ];
 
     protected $casts = [
-        'fecha_apertura' => 'datetime',
-        'fecha_cierre' => 'datetime',
+        'balance_actual' => 'decimal:2',
+        'activa' => 'boolean',
     ];
 
     public function sucursal(): BelongsTo
@@ -29,13 +26,8 @@ class Caja extends Model
         return $this->belongsTo(Sucursal::class);
     }
 
-    public function user(): BelongsTo
+    public function sesiones(): HasMany
     {
-        return $this->belongsTo(User::class);
-    }
-
-    public function ventas(): HasMany
-    {
-        return $this->hasMany(Venta::class);
+        return $this->hasMany(CajaSesion::class);
     }
 }

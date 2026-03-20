@@ -691,6 +691,7 @@ function ArqueoCajaTab() {
   useEffect(() => { fetchCajas(); }, [fetchCajas]);
 
   const selectCaja = async (caja) => {
+    if (!caja?.id || caja.id === 'undefined') return;
     setSelectedCaja(caja);
     setLoadingArqueo(true);
     try {

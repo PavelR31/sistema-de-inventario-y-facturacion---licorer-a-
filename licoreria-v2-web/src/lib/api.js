@@ -36,6 +36,7 @@ api.interceptors.request.use((config) => {
       const branch = JSON.parse(activeBranch);
       if (branch && branch.id) {
         config.headers['X-Branch-Id'] = branch.id;
+        config.headers['X-Sucursal-Id'] = branch.id;
       }
     } catch (e) {
       console.error("Error parsing active_branch", e);

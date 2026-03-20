@@ -75,7 +75,8 @@ Route::middleware([
 
         // Ventas
         Route::get('ventas', [VentaController::class, 'index'])->middleware('permission:ver.historial-ventas');
-        Route::post('ventas', [VentaController::class, 'store'])->middleware('permission:crear.venta');
+        Route::post('ventas', [VentaController::class, 'store'])
+            ->middleware(['permission:crear.venta', \App\Http\Middleware\Tenant\CheckCajaSession::class]);
         Route::get('ventas/{venta}', [VentaController::class, 'show'])->middleware('permission:ver.historial-ventas');
         Route::post('ventas/{id}/anular', [VentaController::class, 'anular'])->middleware('permission:anular.venta');
 
@@ -107,10 +108,16 @@ Route::middleware([
         Route::put('roles/{role}', [RoleController::class, 'update'])->middleware('permission:editar.rol');
         Route::delete('roles/{role}', [RoleController::class, 'destroy'])->middleware('permission:eliminar.rol');
 
-        // Caja
-        Route::get('caja/status', [CajaController::class, 'status']);
-        Route::post('caja/abrir', [CajaController::class, 'abrir'])->middleware('permission:abrir.caja');
-        Route::post('caja/cerrar/{caja}', [CajaController::class, 'cerrar'])->middleware('permission:cerrar.caja');
+        // Cajas Físicas
+        Route::apiResource('cajas', CajaController::class);
+        
+        // Sesiones de Caja (Trabajo)
+        Route::get('caja-sesiones/active', [\App\Http\Controllers\Tenant\CajaSesionController::class, 'active']);
+        Route::get('caja-sesiones/disponibles', [\App\Http\Controllers\Tenant\CajaSesionController::class, 'listDisponibles']);
+        Route::post('caja-sesiones/abrir', [\App\Http\Controllers\Tenant\CajaSesionController::class, 'abrir']);
+        Route::post('caja-sesiones/cerrar/{id}', [\App\Http\Controllers\Tenant\CajaSesionController::class, 'cerrar']);
+        Route::get('caja-egresos', [\App\Http\Controllers\Tenant\CajaEgresoController::class, 'index']);
+        Route::post('caja-egresos', [\App\Http\Controllers\Tenant\CajaEgresoController::class, 'store']);
         
         // Configuraciones del Sistema
         Route::get('configuraciones', [ConfiguracionController::class, 'index']);

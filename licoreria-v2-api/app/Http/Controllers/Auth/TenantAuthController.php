@@ -28,7 +28,7 @@ class TenantAuthController extends Controller
         $token = $user->createToken('tenant-token')->plainTextToken;
 
         return response()->json([
-            'user' => $user,
+            'user' => $user->load('sucursal'),
             'token' => $token,
             'must_change_password' => $user->must_change_password,
             'roles' => $user->getRoleNames(),

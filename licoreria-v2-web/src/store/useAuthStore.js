@@ -17,6 +17,12 @@ export const useAuthStore = create(
         set({ user, roles, permissions, token, tenant, mustChangePassword });
         if (token) localStorage.setItem('auth_token', token);
         if (tenant) localStorage.setItem('active_tenant', tenant);
+        
+        // Si el usuario ya tiene una sucursal fija asignada, la seteamos automáticamente
+        if (user?.sucursal) {
+           set({ branch: user.sucursal });
+           localStorage.setItem('active_branch', JSON.stringify(user.sucursal));
+        }
       },
 
       hasPermission: (permission) => {

@@ -76,6 +76,8 @@ class TenantDatabaseSeeder extends Seeder
         $roleCajero->syncPermissions([
             'acceso.pos', 'crear.venta', 'ver.historial-ventas',
             'abrir.caja', 'cerrar.caja', 'ver.movimientos-caja',
+            'ver.productos', 'ver.categorias', 'ver.sucursales',
+            'realizar.egresos', 'aplicar.descuento',
         ]);
     }
 }

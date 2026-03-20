@@ -16,6 +16,7 @@ import ComprasHistory from "@/pages/Admin/ComprasHistory";
 import SalesHistory from "@/pages/Admin/SalesHistory";
 import SettingsPage from "@/pages/Admin/SettingsPage";
 import Reportes from "@/pages/Admin/Reportes";
+import CajasList from "@/pages/Admin/CajasList";
 import POS from "@/pages/POS/POS";
 import MySales from "@/pages/POS/MySales";
 import CajaFlow from "@/components/layout/CajaFlow";
@@ -158,6 +159,10 @@ const router = createBrowserRouter([
       {
         path: "admin/usuarios",
         element: <ProtectedRoute requiredPermission="gestionar.usuarios"><UsuariosList /></ProtectedRoute>,
+      },
+      {
+        path: "admin/cajas",
+        element: <ProtectedRoute requiredPermission="gestionar.sucursales"><CajasList /></ProtectedRoute>,
       },
       {
         path: "admin/productos",

@@ -7,7 +7,7 @@ use App\Models\Tenant\Venta;
 use App\Models\Tenant\VentaAnulada;
 use App\Models\Tenant\DetalleVenta;
 use App\Models\Tenant\Producto;
-use App\Models\Tenant\Caja;
+use App\Models\Tenant\CajaSesion;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -17,7 +17,7 @@ class VentaController extends Controller
     public function index(Request $request)
     {
         $sucursalId = $request->header('X-Branch-Id') ?? $request->sucursal_id;
-        
+
         $query = Venta::with(['user', 'sucursal', 'cliente'])->latest();
 
         if ($sucursalId) {
@@ -50,27 +50,20 @@ class VentaController extends Controller
             'cliente_id' => 'nullable|exists:clientes,id',
         ]);
 
-        // 1. Verificar si hay una caja abierta para este usuario en esta sucursal
-        $caja = Caja::where('sucursal_id', $request->sucursal_id)
-            ->where('user_id', auth()->id())
-            ->where('estado', 'abierta')
-            ->first();
+        // 1. Obtener la sesión de caja activa (inyectada por el middleware CheckCajaSession)
+        $sesion = $request->active_caja_session;
 
-        if (!$caja) {
-            return response()->json(['message' => 'Debes tener una caja abierta para realizar ventas.'], 422);
-        }
-
-        return DB::transaction(function () use ($request, $caja) {
+        return DB::transaction(function () use ($request, $sesion) {
             // 2. Calcular Totales y Validar Stock
             $subtotalAcumulado = 0;
             $itemsData = [];
 
             foreach ($request->items as $item) {
                 $producto = Producto::findOrFail($item['producto_id']);
-                
+
                 // Obtener stock y precio de la sucursal específica
                 $pivot = $producto->sucursales()->where('sucursal_id', $request->sucursal_id)->first();
-                
+
                 if (!$pivot) {
                     throw new \Exception("El producto '{$producto->nombre}' no está disponible en esta sucursal.");
                 }
@@ -82,7 +75,7 @@ class VentaController extends Controller
                 $precioUnitario = $pivot->pivot->precio_venta;
                 $descuentoItem = $item['descuento'] ?? 0;
                 $lineSubtotal = ($precioUnitario * $item['cantidad']) - $descuentoItem;
-                
+
                 $subtotalAcumulado += $lineSubtotal;
 
                 $itemsData[] = [
@@ -97,20 +90,20 @@ class VentaController extends Controller
             // 3. Aplicar Descuento Global y Calcular Impuestos
             $descuentoGlobal = $request->descuento_global ?? 0;
             $montoImponible = max(0, $subtotalAcumulado - $descuentoGlobal);
-            
+
             $porcentajeImpuesto = $request->impuesto_porcentaje ?? 0;
             $montoImpuesto = round($montoImponible * ($porcentajeImpuesto / 100), 2);
-            
+
             $totalFinal = $montoImponible + $montoImpuesto;
 
             // 4. Generar número de factura (Ticket)
             $count = Venta::count() + 1;
-            $numeroFactura = 'TK-' . str_pad((string)$count, 8, '0', STR_PAD_LEFT);
+            $numeroFactura = 'TK-' . str_pad((string) $count, 8, '0', STR_PAD_LEFT);
 
             // 5. Crear la Venta
             $venta = Venta::create([
                 'sucursal_id' => $request->sucursal_id,
-                'caja_id' => $caja->id,
+                'caja_sesion_id' => $sesion->id,
                 'cliente_id' => $request->cliente_id,
                 'user_id' => auth()->id(),
                 'numero_factura' => $numeroFactura,
@@ -151,7 +144,7 @@ class VentaController extends Controller
         $venta = Venta::with(['detalles.producto', 'user', 'sucursal', 'cliente'])->findOrFail($id);
         $logo = \App\Models\Tenant\Configuracion::getVal('logo_empresa');
         $moneda = \App\Models\Tenant\Configuracion::getVal('simbolo_moneda', 'C$');
-        
+
         return view('tickets.receipt', compact('venta', 'logo', 'moneda'));
     }
 

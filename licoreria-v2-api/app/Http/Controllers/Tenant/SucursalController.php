@@ -10,10 +10,27 @@ class SucursalController extends Controller
 {
     public function index(Request $request)
     {
+        $user = $request->user();
         $query = Sucursal::query();
+
+        // Si no es administrador y no tiene permiso global, filtrar por su sucursal asignada
+        if (!$user->hasRole('Administrador') && !$user->hasPermissionTo('ver.sucursales')) {
+            if ($user->sucursal_id) {
+                $query->where('id', $user->sucursal_id);
+            } else {
+                // Si no tiene sucursal asignada y no es admin, no ve nada (o podrías decidir que vea la principal)
+                return response()->json(['data' => [], 'total' => 0]);
+            }
+        }
+
         if ($request->search) {
             $query->where('nombre', 'like', "%{$request->search}%");
         }
+
+        if ($request->has('all')) {
+            return response()->json($query->get());
+        }
+
         return response()->json($query->paginate($request->per_page ?? 15));
     }
 

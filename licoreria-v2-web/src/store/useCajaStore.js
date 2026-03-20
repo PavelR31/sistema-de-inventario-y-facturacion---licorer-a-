@@ -3,7 +3,7 @@ import api from '@/lib/api';
 
 export const useCajaStore = create((set, get) => ({
   isCajaOpen: false,
-  activeCaja: null,
+  activeSesion: null,
   isLoading: true,
 
   checkCajaStatus: async (sucursalId, silent = false) => {
@@ -13,24 +13,25 @@ export const useCajaStore = create((set, get) => ({
     }
     if (!silent) set({ isLoading: true });
     try {
-      const response = await api.get(`/api/caja/status?sucursal_id=${sucursalId}`);
+      const response = await api.get('/api/caja-sesiones/active');
+      const sesion = response.data && response.data.id ? response.data : null;
       set({ 
-        isCajaOpen: response.data.is_open, 
-        activeCaja: response.data.caja,
+        isCajaOpen: !!sesion, 
+        activeSesion: sesion,
         isLoading: false 
       });
     } catch (error) {
-      set({ isCajaOpen: false, activeCaja: null, isLoading: false });
+      set({ isCajaOpen: false, activeSesion: null, isLoading: false });
     }
   },
 
-  abrirCaja: async (sucursalId, monto) => {
+  abrirCaja: async (cajaId, monto) => {
     try {
-      const response = await api.post('/api/caja/abrir', {
-        sucursal_id: sucursalId,
-        monto_apertura: monto
+      const response = await api.post('/api/caja-sesiones/abrir', {
+        caja_id: cajaId,
+        monto_real: monto
       });
-      set({ isCajaOpen: true, activeCaja: response.data });
+      set({ isCajaOpen: true, activeSesion: response.data });
       return { success: true };
     } catch (error) {
       return { success: false, message: error.response?.data?.message || 'Error al abrir caja' };
@@ -38,16 +39,25 @@ export const useCajaStore = create((set, get) => ({
   },
 
   cerrarCaja: async (monto) => {
-    const { activeCaja } = get();
-    if (!activeCaja) return;
+    const { activeSesion } = get();
+    if (!activeSesion || !activeSesion.id || activeSesion.id === 'undefined') return { success: false, message: 'ID de sesión inválido' };
     try {
-      await api.post(`/api/caja/cerrar/${activeCaja.id}`, {
-        monto_cierre: monto
+      await api.post(`/api/caja-sesiones/cerrar/${activeSesion.id}`, {
+        monto_real: monto
       });
-      set({ isCajaOpen: false, activeCaja: null });
+      set({ isCajaOpen: false, activeSesion: null });
       return { success: true };
     } catch (error) {
       return { success: false, message: error.response?.data?.message || 'Error al cerrar caja' };
+    }
+  },
+
+  registrarEgreso: async (monto, motivo) => {
+    try {
+      const response = await api.post('/api/caja-egresos', { monto, motivo });
+      return { success: true, data: response.data };
+    } catch (error) {
+      return { success: false, message: error.response?.data?.message || 'Error al registrar egreso' };
     }
   }
 }));

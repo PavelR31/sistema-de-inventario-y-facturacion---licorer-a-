@@ -12,7 +12,7 @@ class UserController extends Controller
 {
     public function index(Request $request)
     {
-        $query = User::with('roles');
+        $query = User::with(['roles', 'sucursal']);
         if ($request->search) {
             $query->where('name', 'like', "%{$request->search}%")
                   ->orWhere('email', 'like', "%{$request->search}%");
@@ -27,12 +27,14 @@ class UserController extends Controller
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8',
             'role' => 'required|exists:roles,name',
+            'sucursal_id' => 'nullable|exists:sucursales,id',
         ]);
 
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
+            'sucursal_id' => $request->sucursal_id,
         ]);
 
         $user->assignRole($request->role);
@@ -46,11 +48,13 @@ class UserController extends Controller
             'name' => 'string|max:255',
             'email' => 'string|email|max:255|unique:users,email,' . $user->id,
             'role' => 'exists:roles,name',
+            'sucursal_id' => 'nullable|exists:sucursales,id',
         ]);
 
         if ($request->has('name')) $user->name = $request->name;
         if ($request->has('email')) $user->email = $request->email;
         if ($request->has('password')) $user->password = Hash::make($request->password);
+        if ($request->has('sucursal_id')) $user->sucursal_id = $request->sucursal_id;
         
         $user->save();
 

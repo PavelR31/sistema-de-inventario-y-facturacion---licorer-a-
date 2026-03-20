@@ -13,7 +13,8 @@ export default function ArqueoCajaModal({ isOpen, onOpenChange, activeCaja, onCo
     return acc + (parseInt(val) * (parseInt(cant) || 0));
   }, 0);
 
-  const diferenciaCaja = totalContado - (activeCaja?.monto_caja || 0);
+  const expectedCash = (parseFloat(activeCaja?.apertura_real) || 0) + (parseFloat(activeCaja?.ventas_efectivo) || 0) - (parseFloat(activeCaja?.egresos_totales) || 0);
+  const diferenciaCaja = totalContado - expectedCash;
 
   const handleConfirm = () => {
     onConfirm(totalContado);
@@ -28,9 +29,9 @@ export default function ArqueoCajaModal({ isOpen, onOpenChange, activeCaja, onCo
               <Calculator size={20} weight="bold" />
             </div>
             <div>
-              <DialogTitle className="text-xl font-bold text-slate-900">Arqueo de Caja</DialogTitle>
+              <DialogTitle className="text-xl font-bold text-slate-900">Cierre de Sesión y Arqueo</DialogTitle>
               <DialogDescription className="text-sm text-slate-500">
-                Turno actual: {activeCaja?.sucursal?.nombre || 'Sucursal Principal'}
+                Caja Física: {activeCaja?.caja?.nombre || 'N/A'} • Sucursal: {activeCaja?.caja?.sucursal?.nombre || 'Principal'}
               </DialogDescription>
             </div>
           </div>
@@ -41,7 +42,7 @@ export default function ArqueoCajaModal({ isOpen, onOpenChange, activeCaja, onCo
           <div className="lg:col-span-7 p-6 border-b lg:border-b-0 lg:border-r space-y-4">
             <div className="flex items-center gap-2 mb-4 text-slate-900">
               <Coins size={18} weight="bold" />
-              <h3 className="font-bold">Efectivo Físico</h3>
+              <h3 className="font-bold">Efectivo Físico en Gaveta</h3>
             </div>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -70,18 +71,26 @@ export default function ArqueoCajaModal({ isOpen, onOpenChange, activeCaja, onCo
           <div className="lg:col-span-5 p-6 bg-slate-50/30 space-y-6">
             <div className="space-y-4">
               <div className="p-4 rounded-xl bg-slate-900 text-white shadow-lg shadow-slate-200">
-                <p className="text-[10px] uppercase tracking-widest font-bold opacity-60 mb-1">Total Contado</p>
+                <p className="text-[10px] uppercase tracking-widest font-bold opacity-60 mb-1">Total Contado (Declarado)</p>
                 <p className="text-4xl font-bold tracking-tight tabular-nums">{formatMoney(totalContado)}</p>
               </div>
 
               <div className="p-4 rounded-xl border border-slate-200 bg-white space-y-3">
                 <div className="flex justify-between items-center text-sm">
-                  <span className="text-slate-500 font-medium">Efectivo en Sistema</span>
-                  <span className="font-bold text-slate-900 tabular-nums">{formatMoney(activeCaja?.monto_caja || 0)}</span>
+                  <span className="text-slate-500 font-medium">Apertura (Fondo)</span>
+                  <span className="font-bold text-slate-900 tabular-nums">{formatMoney(activeCaja?.apertura_real || 0)}</span>
                 </div>
                 <div className="flex justify-between items-center text-sm">
-                  <span className="text-slate-500 font-medium">Ventas de hoy</span>
-                  <span className="font-bold text-slate-900 tabular-nums">{formatMoney(activeCaja?.ventas_totales || 0)}</span>
+                  <span className="text-slate-500 font-medium">Ventas Efectivo</span>
+                  <span className="font-bold text-slate-900 tabular-nums">{formatMoney(activeCaja?.ventas_efectivo || 0)}</span>
+                </div>
+                <div className="flex justify-between items-center text-sm text-rose-600">
+                  <span className="font-medium">Egresos (Gastos)</span>
+                  <span className="font-bold tabular-nums">-{formatMoney(activeCaja?.egresos_totales || 0)}</span>
+                </div>
+                <div className="flex justify-between items-center text-xs pt-1 border-t border-dashed">
+                  <span className="text-slate-400 font-medium">Esperado en Sistema</span>
+                  <span className="font-bold text-slate-600 tabular-nums">{formatMoney(expectedCash)}</span>
                 </div>
                 <div className="pt-3 border-t border-slate-100 flex justify-between items-center">
                   <span className="text-sm font-bold text-slate-900">Diferencia</span>
@@ -99,29 +108,32 @@ export default function ArqueoCajaModal({ isOpen, onOpenChange, activeCaja, onCo
 
               {/* Status Message */}
               <div className={`flex gap-3 p-4 rounded-xl border text-sm ${
-                diferenciaCaja === 0 
+                Math.abs(diferenciaCaja) < 0.01
                 ? 'bg-emerald-50 border-emerald-100 text-emerald-800' 
                 : diferenciaCaja > 0 
                   ? 'bg-blue-50 border-blue-100 text-blue-800' 
                   : 'bg-rose-50 border-rose-100 text-rose-800'
               }`}>
                 <div className="pt-0.5">
-                  {diferenciaCaja === 0 
+                  {Math.abs(diferenciaCaja) < 0.01
                    ? <CheckCircle size={18} weight="fill" />
                    : <Warning size={18} weight="fill" />}
                 </div>
                 <p className="leading-tight font-medium">
-                  {diferenciaCaja === 0 
-                   ? "La caja está cuadrada. Todo en orden para el cierre."
+                  {Math.abs(diferenciaCaja) < 0.01 
+                   ? "La sesión cuadra perfectamente."
                    : diferenciaCaja > 0 
-                     ? "Hay un excedente de efectivo. Verifique ingresos no registrados." 
-                     : "Falta efectivo en caja. Revise el conteo o ventas pendientes."}
+                     ? "Hay un excedente respecto al sistema." 
+                     : "Hay un faltante respecto al sistema."}
                 </p>
               </div>
             </div>
           </div>
         </div>
 
+        <DialogFooter className="p-4 border-t bg-slate-50/50 gap-3 text-xs italic text-slate-400 text-center px-6">
+           Al confirmar, se guardará la discrepancia de {formatMoney(diferenciaCaja)} y se actualizará el saldo de la caja física.
+        </DialogFooter>
         <DialogFooter className="p-4 border-t bg-slate-50/50 gap-3">
           <Button 
               variant="outline" 
@@ -139,9 +151,9 @@ export default function ArqueoCajaModal({ isOpen, onOpenChange, activeCaja, onCo
               {isProcessing ? (
                 <div className="flex items-center gap-2">
                   <CircleNotch className="h-4 w-4 animate-spin" />
-                  <span>Procesando...</span>
+                  <span>Cerrando Sesión...</span>
                 </div>
-              ) : 'Confirmar Cierre de Caja'}
+              ) : 'Finalizar Turno y Cerrar Caja'}
           </Button>
         </DialogFooter>
       </DialogContent>
