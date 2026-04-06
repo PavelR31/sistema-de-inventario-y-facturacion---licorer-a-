@@ -10,6 +10,7 @@ import SucursalesList from "@/pages/Admin/SucursalesList";
 import UsuariosList from "@/pages/Admin/UsuariosList";
 import ProductosList from "@/pages/Admin/ProductosList";
 import CategoriasList from "@/pages/Admin/CategoriasList";
+import MedidasList from "@/pages/Admin/MedidasList";
 import ProveedoresList from "@/pages/Admin/ProveedoresList";
 import NuevaCompra from "@/pages/Admin/NuevaCompra";
 import ComprasHistory from "@/pages/Admin/ComprasHistory";
@@ -24,6 +25,8 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ShieldCheck } from "lucide-react";
 
+import AjustesStock from "@/pages/Admin/AjustesStock";
+
 // Placeholder Pages
 const Dashboard = () => {
   const { roles } = useAuthStore();
@@ -33,7 +36,6 @@ const Dashboard = () => {
   if (role === 'Administrador' || role === 'Gerente') return <Navigate to="/admin" replace />;
   return <Navigate to="/pos" replace />;
 };
-const InventarioGlobal = () => <div className="p-4"><h1>Inventario Global</h1></div>;
 
 const SuperAdminDashboard = () => (
   <div className="space-y-8 animate-in fade-in duration-700">
@@ -173,8 +175,12 @@ const router = createBrowserRouter([
         element: <ProtectedRoute requiredPermission="gestionar.categorias"><CategoriasList /></ProtectedRoute>,
       },
       {
+        path: "admin/medidas",
+        element: <ProtectedRoute requiredPermission="ver.productos"><MedidasList /></ProtectedRoute>,
+      },
+      {
         path: "admin/inventario",
-        element: <ProtectedRoute requiredPermission="ajustar.stock"><InventarioGlobal /></ProtectedRoute>,
+        element: <ProtectedRoute requiredPermission="ajustar.stock"><AjustesStock /></ProtectedRoute>,
       },
       {
         path: "admin/proveedores",

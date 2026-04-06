@@ -17,7 +17,18 @@ class Producto extends Model
         'descripcion',
         'imagen_ruta',
         'activo',
+        'medida_id',
     ];
+
+    public function medida()
+    {
+        return $this->belongsTo(Medida::class);
+    }
+
+    public function presentaciones()
+    {
+        return $this->hasMany(PresentacionProducto::class);
+    }
 
     public function categoria()
     {

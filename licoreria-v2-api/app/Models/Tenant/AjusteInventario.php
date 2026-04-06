@@ -13,6 +13,7 @@ class AjusteInventario extends Model
     protected $fillable = [
         'sucursal_id',
         'producto_id',
+        'presentacion_id',
         'user_id',
         'tipo',
         'cantidad',
@@ -27,6 +28,11 @@ class AjusteInventario extends Model
     public function producto(): BelongsTo
     {
         return $this->belongsTo(Producto::class);
+    }
+
+    public function presentacion(): BelongsTo
+    {
+        return $this->belongsTo(PresentacionProducto::class, 'presentacion_id');
     }
 
     public function user(): BelongsTo

@@ -41,6 +41,7 @@ class VentaController extends Controller
             'sucursal_id' => 'required|exists:sucursales,id',
             'items' => 'required|array|min:1',
             'items.*.producto_id' => 'required|exists:productos,id',
+            'items.*.presentacion_id' => 'nullable|exists:presentaciones_producto,id',
             'items.*.cantidad' => 'required|integer|min:1',
             'items.*.descuento' => 'nullable|numeric|min:0',
             'descuento_global' => 'nullable|numeric|min:0',
@@ -68,11 +69,25 @@ class VentaController extends Controller
                     throw new \Exception("El producto '{$producto->nombre}' no está disponible en esta sucursal.");
                 }
 
-                if ($pivot->pivot->stock_actual < $item['cantidad']) {
+                $cantidadUnidadesBase = 1;
+                $precioUnitario = $pivot->pivot->precio_venta;
+
+                if (isset($item['presentacion_id'])) {
+                    $presentacion = \App\Models\Tenant\PresentacionProducto::find($item['presentacion_id']);
+                    if ($presentacion && $presentacion->producto_id === $producto->id) {
+                        $cantidadUnidadesBase = $presentacion->cantidad_unidades;
+                        $precioUnitario = $presentacion->precio_venta;
+                    }
+                }
+
+                $cantidadTotalDescontar = $item['cantidad'] * $cantidadUnidadesBase;
+                
+                $permitirNegativo = \App\Models\Tenant\Configuracion::getVal('permitir_stock_negativo', 'false') === 'true' || \App\Models\Tenant\Configuracion::getVal('permitir_stock_negativo') === true;
+
+                if (!$permitirNegativo && $pivot->pivot->stock_actual < $cantidadTotalDescontar) {
                     throw new \Exception("Stock insuficiente para '{$producto->nombre}'. Disponible: {$pivot->pivot->stock_actual}");
                 }
 
-                $precioUnitario = $pivot->pivot->precio_venta;
                 $descuentoItem = $item['descuento'] ?? 0;
                 $lineSubtotal = ($precioUnitario * $item['cantidad']) - $descuentoItem;
 
@@ -80,10 +95,12 @@ class VentaController extends Controller
 
                 $itemsData[] = [
                     'producto_id' => $producto->id,
+                    'presentacion_id' => $item['presentacion_id'] ?? null,
                     'cantidad' => $item['cantidad'],
                     'descuento' => $descuentoItem,
                     'precio_unitario' => $precioUnitario,
                     'subtotal' => $lineSubtotal,
+                    '_cantidad_descontar' => $cantidadTotalDescontar,
                 ];
             }
 
@@ -120,13 +137,32 @@ class VentaController extends Controller
 
             // 5. Crear Detalles y Actualizar Stock
             foreach ($itemsData as $item) {
+                $cantidadDescontar   = $item['_cantidad_descontar'];
+                $presentacionId      = $item['presentacion_id'] ?? null;
+                unset($item['_cantidad_descontar']);
+
                 $venta->detalles()->create($item);
 
-                // Descontar Stock
+                // Descontar stock global de UNIDADES
                 DB::table('producto_sucursal')
                     ->where('producto_id', $item['producto_id'])
                     ->where('sucursal_id', $request->sucursal_id)
-                    ->decrement('stock_actual', $item['cantidad']);
+                    ->decrement('stock_actual', $cantidadDescontar);
+
+                // Descontar stock de PRESENTACIÓN (si la venta fue por presentación)
+                if ($presentacionId) {
+                    $presRow = DB::table('presentacion_sucursal')
+                        ->where('presentacion_id', $presentacionId)
+                        ->where('sucursal_id', $request->sucursal_id)
+                        ->first();
+                    if ($presRow) {
+                        $nuevoStockPres = max(0, $presRow->stock_actual - $item['cantidad']);
+                        DB::table('presentacion_sucursal')
+                            ->where('presentacion_id', $presentacionId)
+                            ->where('sucursal_id', $request->sucursal_id)
+                            ->update(['stock_actual' => $nuevoStockPres]);
+                    }
+                }
             }
 
             return response()->json($venta->load('detalles.producto'), 201);
@@ -174,10 +210,19 @@ class VentaController extends Controller
 
             // 3. Restaurar stock
             foreach ($venta->detalles as $detalle) {
+                $cantidadUnidadesBase = 1;
+                if ($detalle->presentacion_id) {
+                    $presentacion = \App\Models\Tenant\PresentacionProducto::find($detalle->presentacion_id);
+                    if ($presentacion) {
+                        $cantidadUnidadesBase = $presentacion->cantidad_unidades;
+                    }
+                }
+                $cantidadTotalRestaurar = $detalle->cantidad * $cantidadUnidadesBase;
+
                 DB::table('producto_sucursal')
                     ->where('producto_id', $detalle->producto_id)
                     ->where('sucursal_id', $venta->sucursal_id)
-                    ->increment('stock_actual', $detalle->cantidad);
+                    ->increment('stock_actual', $cantidadTotalRestaurar);
             }
 
             return response()->json([

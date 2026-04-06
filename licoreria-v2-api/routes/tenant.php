@@ -16,6 +16,7 @@ use App\Http\Controllers\Tenant\UserController;
 use App\Http\Controllers\Tenant\RoleController;
 use App\Http\Controllers\Tenant\CajaController;
 use App\Http\Controllers\Tenant\DashboardController;
+use App\Http\Controllers\Tenant\MedidaController;
 use App\Http\Controllers\Tenant\ReporteController;
 use App\Http\Controllers\Tenant\ConfiguracionController;
 use Illuminate\Http\Request;
@@ -67,6 +68,7 @@ Route::middleware([
 
         // Productos
         Route::get('productos', [ProductoController::class, 'index'])->middleware('permission:ver.productos');
+        Route::get('productos/buscar-barcode', [ProductoController::class, 'buscarPorBarcode'])->middleware('permission:ver.productos');
         Route::post('productos', [ProductoController::class, 'store'])->middleware('permission:crear.producto');
         Route::get('productos/{producto}', [ProductoController::class, 'show'])->middleware('permission:ver.productos');
         Route::post('productos/{producto}', [ProductoController::class, 'update'])->middleware('permission:editar.producto'); // POST con _method=PUT
@@ -92,6 +94,10 @@ Route::middleware([
         Route::post('compras', [CompraController::class, 'store'])->middleware('permission:registrar.compra');
         Route::get('compras/{compra}', [CompraController::class, 'show'])->middleware('permission:ver.historial-compras');
 
+        // Ajustes de Inventario
+        Route::get('ajustes-inventarios', [\App\Http\Controllers\Tenant\AjusteInventarioController::class, 'index'])->middleware('permission:ajustar.stock');
+        Route::post('ajustes-inventarios', [\App\Http\Controllers\Tenant\AjusteInventarioController::class, 'store'])->middleware('permission:ajustar.stock');
+
         // Usuarios
         Route::get('users', [UserController::class, 'index'])->middleware('permission:ver.usuarios');
         Route::post('users', [UserController::class, 'store'])->middleware('permission:crear.usuario');
@@ -110,6 +116,8 @@ Route::middleware([
 
         // Cajas Físicas
         Route::apiResource('cajas', CajaController::class);
+        Route::apiResource('proveedores', ProveedorController::class);
+        Route::apiResource('medidas', MedidaController::class);
         
         // Sesiones de Caja (Trabajo)
         Route::get('caja-sesiones/active', [\App\Http\Controllers\Tenant\CajaSesionController::class, 'active']);

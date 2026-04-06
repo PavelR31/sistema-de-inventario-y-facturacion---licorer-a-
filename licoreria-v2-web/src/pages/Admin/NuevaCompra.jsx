@@ -11,6 +11,7 @@ import api from '@/lib/api';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useNavigate } from 'react-router-dom';
 
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 export default function NuevaCompra() {
   const { branch } = useAuthStore();
   const navigate = useNavigate();
@@ -47,23 +48,55 @@ export default function NuevaCompra() {
     fetchData();
   }, []);
 
-  const addToCart = (producto) => {
-    const exists = cart.find(item => item.id === producto.id);
+  const [selectedProductForPresentation, setSelectedProductForPresentation] = useState(null);
+
+  const confirmAddToCart = (producto, presentacion = null) => {
+    const cartId = `${producto.id}_${presentacion ? presentacion.id : 'base'}`;
+    const exists = cart.find(item => item.cartId === cartId);
+    
     if (exists) {
-      toast.error('El producto ya está en la lista');
-      return;
+      setCart(cart.map(item =>
+        item.cartId === cartId ? { ...item, cantidad: item.cantidad + 1 } : item
+      ));
+    } else {
+      const nombre_mostrar = presentacion ? `${producto.nombre} (${presentacion.nombre})` : producto.nombre;
+      const costo_base = parseFloat(producto.precio_compra) || 0;
+      // El costo debe ser por presentación completa (no multiplicamos aquí, el backend multiplica por cantidad_unidades)
+      // Si hay precio_venta en la presentación lo usamos de referencia, pero el campo real es lo que ingresa el usuario
+      const costo_estimado = presentacion
+        ? (costo_base * parseInt(presentacion.cantidad_unidades)) // precio estimado de una caja/six-pack
+        : costo_base;
+      const unidades_por_item = presentacion ? parseInt(presentacion.cantidad_unidades) : 1;
+
+      setCart([...cart, { 
+        ...producto, 
+        cartId, 
+        presentacion_id: presentacion?.id || null,
+        nombre_mostrar,
+        cantidad: 1, 
+        costo: costo_estimado,
+        unidades_por_item,
+      }]);
     }
-    setCart([...cart, { ...producto, cantidad: 1, costo: producto.precio_compra || 0 }]);
     setSearchTerm('');
+    setSelectedProductForPresentation(null);
   };
 
-  const removeFromCart = (id) => {
-    setCart(cart.filter(item => item.id !== id));
+  const handleProductClick = (producto) => {
+    if (producto.presentaciones && producto.presentaciones.length > 0) {
+      setSelectedProductForPresentation(producto);
+    } else {
+      confirmAddToCart(producto, null);
+    }
   };
 
-  const updateItem = (id, field, value) => {
+  const removeFromCart = (cartId) => {
+    setCart(cart.filter(item => item.cartId !== cartId));
+  };
+
+  const updateItem = (cartId, field, value) => {
     setCart(cart.map(item =>
-      item.id === id ? { ...item, [field]: parseFloat(value) || 0 } : item
+      item.cartId === cartId ? { ...item, [field]: parseFloat(value) || 0 } : item
     ));
   };
 
@@ -81,6 +114,7 @@ export default function NuevaCompra() {
         fecha_compra: fechaCompra,
         items: cart.map(item => ({
           producto_id: item.id,
+          presentacion_id: item.presentacion_id || null,
           cantidad: item.cantidad,
           precio_unitario: item.costo
         }))
@@ -202,7 +236,7 @@ export default function NuevaCompra() {
                     <div
                       key={p.id}
                       className="p-3 hover:bg-slate-50 cursor-pointer flex justify-between items-center border-b last:border-0"
-                      onClick={() => addToCart(p)}
+                      onClick={() => handleProductClick(p)}
                     >
                       <div>
                         <p className="font-bold text-sm text-slate-800">{p.nombre}</p>
@@ -226,7 +260,7 @@ export default function NuevaCompra() {
                         key={p.id}
                         className={`px-4 py-2.5 flex items-center justify-between cursor-pointer transition-colors ${inCart ? 'bg-green-50 opacity-60 cursor-default' : 'hover:bg-slate-50'
                           }`}
-                        onClick={() => !inCart && addToCart(p)}
+                        onClick={() => handleProductClick(p)}
                       >
                         <div className="min-w-0">
                           <p className="font-medium text-sm text-slate-800 truncate">{p.nombre}</p>
@@ -249,62 +283,79 @@ export default function NuevaCompra() {
               </div>
             )}
 
-            <div className="border rounded-lg overflow-hidden">
+            <div className="border rounded-sm overflow-hidden">
               <Table>
                 <TableHeader className="bg-slate-50">
                   <TableRow>
                     <TableHead>Producto</TableHead>
-                    <TableHead className="w-[120px]">Cantidad</TableHead>
-                    <TableHead className="w-[150px]">Costo Unit.</TableHead>
-                    <TableHead className="w-[120px]">Subtotal</TableHead>
-                    <TableHead className="w-[50px]"></TableHead>
+                    <TableHead className="w-[100px] text-center">Cant.</TableHead>
+                    <TableHead className="w-[80px] text-center">Unid.</TableHead>
+                    <TableHead className="w-[140px]">Costo / Item</TableHead>
+                    <TableHead className="w-[110px]">Subtotal</TableHead>
+                    <TableHead className="w-[40px]"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {cart.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center py-12 text-muted-foreground">
+                      <TableCell colSpan={6} className="text-center py-12 text-muted-foreground">
                         No hay productos en la lista. Usa el buscador para agregar.
                       </TableCell>
                     </TableRow>
                   ) : (
-                    cart.map((item) => (
-                      <TableRow key={item.id}>
-                        <TableCell>
-                          <p className="font-medium text-sm">{item.nombre}</p>
-                          <p className="text-[10px] text-muted-foreground">{item.categoria?.nombre || 'General'}</p>
-                        </TableCell>
-                        <TableCell>
-                          <Input
-                            type="number"
-                            min="1"
-                            className="h-8 rounded-sm"
-                            value={item.cantidad}
-                            onChange={(e) => updateItem(item.id, 'cantidad', e.target.value)}
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <div className="relative">
-                            <DollarSign className="absolute left-2 top-2 h-3 w-3 text-muted-foreground" />
+                    cart.map((item) => {
+                      const totalUnidades = item.cantidad * (item.unidades_por_item ?? 1);
+                      return (
+                        <TableRow key={item.cartId}>
+                          <TableCell>
+                            <p className="font-semibold text-sm text-slate-800">{item.nombre_mostrar || item.nombre}</p>
+                            <p className="text-[10px] text-muted-foreground uppercase tracking-wider">
+                              {item.unidades_por_item > 1
+                                ? `+${totalUnidades} unidades al stock`
+                                : `+${totalUnidades} unidad al stock`}
+                            </p>
+                          </TableCell>
+                          <TableCell>
                             <Input
                               type="number"
-                              step="0.01"
-                              className="pl-6 h-8 font-mono rounded-sm"
-                              value={item.costo}
-                              onChange={(e) => updateItem(item.id, 'costo', e.target.value)}
+                              min="1"
+                              className="h-8 rounded-sm text-center"
+                              value={item.cantidad}
+                              onChange={(e) => updateItem(item.cartId, 'cantidad', e.target.value)}
                             />
-                          </div>
-                        </TableCell>
-                        <TableCell className="font-bold text-slate-700">
-                          ${(item.cantidad * item.costo).toFixed(2)}
-                        </TableCell>
-                        <TableCell>
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive rounded-sm" onClick={() => removeFromCart(item.id)}>
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))
+                          </TableCell>
+                          <TableCell className="text-center">
+                            <span className={`text-xs font-bold px-2 py-0.5 rounded ${
+                              item.unidades_por_item > 1
+                                ? 'bg-primary/10 text-primary'
+                                : 'bg-slate-100 text-slate-500'
+                            }`}>
+                              ×{item.unidades_por_item ?? 1}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <div className="relative">
+                              <DollarSign className="absolute left-2 top-2 h-3 w-3 text-muted-foreground" />
+                              <Input
+                                type="number"
+                                step="0.01"
+                                className="pl-6 h-8 font-mono rounded-sm"
+                                value={item.costo}
+                                onChange={(e) => updateItem(item.cartId, 'costo', e.target.value)}
+                              />
+                            </div>
+                          </TableCell>
+                          <TableCell className="font-bold text-slate-700">
+                            ${(item.cantidad * item.costo).toFixed(2)}
+                          </TableCell>
+                          <TableCell>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive rounded-sm" onClick={() => removeFromCart(item.cartId)}>
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
                   )}
                 </TableBody>
               </Table>
@@ -312,6 +363,69 @@ export default function NuevaCompra() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Presentation Selection Modal */}
+      <Dialog 
+        open={!!selectedProductForPresentation} 
+        onOpenChange={(open) => !open && setSelectedProductForPresentation(null)}
+      >
+        <DialogContent className="sm:max-w-md border-none shadow-xl rounded-sm p-0 overflow-hidden bg-white">
+          {selectedProductForPresentation && (
+            <div className="p-8 space-y-6">
+              <div className="text-center space-y-2">
+                <div className="h-16 w-16 bg-slate-50 text-primary rounded-sm flex items-center justify-center mx-auto mb-4 border border-slate-100">
+                  <Package className="h-8 w-8" />
+                </div>
+                <h2 className="text-xl font-black text-slate-900 tracking-tight leading-tight">
+                  Formato de Compra
+                </h2>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">
+                  {selectedProductForPresentation.nombre}
+                </p>
+              </div>
+
+              <div className="space-y-3 max-h-[50vh] overflow-y-auto pr-2 no-scrollbar">
+                {/* Base Unit Option */}
+                <button
+                  onClick={() => confirmAddToCart(selectedProductForPresentation, null)}
+                  className="w-full flex items-center justify-between p-4 rounded-sm border border-slate-200 hover:border-primary hover:bg-slate-50 transition-all group text-left bg-white"
+                >
+                  <div>
+                    <span className="block text-sm font-bold text-slate-800">
+                      Unidad Suelta
+                    </span>
+                    <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-1">
+                      Agrega 1 unidad al inventario
+                    </span>
+                  </div>
+                </button>
+
+                {/* Presentations Options */}
+                {selectedProductForPresentation.presentaciones?.map(pres => (
+                  <button
+                    key={pres.id}
+                    onClick={() => confirmAddToCart(selectedProductForPresentation, pres)}
+                    className="w-full flex items-center justify-between p-4 rounded-sm border border-slate-200 hover:border-primary hover:bg-slate-50 transition-all group text-left bg-white"
+                  >
+                    <div>
+                      <span className="block text-sm font-bold text-slate-800">
+                        {pres.nombre}
+                      </span>
+                      <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-1">
+                        Agrega {pres.cantidad_unidades} unidades al inventario
+                      </span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+              
+              <Button variant="ghost" className="w-full h-10 rounded-sm text-xs font-bold text-slate-500 uppercase tracking-widest" onClick={() => setSelectedProductForPresentation(null)}>
+                Cancelar
+              </Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

@@ -1,0 +1,27 @@
+Tenant: test-pavel
+
+   INFO  Running migrations.  
+
+  2026_03_22_213141_add_medida_id_to_productos_table  5.90ms FAIL
+
+   Illuminate\Database\QueryException 
+
+  SQLSTATE[42S21]: Column already exists: 1060 Duplicate column name 'medida_id' (Connection: tenant, SQL: alter table `productos` add `medida_id` bigint unsigned null)
+
+  at vendor\laravel\framework\src\Illuminate\Database\Connection.php:825
+    821▕                     $this->getName(), $query, $this->prepareBindings($bindings), $e
+    822▕                 );
+    823▕             }
+    824▕ 
+  ➜ 825▕             throw new QueryException(
+    826▕                 $this->getName(), $query, $this->prepareBindings($bindings), $e
+    827▕             );
+    828▕         }
+    829▕     }
+
+  1   vendor\laravel\framework\src\Illuminate\Database\Connection.php:571
+      PDOException::("SQLSTATE[42S21]: Column already exists: 1060 Duplicate column name 'medida_id'")
+
+  2   vendor\laravel\framework\src\Illuminate\Database\Connection.php:571
+      PDOStatement::execute()
+

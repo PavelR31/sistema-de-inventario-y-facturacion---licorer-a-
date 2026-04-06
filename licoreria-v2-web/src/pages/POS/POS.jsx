@@ -16,7 +16,8 @@ import {
     Scan
 } from "@phosphor-icons/react"
 import { toast } from 'sonner';
-import api from '@/lib/api';
+import api, { getImageUrl } from '@/lib/api';
+import { FallbackImage } from '@/components/ui/fallback-image';
 import ArqueoCajaModal from '@/components/pos/ArqueoCajaModal';
 
 export default function POS() {
@@ -58,6 +59,48 @@ export default function POS() {
   const [egresoMonto, setEgresoMonto] = useState('');
   const [egresoMotivo, setEgresoMotivo] = useState('');
   const [isRecordingEgreso, setIsRecordingEgreso] = useState(false);
+  
+  // Presentation Selection State
+  const [selectedProductForPresentation, setSelectedProductForPresentation] = useState(null);
+
+  // Barcode search handler: triggered on Enter key in search field
+  const handleBarcodeSearch = async (term) => {
+    if (!term.trim()) return;
+    // If it's a pure name search (no special chars, matches locally), skip barcode API
+    const localNameMatch = products.find(p =>
+      p.nombre.toLowerCase().includes(term.toLowerCase())
+    );
+    // A barcode is unlikely to match by name; only skip API if term looks like a plain name
+    // We always call the API if it could be a barcode (contains digits or hyphens)
+    const looksLikeBarcode = /[\d\-]/.test(term);
+    if (localNameMatch && !looksLikeBarcode) return;
+
+    try {
+      const res = await api.get('/api/productos/buscar-barcode', { params: { code: term } });
+      if (res.data.found) {
+        const producto = res.data.producto;
+        const presentacionId = res.data.matched_presentacion_id;
+        const presentacion = presentacionId
+          ? producto.presentaciones?.find(p => p.id === presentacionId) || null
+          : null;
+
+        if (producto.stock_actual <= 0) {
+          toast.error(`Sin stock para '${producto.nombre}'`);
+          return;
+        }
+
+        addToCart(producto, presentacion);
+        toast.success(presentacion
+          ? `${producto.nombre} (${presentacion.nombre}) → carrito`
+          : `${producto.nombre} → carrito`);
+        setSearchTerm('');
+      }
+    } catch (err) {
+      if (err.response?.status === 404) {
+        toast.error('Código no encontrado');
+      }
+    }
+  };
 
   const handleEgresoSubmit = async (e) => {
     e.preventDefault();
@@ -153,6 +196,7 @@ export default function POS() {
         sucursal_id: branch.id,
         items: cart.map(i => ({ 
             producto_id: i.id, 
+            presentacion_id: i.presentacion_id || null,
             cantidad: i.quantity,
             descuento: i.discount || 0
         })),
@@ -292,9 +336,15 @@ export default function POS() {
             <div className="relative group">
               <MagnifyingGlass className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-slate-400 transition-colors group-focus-within:text-primary" />
               <Input 
-                placeholder="Buscar por nombre o código de barras..." 
+                placeholder="Buscar por nombre o escanear código de barras..." 
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleBarcodeSearch(searchTerm);
+                  }
+                }}
                 className="pl-12 h-14 bg-white border-slate-200 rounded-xl shadow-sm focus-visible:ring-primary/20 transition-all text-sm font-medium"
               />
             </div>
@@ -363,18 +413,35 @@ export default function POS() {
                     <Card 
                       key={product.id}
                       className={`group cursor-pointer border border-slate-200 rounded-2xl overflow-hidden hover:border-primary/50 hover:shadow-xl hover:shadow-slate-200/50 transition-all duration-300 flex flex-col bg-white ${product.stock_actual <= 0 ? 'opacity-50 grayscale pointer-events-none' : ''}`}
-                      onClick={() => addToCart(product)}
+                      onClick={() => {
+                        if (product.presentaciones && product.presentaciones.length > 0) {
+                          setSelectedProductForPresentation(product);
+                        } else {
+                          addToCart(product, null);
+                        }
+                      }}
                     >
                       <div className="aspect-square bg-slate-50 relative overflow-hidden flex items-center justify-center p-6">
-                        {product.imagen_url ? (
-                            <img src={product.imagen_url} className="h-full w-full object-cover group-hover:scale-110 transition-transform duration-500" alt={product.nombre} />
+                        {(product.imagen_url || product.imagen_ruta) ? (
+                            <FallbackImage 
+                              src={product.imagen_url || getImageUrl(product.imagen_ruta)} 
+                              className="h-full w-full object-cover group-hover:scale-110 transition-transform duration-500" 
+                              alt={product.nombre} 
+                              fallbackIcon={BeerStein}
+                              fallbackClass="h-16 w-16 text-slate-200 group-hover:scale-110 group-hover:rotate-2 transition-transform duration-500"
+                            />
                         ) : (
                             <BeerStein className="h-16 w-16 text-slate-200 group-hover:scale-110 group-hover:rotate-2 transition-transform duration-500" />
                         )}
-                        <div className="absolute top-3 right-3">
+                        <div className="absolute top-3 right-3 flex flex-col gap-1 items-end">
                             <span className={`text-[9px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wider ${product.stock_actual < 5 ? 'bg-rose-50 text-rose-600' : 'bg-white/90 border border-slate-100 text-slate-400'}`}>
                               Stock: {product.stock_actual}
                             </span>
+                            {product.presentaciones && product.presentaciones.length > 0 && (
+                              <span className="text-[9px] font-bold px-2 py-0.5 rounded-md uppercase tracking-wider bg-primary/10 text-primary border border-primary/20">
+                                {product.presentaciones.length} Formato{product.presentaciones.length > 1 ? 's' : ''}
+                              </span>
+                            )}
                         </div>
                       </div>
                       <div className="p-4 flex flex-col flex-1 bg-white border-t border-slate-50">
@@ -398,11 +465,25 @@ export default function POS() {
                      <div 
                       key={product.id}
                       className={`flex items-center gap-4 p-3 bg-white rounded-2xl border border-slate-200 hover:border-primary/40 hover:shadow-md transition-all cursor-pointer group ${product.stock_actual <= 0 ? 'opacity-50 grayscale pointer-events-none' : ''}`}
-                      onClick={() => addToCart(product)}
+                      onClick={() => {
+                        if (product.presentaciones && product.presentaciones.length > 0) {
+                          setSelectedProductForPresentation(product);
+                        } else {
+                          addToCart(product, null);
+                        }
+                      }}
                      >
                         <div className="h-14 w-14 rounded-xl bg-slate-50 flex items-center justify-center shrink-0 border border-slate-100 overflow-hidden">
-                           {product.imagen_url ? <img src={product.imagen_url} className="h-full w-full object-cover" /> : <BeerBottle className="h-7 w-7 text-slate-200" />}
-                        </div>
+                            {(product.imagen_url || product.imagen_ruta) ? (
+                              <FallbackImage 
+                                src={product.imagen_url || getImageUrl(product.imagen_ruta)} 
+                                className="h-full w-full object-cover" 
+                                alt={product.nombre}
+                                fallbackIcon={BeerBottle}
+                                fallbackClass="h-7 w-7 text-slate-200"
+                              />
+                            ) : <BeerBottle className="h-7 w-7 text-slate-200" />}
+                         </div>
                         <div className="flex-1 min-w-0">
                            <div className="flex items-center gap-2 mb-0.5">
                               <h3 className="font-bold text-slate-800 text-sm truncate group-hover:text-primary transition-colors">{product.nombre}</h3>
@@ -493,17 +574,25 @@ export default function POS() {
               </div>
             ) : (
               cart.map(item => (
-                <div key={item.id} className="group p-4 rounded-2xl border border-slate-50 bg-white hover:border-slate-100 hover:shadow-sm transition-all animate-in slide-in-from-right-4 duration-300">
+                <div key={item.cartId} className="group p-4 rounded-2xl border border-slate-50 bg-white hover:border-slate-100 hover:shadow-sm transition-all animate-in slide-in-from-right-4 duration-300">
                   <div className="flex gap-4">
                     <div className="h-12 w-12 rounded-xl bg-slate-50 flex items-center justify-center shrink-0 border border-slate-100">
-                        {item.imagen_url ? <img src={item.imagen_url} className="h-full w-full object-cover rounded-xl" /> : <BeerBottle className="h-6 w-6 text-slate-300" />}
+                        {item.imagen_ruta ? (
+                            <FallbackImage 
+                              src={getImageUrl(item.imagen_ruta)} 
+                              className="h-full w-full object-cover rounded-xl" 
+                              alt={item.nombre}
+                              fallbackIcon={BeerBottle}
+                              fallbackClass="h-6 w-6 text-slate-300"
+                            />
+                        ) : <BeerBottle className="h-6 w-6 text-slate-300" />}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h4 className="text-xs font-bold text-slate-800 truncate leading-none mb-1">{item.nombre}</h4>
+                      <h4 className="text-xs font-bold text-slate-800 truncate leading-tight mb-1">{item.nombre_mostrar}</h4>
                       <p className="text-[11px] font-bold text-primary tracking-tighter">{formatMoney(item.precio_venta)}</p>
                     </div>
                     <button 
-                      onClick={() => removeFromCart(item.id)}
+                      onClick={() => removeFromCart(item.cartId)}
                       className="text-slate-200 hover:text-rose-500 transition-colors self-start"
                     >
                       <Trash className="h-4 w-4" weight="bold" />
@@ -513,14 +602,14 @@ export default function POS() {
                   <div className="mt-4 flex items-center justify-between pt-4 border-t border-slate-50">
                     <div className="flex items-center bg-slate-50 rounded-lg p-0.5 border border-slate-100">
                       <button 
-                        onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                        onClick={() => updateQuantity(item.cartId, item.quantity - 1)}
                         className="h-7 w-7 flex items-center justify-center rounded-md hover:bg-white text-slate-400 hover:text-slate-900 transition-all font-bold"
                       >
                         -
                       </button>
                       <span className="w-8 text-center text-xs font-black text-slate-700">{item.quantity}</span>
                       <button 
-                        onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                        onClick={() => updateQuantity(item.cartId, item.quantity + 1)}
                         className="h-7 w-7 flex items-center justify-center rounded-md hover:bg-white text-slate-400 hover:text-slate-900 transition-all font-bold"
                       >
                         +
@@ -546,7 +635,7 @@ export default function POS() {
                                         defaultValue={item.discount}
                                         onBlur={(e) => {
                                             const val = parseFloat(e.target.value) || 0;
-                                            usePOSStore.getState().updateDiscount(item.id, val);
+                                            usePOSStore.getState().updateDiscount(item.cartId, val);
                                         }}
                                         className="h-10 text-center font-bold"
                                     />
@@ -731,6 +820,92 @@ export default function POS() {
             
             <p className="mt-10 text-[9px] font-black uppercase tracking-[0.4em] text-slate-300">Licora SaaS v2</p>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Presentation Selection Modal */}
+      <Dialog 
+        open={!!selectedProductForPresentation} 
+        onOpenChange={(open) => !open && setSelectedProductForPresentation(null)}
+      >
+        <DialogContent className="sm:max-w-md border-none shadow-2xl rounded-2xl p-0 overflow-hidden bg-white">
+          {selectedProductForPresentation && (
+            <div className="p-8 space-y-6">
+              <div className="text-center space-y-2">
+                <div className="h-16 w-16 bg-slate-50 text-primary rounded-2xl flex items-center justify-center mx-auto mb-4 border border-slate-100">
+                  <Package className="h-8 w-8" weight="regular" />
+                </div>
+                <h2 className="text-xl font-black text-slate-900 tracking-tight leading-tight">
+                  Formato de Venta
+                </h2>
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">
+                  {selectedProductForPresentation.nombre}
+                </p>
+              </div>
+
+              <div className="space-y-3 max-h-[50vh] overflow-y-auto pr-2 no-scrollbar">
+                {/* Base Unit Option */}
+                <button
+                  onClick={() => {
+                    addToCart(selectedProductForPresentation, null);
+                    setSelectedProductForPresentation(null);
+                  }}
+                  className="w-full flex items-center justify-between p-4 rounded-xl border-2 border-slate-100 hover:border-primary hover:bg-primary/5 transition-all group text-left bg-white"
+                >
+                  <div>
+                    <span className="block text-sm font-bold text-slate-800 group-hover:text-primary transition-colors">
+                      Unidad Suelta
+                    </span>
+                    <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-1">
+                      Descuenta 1 unidad
+                    </span>
+                  </div>
+                  <span className="text-lg font-black text-slate-900 tracking-tighter">
+                    {formatMoney(selectedProductForPresentation.precio_venta)}
+                  </span>
+                </button>
+
+                {/* Presentations Options — only show if they have stock */}
+                {selectedProductForPresentation.presentaciones
+                  ?.filter(pres => (pres.stock_sucursal ?? 0) > 0)
+                  .map(pres => (
+                    <button
+                      key={pres.id}
+                      onClick={() => {
+                        addToCart(selectedProductForPresentation, pres);
+                        setSelectedProductForPresentation(null);
+                      }}
+                      className="w-full flex items-center justify-between p-4 rounded-xl border-2 border-slate-100 hover:border-primary hover:bg-primary/5 transition-all group text-left bg-white"
+                    >
+                      <div>
+                        <span className="block text-sm font-bold text-slate-800 group-hover:text-primary transition-colors">
+                          {pres.nombre}
+                        </span>
+                        <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-1">
+                          Descuenta {pres.cantidad_unidades} unid. &bull; {pres.stock_sucursal} disponibles
+                        </span>
+                      </div>
+                      <span className="text-lg font-black text-slate-900 tracking-tighter">
+                        {formatMoney(pres.precio_venta)}
+                      </span>
+                    </button>
+                  ))
+                }
+
+                {/* Info if no presentations have stock */}
+                {selectedProductForPresentation.presentaciones?.every(p => (p.stock_sucursal ?? 0) === 0) &&
+                  selectedProductForPresentation.presentaciones?.length > 0 && (
+                  <p className="text-[10px] text-center text-slate-400 font-bold uppercase tracking-wider py-2">
+                    No hay empaques sellados en stock — solo unidades sueltas disponibles
+                  </p>
+                )}
+              </div>
+              
+              <Button variant="ghost" className="w-full h-12 rounded-xl text-xs font-bold text-slate-400 uppercase tracking-widest" onClick={() => setSelectedProductForPresentation(null)}>
+                Cancelar
+              </Button>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 

@@ -1,9 +1,15 @@
 import axios from 'axios';
 
-const getBaseURL = () => {
+export const getBaseURL = () => {
   // En desarrollo local, usamos el mismo hostname pero puerto 8000
   const hostname = window.location.hostname;
   return `http://${hostname}:8000`;
+};
+
+export const getImageUrl = (path) => {
+  if (!path) return null;
+  if (path.startsWith('http')) return path;
+  return `${getBaseURL()}/storage/${path}`;
 };
 
 const api = axios.create({

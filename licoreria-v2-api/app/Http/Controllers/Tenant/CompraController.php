@@ -31,13 +31,14 @@ class CompraController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'sucursal_id' => 'required|exists:sucursales,id',
-            'proveedor_id' => 'required|exists:proveedores,id',
-            'numero_factura' => 'nullable|string',
-            'fecha_compra' => 'required|date',
-            'items' => 'required|array|min:1',
-            'items.*.producto_id' => 'required|exists:productos,id',
-            'items.*.cantidad' => 'required|integer|min:1',
+            'sucursal_id'             => 'required|exists:sucursales,id',
+            'proveedor_id'            => 'required|exists:proveedores,id',
+            'numero_factura'          => 'nullable|string',
+            'fecha_compra'            => 'required|date',
+            'items'                   => 'required|array|min:1',
+            'items.*.producto_id'     => 'required|exists:productos,id',
+            'items.*.presentacion_id' => 'nullable|exists:presentaciones_producto,id',
+            'items.*.cantidad'        => 'required|integer|min:1',
             'items.*.precio_unitario' => 'required|numeric|min:0',
         ]);
 
@@ -45,42 +46,70 @@ class CompraController extends Controller
             $total = collect($request->items)->sum(fn($item) => $item['cantidad'] * $item['precio_unitario']);
 
             $compra = CompraProveedor::create([
-                'sucursal_id' => $request->sucursal_id,
-                'proveedor_id' => $request->proveedor_id,
-                'user_id' => auth()->id(),
+                'sucursal_id'    => $request->sucursal_id,
+                'proveedor_id'   => $request->proveedor_id,
+                'user_id'        => auth()->id(),
                 'numero_factura' => $request->numero_factura,
-                'fecha_compra' => $request->fecha_compra,
-                'total' => $total,
-                'estado' => 'completado',
+                'fecha_compra'   => $request->fecha_compra,
+                'total'          => $total,
+                'estado'         => 'completado',
             ]);
 
             foreach ($request->items as $item) {
+                $presentacion            = null;
+                $cantidadUnidadesBase    = 1;
+                $precioUnitarioBase      = $item['precio_unitario'];
+
+                if (!empty($item['presentacion_id'])) {
+                    $presentacion         = \App\Models\Tenant\PresentacionProducto::find($item['presentacion_id']);
+                    if ($presentacion) {
+                        $cantidadUnidadesBase = (int) $presentacion->cantidad_unidades;
+                        $precioUnitarioBase   = $item['precio_unitario'] / max($cantidadUnidadesBase, 1);
+                    }
+                }
+
+                // Detalle de compra (cantidad = número de presentaciones o unidades compradas)
                 $compra->detalles()->create([
-                    'producto_id' => $item['producto_id'],
-                    'cantidad' => $item['cantidad'],
+                    'producto_id'     => $item['producto_id'],
+                    'presentacion_id' => $item['presentacion_id'] ?? null,
+                    'cantidad'        => $item['cantidad'],
                     'precio_unitario' => $item['precio_unitario'],
-                    'subtotal' => $item['cantidad'] * $item['precio_unitario'],
+                    'subtotal'        => $item['cantidad'] * $item['precio_unitario'],
                 ]);
 
-                // Actualizar Stock en la sucursal
-                $producto = Producto::find($item['producto_id']);
-                
-                // Buscamos si ya existe la relación en la sucursal
-                $pivot = $producto->sucursales()->where('sucursal_id', $request->sucursal_id)->first();
+                $producto     = Producto::find($item['producto_id']);
+                $sucursalId   = $request->sucursal_id;
+
+                // 1. Stock global de UNIDADES (para totales de inventario)
+                $unidadesAgregadas = $item['cantidad'] * $cantidadUnidadesBase;
+                $pivot = $producto->sucursales()->where('sucursal_id', $sucursalId)->first();
 
                 if ($pivot) {
-                    $nuevoStock = $pivot->pivot->stock_actual + $item['cantidad'];
-                    $producto->sucursales()->updateExistingPivot($request->sucursal_id, [
-                        'stock_actual' => $nuevoStock,
-                        'precio_compra' => $item['precio_unitario'], // Actualizamos precio de compra al último
+                    $producto->sucursales()->updateExistingPivot($sucursalId, [
+                        'stock_actual'  => $pivot->pivot->stock_actual + $unidadesAgregadas,
+                        'precio_compra' => $precioUnitarioBase,
                     ]);
                 } else {
-                    $producto->sucursales()->attach($request->sucursal_id, [
-                        'stock_actual' => $item['cantidad'],
-                        'stock_minimo' => 0,
-                        'precio_compra' => $item['precio_unitario'],
-                        'precio_venta' => $item['precio_unitario'] * 1.3, // Margen sugerido 30%
+                    $producto->sucursales()->attach($sucursalId, [
+                        'stock_actual'  => $unidadesAgregadas,
+                        'stock_minimo'  => 0,
+                        'precio_compra' => $precioUnitarioBase,
+                        'precio_venta'  => $precioUnitarioBase * 1.3,
                     ]);
+                }
+
+                // 2. Stock por PRESENTACIÓN (para controlar qué formatos se pueden vender)
+                if ($presentacion) {
+                    $presStock = $presentacion->sucursales()->where('sucursal_id', $sucursalId)->first();
+                    if ($presStock) {
+                        $presentacion->sucursales()->updateExistingPivot($sucursalId, [
+                            'stock_actual' => $presStock->pivot->stock_actual + $item['cantidad'],
+                        ]);
+                    } else {
+                        $presentacion->sucursales()->attach($sucursalId, [
+                            'stock_actual' => $item['cantidad'],
+                        ]);
+                    }
                 }
             }
 

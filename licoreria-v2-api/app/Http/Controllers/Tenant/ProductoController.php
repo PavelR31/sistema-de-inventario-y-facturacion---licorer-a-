@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Tenant;
 
 use App\Http\Controllers\Controller;
 use App\Models\Tenant\Producto;
+use App\Models\Tenant\PresentacionProducto;
 use Illuminate\Http\Request;
 
 class ProductoController extends Controller
@@ -12,7 +13,7 @@ class ProductoController extends Controller
     {
         $sucursalId = $request->header('X-Branch-Id') ?? $request->sucursal_id;
 
-        $query = Producto::with(['categoria', 'sucursales' => function ($q) use ($sucursalId) {
+        $query = Producto::with(['categoria', 'medida', 'presentaciones', 'sucursales' => function ($q) use ($sucursalId) {
             if ($sucursalId) {
                 $q->where('sucursal_id', $sucursalId);
             }
@@ -25,7 +26,8 @@ class ProductoController extends Controller
         if ($request->search) {
             $query->where(function($q) use ($request) {
                 $q->where('nombre', 'like', "%{$request->search}%")
-                  ->orWhere('codigo', 'like', "%{$request->search}%");
+                  ->orWhere('sku', 'like', "%{$request->search}%")
+                  ->orWhere('upc', 'like', "%{$request->search}%");
             });
         }
 
@@ -39,6 +41,18 @@ class ProductoController extends Controller
                 $producto->precio_compra = $branchData?->pivot?->precio_compra ?? 0;
             }
             $producto->stock_total = $producto->sucursales->sum('pivot.stock_actual');
+
+            // Inyectar stock_sucursal en cada presentación para que el POS filtre disponibilidad
+            if ($sucursalId && $producto->presentaciones) {
+                $producto->presentaciones->each(function ($pres) use ($sucursalId) {
+                    $pivotRow = \DB::table('presentacion_sucursal')
+                        ->where('presentacion_id', $pres->id)
+                        ->where('sucursal_id', $sucursalId)
+                        ->first();
+                    $pres->stock_sucursal = $pivotRow ? (int)$pivotRow->stock_actual : 0;
+                });
+            }
+
             return $producto;
         });
 
@@ -49,14 +63,22 @@ class ProductoController extends Controller
     {
         $request->validate([
             'categoria_id' => 'nullable|exists:categorias,id',
+            'medida_id' => 'nullable|exists:medidas,id',
             'nombre' => 'required|string|max:150',
+            'descripcion' => 'nullable|string',
             'sku' => 'nullable|string|max:50|unique:productos,sku',
             'upc' => 'nullable|string|max:50|unique:productos,upc',
             'activo' => 'boolean',
-            'imagen' => 'nullable|image|max:2048', // Max 2MB
+            'imagen' => 'nullable|image|max:2048',
+            'presentaciones' => 'nullable|array',
+            'presentaciones.*.nombre' => 'required|string|max:50',
+            'presentaciones.*.cantidad_unidades' => 'required|integer|min:1',
+            'presentaciones.*.precio_venta' => 'required|numeric|min:0',
+            'presentaciones.*.codigo_barras' => 'nullable|string|max:50',
+            'presentaciones.*.es_principal' => 'boolean',
         ]);
 
-        $data = $request->except(['sucursales', 'imagen']);
+        $data = $request->except(['sucursales', 'imagen', 'presentaciones']);
 
         if ($request->hasFile('imagen')) {
             $path = $request->file('imagen')->store('productos', 'public');
@@ -65,25 +87,38 @@ class ProductoController extends Controller
 
         $producto = Producto::create($data);
 
-        return response()->json($producto, 201);
+        if ($request->has('presentaciones')) {
+            $producto->presentaciones()->createMany($request->presentaciones);
+        }
+
+        return response()->json($producto->load('medida', 'presentaciones'), 201);
     }
 
     public function show(Producto $producto)
     {
-        return response()->json($producto->load('categoria', 'sucursales'));
+        return response()->json($producto->load('categoria', 'medida', 'presentaciones', 'sucursales'));
     }
 
     public function update(Request $request, Producto $producto)
     {
         $request->validate([
             'categoria_id' => 'nullable|exists:categorias,id',
+            'medida_id' => 'nullable|exists:medidas,id',
             'nombre' => 'string|max:150',
+            'descripcion' => 'nullable|string',
             'sku' => 'nullable|string|max:50|unique:productos,sku,' . $producto->id,
             'upc' => 'nullable|string|max:50|unique:productos,upc,' . $producto->id,
             'sucursales' => 'array',
+            'presentaciones' => 'nullable|array',
+            'presentaciones.*.id' => 'nullable|exists:presentaciones_producto,id',
+            'presentaciones.*.nombre' => 'required_with:presentaciones|string|max:50',
+            'presentaciones.*.cantidad_unidades' => 'required_with:presentaciones|integer|min:1',
+            'presentaciones.*.precio_venta' => 'required_with:presentaciones|numeric|min:0',
+            'presentaciones.*.codigo_barras' => 'nullable|string|max:50',
+            'presentaciones.*.es_principal' => 'boolean',
         ]);
 
-        $producto->update($request->except('sucursales'));
+        $producto->update($request->except(['sucursales', 'presentaciones']));
 
         if ($request->has('sucursales')) {
             $syncData = [];
@@ -98,12 +133,100 @@ class ProductoController extends Controller
             $producto->sucursales()->sync($syncData);
         }
 
-        return response()->json($producto->load('sucursales'));
+        if ($request->has('presentaciones')) {
+            $incomingIds = collect($request->presentaciones)->pluck('id')->filter()->toArray();
+            
+            // Delete presentations not in the request
+            // Note: If they are tied to sales, they will fail to delete if there is a restricted foreign key,
+            // but for MVP we attempt to delete them as they are not needed anymore.
+            try {
+                $producto->presentaciones()->whereNotIn('id', $incomingIds)->delete();
+            } catch (\Exception $e) {
+                // If deletion fails due to FK constraint, we just leave them.
+            }
+
+            foreach ($request->presentaciones as $presData) {
+                if (isset($presData['id'])) {
+                    $producto->presentaciones()->where('id', $presData['id'])->update($presData);
+                } else {
+                    $producto->presentaciones()->create($presData);
+                }
+            }
+        }
+
+        return response()->json($producto->load('sucursales', 'medida', 'presentaciones'));
     }
 
     public function destroy(Producto $producto)
     {
         $producto->delete();
         return response()->json(['message' => 'Producto eliminado de catálogo global.']);
+    }
+
+    /**
+     * Busca un producto por código de barras (sku, upc, o código de presentación).
+     * Usado por el POS para escaneo automático.
+     */
+    public function buscarPorBarcode(Request $request)
+    {
+        $request->validate(['code' => 'required|string']);
+
+        $code = trim($request->code);
+        $sucursalId = $request->header('X-Branch-Id') ?? $request->sucursal_id;
+
+        // 1. Buscar primero en presentaciones_producto por codigo_barras
+        $presentacion = PresentacionProducto::where('codigo_barras', $code)->first();
+
+        if ($presentacion) {
+            $producto = Producto::with(['categoria', 'medida', 'presentaciones',
+                'sucursales' => function ($q) use ($sucursalId) {
+                    if ($sucursalId) $q->where('sucursal_id', $sucursalId);
+                }])->find($presentacion->producto_id);
+
+            if ($producto) {
+                $branchData = $producto->sucursales->first();
+                if ($sucursalId && $branchData) {
+                    $producto->stock_actual  = $branchData?->pivot?->stock_actual ?? 0;
+                    $producto->precio_venta  = $branchData?->pivot?->precio_venta ?? 0;
+                    $producto->precio_compra = $branchData?->pivot?->precio_compra ?? 0;
+                }
+                $producto->stock_total = $producto->sucursales->sum('pivot.stock_actual');
+
+                return response()->json([
+                    'found'                  => true,
+                    'matched_by'             => 'presentacion',
+                    'matched_presentacion_id' => $presentacion->id,
+                    'producto'               => $producto,
+                ]);
+            }
+        }
+
+        // 2. Buscar en sku y upc del producto base
+        $producto = Producto::with(['categoria', 'medida', 'presentaciones',
+            'sucursales' => function ($q) use ($sucursalId) {
+                if ($sucursalId) $q->where('sucursal_id', $sucursalId);
+            }])
+            ->where('sku', $code)
+            ->orWhere('upc', $code)
+            ->first();
+
+        if ($producto) {
+            $branchData = $producto->sucursales->first();
+            if ($sucursalId && $branchData) {
+                $producto->stock_actual  = $branchData?->pivot?->stock_actual ?? 0;
+                $producto->precio_venta  = $branchData?->pivot?->precio_venta ?? 0;
+                $producto->precio_compra = $branchData?->pivot?->precio_compra ?? 0;
+            }
+            $producto->stock_total = $producto->sucursales->sum('pivot.stock_actual');
+
+            return response()->json([
+                'found'                  => true,
+                'matched_by'             => 'base',
+                'matched_presentacion_id' => null,
+                'producto'               => $producto,
+            ]);
+        }
+
+        return response()->json(['found' => false, 'message' => 'Código no encontrado.'], 404);
     }
 }

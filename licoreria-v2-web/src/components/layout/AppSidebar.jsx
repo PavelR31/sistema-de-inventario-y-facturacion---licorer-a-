@@ -14,9 +14,10 @@ import {
   Truck,
   FileText,
   Receipt,
-  ChartPieSlice,
   CashRegister,
-  House
+  House,
+  Tag,
+  ChartBar
 } from "@phosphor-icons/react"
 
 import {
@@ -53,6 +54,7 @@ const ALL_MENU_ITEMS = [
   // Inventario
   { permission: 'ver.productos',         label: "Inventario", title: "Productos",         url: "/admin/productos",   icon: Package },
   { permission: 'gestionar.categorias',  label: "Inventario", title: "Categorías",        url: "/admin/categorias",  icon: ShieldCheck },
+  { permission: 'ver.productos',         label: "Inventario", title: "Medidas",           url: "/admin/medidas",     icon: Tag },
   { permission: 'gestionar.proveedores', label: "Inventario", title: "Proveedores",       url: "/admin/proveedores", icon: Truck },
   { permission: 'ajustar.stock',         label: "Inventario", title: "Ajustes de Stock",  url: "/admin/inventario",  icon: ClockCounterClockwise },
 
@@ -64,7 +66,7 @@ const ALL_MENU_ITEMS = [
   { permission: 'acceso.pos',            label: "Ventas & Caja", title: "Punto de Venta",   url: "/pos",            icon: CashRegister },
   { permission: 'crear.venta',           label: "Ventas & Caja", title: "Mis Ventas",        url: "/pos/mis-ventas", icon: Receipt },
   { permission: 'ver.historial-ventas',  label: "Ventas & Caja", title: "Historial Ventas",  url: "/admin/ventas",   icon: ClockCounterClockwise },
-  { permission: 'ver.reporte-utilidades',label: "Ventas & Caja", title: "Reportes",          url: "/admin/reportes", icon: ChartPieSlice },
+  { permission: 'ver.reporte-utilidades',label: "Ventas & Caja", title: "Reportes",          url: "/admin/reportes", icon: ChartBar },
 
   // Configuración
   { permission: 'gestionar.roles',       label: "Configuración", title: "Seguridad y Ajustes", url: "/admin/settings", icon: Gear },
