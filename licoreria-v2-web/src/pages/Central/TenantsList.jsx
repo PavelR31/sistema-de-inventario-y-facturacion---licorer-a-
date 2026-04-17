@@ -108,7 +108,7 @@ export default function TenantsList() {
                 <Plus className="mr-2 h-4 w-4" /> Nueva Licorería
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent aria-describedby={undefined}>
               <DialogHeader>
                 <DialogTitle>Registrar Nueva Licorería</DialogTitle>
               </DialogHeader>
@@ -234,7 +234,7 @@ export default function TenantsList() {
 
       {/* Dialogo de Éxito con Contraseña */}
       <Dialog open={isSuccessDialogOpen} onOpenChange={setIsSuccessDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md" aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-green-600">
               <div className="h-8 w-8 rounded-full bg-green-100 flex items-center justify-center">
@@ -275,7 +275,7 @@ export default function TenantsList() {
 
       {/* Dialogo de Edición */}
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-        <DialogContent>
+        <DialogContent aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle>Editar Licorería</DialogTitle>
           </DialogHeader>

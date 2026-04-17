@@ -77,13 +77,27 @@ return new class extends Migration
             $table->timestamps();
         });
 
-        // 7. CAJAS (Apertura y Cierre)
+        // 7. CAJAS
         Schema::create('cajas', function (Blueprint $table) {
             $table->id();
             $table->foreignId('sucursal_id')->constrained('sucursales')->cascadeOnDelete();
+            $table->string('nombre', 100);
+            $table->decimal('balance_actual', 12, 2)->default(0);
+            $table->boolean('activa')->default(true);
+            $table->timestamps();
+        });
+
+        // 7.1 CAJA SESIONES
+        Schema::create('caja_sesiones', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('caja_id')->constrained('cajas')->cascadeOnDelete();
             $table->foreignId('user_id')->nullable(); // Usuario que abrió
-            $table->decimal('monto_apertura', 12, 2)->default(0);
-            $table->decimal('monto_cierre', 12, 2)->nullable();
+            $table->decimal('apertura_esperada', 12, 2)->default(0);
+            $table->decimal('apertura_real', 12, 2)->default(0);
+            $table->decimal('discrepancia_apertura', 12, 2)->default(0);
+            $table->decimal('cierre_esperado', 12, 2)->nullable();
+            $table->decimal('cierre_real', 12, 2)->nullable();
+            $table->decimal('discrepancia_cierre', 12, 2)->nullable();
             $table->enum('estado', ['abierta', 'cerrada'])->default('abierta');
             $table->timestamp('fecha_apertura')->useCurrent();
             $table->timestamp('fecha_cierre')->nullable();
@@ -94,7 +108,7 @@ return new class extends Migration
         Schema::create('ventas', function (Blueprint $table) {
             $table->id();
             $table->foreignId('sucursal_id')->constrained('sucursales')->cascadeOnDelete();
-            $table->foreignId('caja_id')->nullable()->constrained('cajas')->nullOnDelete();
+            $table->foreignId('caja_sesion_id')->nullable()->constrained('caja_sesiones')->nullOnDelete();
             $table->foreignId('cliente_id')->nullable()->constrained('clientes')->nullOnDelete();
             $table->foreignId('user_id')->nullable(); // Cajero
             $table->string('numero_factura', 50)->unique();
@@ -201,6 +215,7 @@ return new class extends Migration
         Schema::dropIfExists('ventas_anuladas');
         Schema::dropIfExists('detalle_ventas');
         Schema::dropIfExists('ventas');
+        Schema::dropIfExists('caja_sesiones');
         Schema::dropIfExists('cajas');
         Schema::dropIfExists('clientes');
         Schema::dropIfExists('producto_sucursal');
