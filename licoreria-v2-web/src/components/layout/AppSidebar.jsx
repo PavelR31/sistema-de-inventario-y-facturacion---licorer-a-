@@ -14,10 +14,11 @@ import {
   Truck,
   FileText,
   Receipt,
-  CashRegister,
   House,
   Tag,
-  ChartBar
+  ChartBar,
+  Key,
+  CashRegister
 } from "@phosphor-icons/react"
 
 import {
@@ -43,6 +44,7 @@ const ALL_MENU_ITEMS = [
   // Super Admin
   { role: 'super-admin', label: "General", title: "Dashboard", url: "/central", icon: Layout },
   { role: 'super-admin', label: "General", title: "Licorerías", url: "/central/tenants", icon: Buildings },
+  { role: 'super-admin', label: "General", title: "Licencias", url: "/central/licenses", icon: Key },
   { role: 'super-admin', label: "Configuración", title: "Ajustes Globales", url: "/central/settings", icon: Gear },
 
   // Administración (acceso al panel)

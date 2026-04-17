@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Central\AuthController;
 use App\Http\Controllers\Central\TenantController;
 use App\Http\Controllers\Central\DashboardController;
+use App\Http\Controllers\Central\LicenseController;
 
 // Rutas Públicas Centrales
 Route::post('/central/login', [AuthController::class, 'login']);
@@ -20,6 +21,13 @@ Route::middleware('auth:sanctum')->prefix('central')->group(function () {
 
     // Gestión de Tenants
     Route::apiResource('tenants', TenantController::class);
+    
+    // Gestión de Licencias
+    Route::get('/plans', [LicenseController::class, 'plans']);
+    Route::apiResource('licenses', LicenseController::class)->only(['index', 'show']);
+    Route::post('/licenses/{tenant}/renew', [LicenseController::class, 'renew']);
+    Route::post('/licenses/{tenant}/suspend', [LicenseController::class, 'suspend']);
+    Route::post('/licenses/{tenant}/activate', [LicenseController::class, 'activate']);
     
     // Dashboard Central
     Route::get('/dashboard', [DashboardController::class, 'index']);

@@ -4,7 +4,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
-import { Plus, RefreshCcw, Trash2, Globe } from 'lucide-react';
+import { Plus, RefreshCcw, Trash2, Globe, Key } from 'lucide-react';
 import { toast } from 'sonner';
 import api from '@/lib/api';
 
@@ -196,6 +196,15 @@ export default function TenantsList() {
                       <TableCell className="text-sm text-slate-500">{tenant.email}</TableCell>
                       <TableCell className="text-right px-6">
                         <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-8 px-2 text-xs hover:text-blue-600 hover:bg-blue-50"
+                            onClick={() => window.location.href = '/central/licenses'}
+                          >
+                            <Key className="h-3 w-3 mr-1" />
+                            Licencia
+                          </Button>
                           <Button 
                             variant="ghost" 
                             size="sm" 

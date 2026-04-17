@@ -12,6 +12,7 @@ import ProductosList from "@/pages/Admin/ProductosList";
 import CategoriasList from "@/pages/Admin/CategoriasList";
 import MedidasList from "@/pages/Admin/MedidasList";
 import ProveedoresList from "@/pages/Admin/ProveedoresList";
+import LicenseManagement from "@/pages/Central/LicenseManagement";
 import NuevaCompra from "@/pages/Admin/NuevaCompra";
 import ComprasHistory from "@/pages/Admin/ComprasHistory";
 import SalesHistory from "@/pages/Admin/SalesHistory";
@@ -148,6 +149,10 @@ const router = createBrowserRouter([
       {
         path: "central/tenants",
         element: <ProtectedRoute allowedRoles={['super-admin']}><TenantsList /></ProtectedRoute>,
+      },
+      {
+        path: "central/licenses",
+        element: <ProtectedRoute allowedRoles={['super-admin']}><LicenseManagement /></ProtectedRoute>,
       },
       // Tenant Admin Routes
       {

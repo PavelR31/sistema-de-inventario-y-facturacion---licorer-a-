@@ -4,7 +4,9 @@ namespace App\Http\Controllers\Central;
 
 use App\Http\Controllers\Controller;
 use App\Models\Central\Tenant;
+use App\Models\Central\Plan;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 
 class TenantController extends Controller
 {
@@ -30,16 +32,31 @@ class TenantController extends Controller
             'plan_id' => 'nullable|integer',
         ]);
 
+        // Buscar el plan propuesto, o predeterminado a 'trial'
+        $planId = $request->plan_id;
+        $plan = $planId ? Plan::find($planId) : Plan::where('slug', 'trial')->first();
+
         // Generar una contraseña temporal aleatoria
         $tempPassword = \Illuminate\Support\Str::random(10);
 
         // La creación de este modelo dispara el pipeline de Tenancy que crea y migra la BD
-        $tenant = Tenant::create([
+        $tenantData = [
             'id' => $id,
             'name' => $request->name,
             'email' => $request->email,
             'temp_password' => $tempPassword, // Se guarda en la columna 'data' automáticamente
-        ]);
+        ];
+
+        // Asignar licencia si encontramos el plan
+        if ($plan) {
+            $tenantData['plan_id_fk'] = $plan->id;
+            $tenantData['license_status'] = 'trial';
+            $tenantData['license_starts_at'] = now();
+            $tenantData['license_expires_at'] = now()->addDays(30); // 30 días de prueba
+            $tenantData['max_users'] = $plan->max_users;
+        }
+
+        $tenant = Tenant::create($tenantData);
 
         // Asignar dominio/subdominio
         $tenant->domains()->create([

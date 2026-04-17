@@ -22,6 +22,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'permission' => \Spatie\Permission\Middleware\PermissionMiddleware::class,
             'role_or_permission' => \Spatie\Permission\Middleware\RoleOrPermissionMiddleware::class,
             'token_from_query'  => \App\Http\Middleware\TokenFromQuery::class,
+            'tenant.license'    => \App\Http\Middleware\CheckTenantLicense::class,
         ]);
 
         //

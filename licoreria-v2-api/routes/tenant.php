@@ -40,8 +40,8 @@ Route::middleware([
     // Auth de Tokens (para Inquilinos)
     Route::post('/login', [TenantAuthController::class, 'login']);
 
-    // Rutas protegidas (Requieren autenticación del empleado via Sanctum)
-    Route::middleware('auth:sanctum')->group(function () {
+    // Rutas protegidas (Requieren autenticación del empleado via Sanctum y licencia activa)
+    Route::middleware(['auth:sanctum', 'tenant.license'])->group(function () {
         Route::get('/user', function (Request $request) {
             return response()->json($request->user()->load('roles', 'permissions'));
         });
