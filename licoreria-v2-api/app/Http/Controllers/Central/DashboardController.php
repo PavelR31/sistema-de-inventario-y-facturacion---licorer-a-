@@ -9,9 +9,13 @@ use Illuminate\Support\Facades\Storage;
 
 class DashboardController extends Controller
 {
-    public function index()
+    public function index(\Illuminate\Http\Request $request)
     {
+        $startDate = $request->query('start_date');
+        $endDate = $request->query('end_date');
+
         $tenants = Tenant::with(['domains', 'plan'])->get();
+        $globalStats = $this->getGlobalSalesData($tenants, $startDate, $endDate);
 
         // Conteos por estado de licencia
         $statusCounts = [
@@ -47,7 +51,80 @@ class DashboardController extends Controller
                 ];
             })->values(),
             'backup'           => $backupInfo,
+            'global_sales'     => $globalStats,
         ]);
+    }
+
+    private function getGlobalSalesData($tenants, $startDate = null, $endDate = null): array
+    {
+        $totalSales = 0;
+        $salesToday = 0;
+        $salesThisMonth = 0;
+        $monthlyTrend = [];
+
+        // Determinar el rango para la tendencia (por defecto últimos 6 meses si no hay fechas)
+        $trendStart = $startDate ? \Carbon\Carbon::parse($startDate) : now()->subMonths(5)->startOfMonth();
+        $trendEnd = $endDate ? \Carbon\Carbon::parse($endDate) : now()->endOfMonth();
+
+        // Generar las llaves de los meses en el rango
+        $tempDate = $trendStart->copy()->startOfMonth();
+        while ($tempDate->lte($trendEnd)) {
+            $monthlyTrend[$tempDate->format('Y-m')] = 0;
+            $tempDate->addMonth();
+        }
+
+        foreach ($tenants as $tenant) {
+            try {
+                $tenant->run(function () use (&$totalSales, &$salesToday, &$salesThisMonth, &$monthlyTrend, $startDate, $endDate) {
+                    // Total en el rango (o histórico si no hay fechas)
+                    $queryTotal = \DB::table('ventas')->where('estado', 'vigente');
+                    if ($startDate) $queryTotal->whereDate('created_at', '>=', $startDate);
+                    if ($endDate) $queryTotal->whereDate('created_at', '<=', $endDate);
+                    $totalSales += $queryTotal->sum('total');
+
+                    // Hoy (siempre hoy)
+                    $salesToday += \DB::table('ventas')
+                        ->where('estado', 'vigente')
+                        ->whereDate('created_at', now()->toDateString())
+                        ->sum('total');
+
+                    // Mes actual (siempre mes actual)
+                    $salesThisMonth += \DB::table('ventas')
+                        ->where('estado', 'vigente')
+                        ->whereYear('created_at', now()->year)
+                        ->whereMonth('created_at', now()->month)
+                        ->sum('total');
+
+                    // Tendencia (dentro del rango seleccionado)
+                    foreach (array_keys($monthlyTrend) as $monthKey) {
+                        [$year, $month] = explode('-', $monthKey);
+                        $monthlyTrend[$monthKey] += \DB::table('ventas')
+                            ->where('estado', 'vigente')
+                            ->whereYear('created_at', $year)
+                            ->whereMonth('created_at', $month)
+                            ->sum('total');
+                    }
+                });
+            } catch (\Throwable $e) {
+                continue;
+            }
+        }
+
+        // Formatear tendencia para el frontend (charts)
+        $chartData = [];
+        foreach ($monthlyTrend as $month => $total) {
+            $chartData[] = [
+                'month' => $month,
+                'total' => round($total, 2)
+            ];
+        }
+
+        return [
+            'total_historical' => round($totalSales, 2),
+            'sales_today'      => round($salesToday, 2),
+            'sales_this_month' => round($salesThisMonth, 2),
+            'monthly_trend'    => $chartData,
+        ];
     }
 
     private function getBackupInfo(): array

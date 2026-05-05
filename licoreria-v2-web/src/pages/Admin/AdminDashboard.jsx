@@ -173,10 +173,46 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      <div className="flex items-center gap-1 bg-muted/50 p-1 rounded-lg border w-fit shadow-sm">
-        <Button variant="secondary" size="sm" className="h-8 rounded-md text-xs font-semibold px-4">Vista general</Button>
-        <Button variant="ghost" size="sm" className="h-8 rounded-md text-xs font-semibold px-4 text-muted-foreground" onClick={() => navigate('/admin/reportes')}>Analíticas</Button>
-        <Button variant="ghost" size="sm" className="h-8 rounded-md text-xs font-semibold px-4 text-muted-foreground" onClick={() => navigate('/admin/reportes')}>Reportes</Button>
+      <div className="flex flex-wrap items-center gap-3 bg-muted/30 p-2 rounded-xl border border-muted shadow-sm">
+        <div className="flex items-center gap-1 bg-white border rounded-lg px-2 py-1 shadow-sm">
+          <Storefront size={14} className="text-muted-foreground ml-1" />
+          <Select value={sucursalId} onValueChange={setSucursalId}>
+            <SelectTrigger className="h-7 border-none shadow-none text-xs w-[140px] focus:ring-0">
+              <SelectValue placeholder="Sucursal" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas las sucursales</SelectItem>
+              {sucursales.map(s => (
+                <SelectItem key={s.id} value={s.id.toString()}>{s.nombre}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="flex items-center gap-2 bg-white border rounded-lg px-3 py-1 shadow-sm">
+          <Clock size={14} className="text-muted-foreground" />
+          <div className="flex items-center gap-2 text-xs">
+            <input 
+              type="date" 
+              value={fechaInicio} 
+              onChange={(e) => setFechaInicio(e.target.value)}
+              className="bg-transparent border-none focus:ring-0 text-muted-foreground outline-none"
+            />
+            <span className="text-muted-foreground">—</span>
+            <input 
+              type="date" 
+              value={fechaFin} 
+              onChange={(e) => setFechaFin(e.target.value)}
+              className="bg-transparent border-none focus:ring-0 text-muted-foreground outline-none"
+            />
+          </div>
+        </div>
+
+        <div className="ml-auto flex items-center gap-1">
+          <Button variant="secondary" size="sm" className="h-8 rounded-md text-[10px] font-bold uppercase tracking-wider px-4">Vista general</Button>
+          <Button variant="ghost" size="sm" className="h-8 rounded-md text-[10px] font-bold uppercase tracking-wider px-4 text-muted-foreground" onClick={() => navigate('/admin/reportes')}>Analíticas</Button>
+          <Button variant="ghost" size="sm" className="h-8 rounded-md text-[10px] font-bold uppercase tracking-wider px-4 text-muted-foreground" onClick={() => navigate('/admin/reportes')}>Reportes</Button>
+        </div>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
