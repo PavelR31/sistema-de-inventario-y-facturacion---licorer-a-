@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { toast } from 'sonner';
 import { CircleNotch } from "@phosphor-icons/react";
 import api from '@/lib/api';
+import { Logo } from '@/components/ui/Logo';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -85,42 +86,37 @@ export default function Login() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-white md:bg-slate-50 p-4">
+    <div className="flex items-center justify-center min-h-screen bg-muted/30 p-4">
       <div className="w-full max-w-[400px] space-y-8 animate-in fade-in duration-500">
-        <div className="text-center space-y-2">
+        <div className="text-center">
           <div className="flex justify-center mb-6">
-            <div className="h-12 w-12 rounded-xl bg-slate-900 flex items-center justify-center">
-               <div className="h-5 w-5 border-2 border-white rounded-sm flex items-center justify-center">
-                  <div className="h-1 w-1 bg-white rounded-full"></div>
-               </div>
-            </div>
+            <Logo className="h-14" />
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900">Licora</h1>
-          <p className="text-sm text-slate-500">Ingrese sus credenciales para continuar</p>
+          <p className="text-sm text-muted-foreground">Ingrese sus credenciales para continuar</p>
         </div>
 
-        <Card className="border-none shadow-none md:border md:shadow-sm md:rounded-2xl bg-white p-2">
+        <Card className="border shadow-sm p-2">
           <form onSubmit={handleLogin}>
             <CardContent className="space-y-4 pt-6">
               <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700">Email</label>
+                <label className="text-sm font-medium">Email</label>
                 <Input 
                   type="email" 
                   placeholder="admin@licora.com" 
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="h-11 rounded-lg border-slate-200 focus-visible:ring-slate-900/5 focus-visible:border-slate-400"
+                  className="h-11"
                   required 
                 />
               </div>
 
               <div className="space-y-2">
                 <div className="flex justify-between items-center">
-                  <label className="text-sm font-medium text-slate-700">Contraseña</label>
+                  <label className="text-sm font-medium">Contraseña</label>
                   <button 
                     type="button" 
                     onClick={() => setIsForgotOpen(true)}
-                    className="text-xs font-semibold text-slate-500 hover:text-slate-900 transition-colors"
+                    className="text-xs font-medium text-primary hover:underline"
                   >
                     ¿Olvidó su contraseña?
                   </button>
@@ -130,7 +126,7 @@ export default function Login() {
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="h-11 rounded-lg border-slate-200 focus-visible:ring-slate-900/5 focus-visible:border-slate-400"
+                  className="h-11"
                   required 
                 />
               </div>
@@ -138,7 +134,7 @@ export default function Login() {
             
             <CardFooter className="pt-2 pb-6 flex flex-col gap-4">
               <Button 
-                className="w-full h-11 rounded-lg bg-slate-900 hover:bg-slate-800 text-white font-semibold text-sm transition-all" 
+                className="w-full h-11" 
                 type="submit" 
                 disabled={isLoading}
               >
@@ -155,8 +151,8 @@ export default function Login() {
           </form>
         </Card>
         
-        <p className="text-center text-xs text-slate-400 font-medium tracking-tight">
-          © 2026 Licora Software
+        <p className="text-center text-xs text-muted-foreground">
+          © 2026 Licora
         </p>
       </div>
 

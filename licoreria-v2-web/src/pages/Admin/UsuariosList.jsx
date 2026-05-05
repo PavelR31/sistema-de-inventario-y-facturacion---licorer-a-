@@ -7,14 +7,27 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
-import { Plus, Pencil, Trash2, Users, Shield, Mail, Key } from 'lucide-react';
+import { 
+  Users, 
+  Plus, 
+  PencilLine, 
+  Trash, 
+  ShieldCheck, 
+  EnvelopeSimple, 
+  Key, 
+  Storefront,
+  ArrowsClockwise
+} from "@phosphor-icons/react";
 import { toast } from 'sonner';
 import api from '@/lib/api';
 import Can from '@/components/auth/Can';
 import DataPagination from '@/components/ui/data-pagination';
 import PageHeader from '@/components/layout/PageHeader';
+import { useAuthStore } from '@/store/useAuthStore';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
 export default function UsuariosList() {
+  const currentUser = useAuthStore(state => state.user);
   const [users, setUsers] = useState([]);
   const [meta, setMeta] = useState({ current_page: 1, last_page: 1, total: 0 });
   const [roles, setRoles] = useState([]);
@@ -23,7 +36,7 @@ export default function UsuariosList() {
   const [searchTerm, setSearchTerm] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
-  const [viewMode, setViewMode] = useState('table'); // 'table' or 'grid'
+  const [viewMode, setViewMode] = useState('table');
   const [formData, setFormData] = useState({ 
     name: '', 
     email: '', 
@@ -90,7 +103,7 @@ export default function UsuariosList() {
     setFormData({ 
       name: user.name, 
       email: user.email, 
-      password: '', // Password se deja vacío si no se va a cambiar
+      password: '', 
       role: user.roles[0]?.name || '',
       sucursal_id: user.sucursal_id?.toString() || 'none' 
     });
@@ -98,6 +111,10 @@ export default function UsuariosList() {
   };
 
   const handleDelete = async (id) => {
+    if (currentUser?.id === id) {
+        toast.error('No puedes eliminar tu propio usuario');
+        return;
+    }
     if (!confirm('¿Estás seguro de eliminar este usuario?')) return;
     try {
       await api.delete(`/api/users/${id}`);
@@ -109,12 +126,16 @@ export default function UsuariosList() {
   };
 
   const handleToggleActive = async (user) => {
+    if (currentUser?.id === user.id) {
+        toast.error('No puedes desactivar tu propio usuario');
+        return;
+    }
     try {
       await api.patch(`/api/users/${user.id}/toggle-active`);
       toast.success(`Usuario ${user.active ? 'desactivado' : 'activado'}`);
       fetchData();
     } catch (error) {
-      toast.error('No se pudo cambiar el estado del usuario');
+      toast.error(error.response?.data?.message || 'No se pudo cambiar el estado del usuario');
     }
   };
 
@@ -124,11 +145,10 @@ export default function UsuariosList() {
   );
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-500">
+    <div className="space-y-6 animate-in fade-in duration-500 pb-10">
       <PageHeader 
-        title="Usuarios & Personal"
-        subtitle="Control de accesos y permisos"
-        icon={Users}
+        title="Personal"
+        subtitle="Gestiona los accesos, roles y sucursales de tu equipo."
         viewMode={viewMode}
         onViewModeChange={setViewMode}
         searchValue={searchTerm}
@@ -136,89 +156,98 @@ export default function UsuariosList() {
         searchPlaceholder="Buscar por nombre o email..."
         action={
           <Can permission="crear.usuario">
-            <Button onClick={() => { resetForm(); setIsDialogOpen(true); }} className="rounded-sm">
-              <Plus className="mr-2 h-4 w-4" /> Nuevo Usuario
+            <Button onClick={() => { resetForm(); setIsDialogOpen(true); }} className="gap-2 shadow-sm">
+              <Plus weight="bold" className="h-4 w-4" /> Nuevo Usuario
             </Button>
           </Can>
         }
       />
 
       {viewMode === 'table' ? (
-        <Card className="border-none shadow-sm bg-white/50 backdrop-blur-sm">
+        <Card className="border shadow-sm overflow-hidden">
           <CardContent className="p-0">
             <Table>
-              <TableHeader className="bg-slate-50/50">
+              <TableHeader className="bg-muted/50">
                 <TableRow>
-                  <TableHead className="font-semibold text-slate-800 py-4 px-6">Usuario</TableHead>
-                  <TableHead className="font-semibold text-slate-800">Email</TableHead>
-                  <TableHead className="font-semibold text-slate-800">Rol</TableHead>
-                  <TableHead className="font-semibold text-slate-800 text-center">Sucursal</TableHead>
-                  <TableHead className="font-semibold text-slate-800 text-center">Estado</TableHead>
-                  <TableHead className="font-semibold text-slate-800 text-right px-6">Acciones</TableHead>
+                  <TableHead className="px-6 py-4 font-bold text-[10px] uppercase tracking-widest">Usuario</TableHead>
+                  <TableHead className="font-bold text-[10px] uppercase tracking-widest">Email</TableHead>
+                  <TableHead className="font-bold text-[10px] uppercase tracking-widest">Rol</TableHead>
+                  <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest">Sucursal</TableHead>
+                  <TableHead className="text-center font-bold text-[10px] uppercase tracking-widest">Estado</TableHead>
+                  <TableHead className="text-right px-6 font-bold text-[10px] uppercase tracking-widest">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {isLoading ? (
                   [...Array(5)].map((_, i) => (
                     <TableRow key={i}>
-                      <TableCell className="px-6"><div className="h-4 w-32 bg-slate-100 animate-pulse rounded"></div></TableCell>
-                      <TableCell><div className="h-4 w-40 bg-slate-100 animate-pulse rounded"></div></TableCell>
-                      <TableCell><div className="h-4 w-20 bg-slate-100 animate-pulse rounded"></div></TableCell>
-                      <TableCell><div className="h-4 w-24 bg-slate-100 animate-pulse rounded mx-auto"></div></TableCell>
-                      <TableCell><div className="h-4 w-12 bg-slate-100 animate-pulse rounded mx-auto"></div></TableCell>
-                      <TableCell className="text-right px-6"><div className="h-8 w-20 bg-slate-100 animate-pulse rounded ml-auto"></div></TableCell>
+                      <TableCell className="px-6 py-4"><div className="h-4 w-32 bg-muted animate-pulse rounded"></div></TableCell>
+                      <TableCell className="py-4"><div className="h-4 w-40 bg-muted animate-pulse rounded"></div></TableCell>
+                      <TableCell className="py-4"><div className="h-4 w-20 bg-muted animate-pulse rounded"></div></TableCell>
+                      <TableCell className="py-4"><div className="h-4 w-24 bg-muted animate-pulse rounded mx-auto"></div></TableCell>
+                      <TableCell className="py-4"><div className="h-4 w-12 bg-muted animate-pulse rounded mx-auto"></div></TableCell>
+                      <TableCell className="text-right px-6 py-4"><div className="h-8 w-20 bg-muted animate-pulse rounded ml-auto"></div></TableCell>
                     </TableRow>
                   ))
                 ) : filteredUsers.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="h-32 text-center text-slate-400 font-medium">
+                    <TableCell colSpan={6} className="h-32 text-center text-muted-foreground text-xs italic">
                       No se encontraron usuarios
                     </TableCell>
                   </TableRow>
                 ) : (
                   filteredUsers.map((user) => (
-                    <TableRow key={user.id} className="hover:bg-slate-50/50 transition-colors">
-                      <TableCell className="px-6">
+                    <TableRow key={user.id} className="hover:bg-muted/30 transition-colors group">
+                      <TableCell className="px-6 py-4">
                         <div className="flex items-center gap-3">
-                          <div className="h-8 w-8 rounded-full bg-primary/5 text-primary flex items-center justify-center font-bold text-xs border border-primary/10">
-                            {user.name.charAt(0).toUpperCase()}
-                          </div>
-                          <span className="font-medium text-slate-700">{user.name}</span>
+                          <Avatar className="h-8 w-8 border">
+                            <AvatarFallback className="text-[10px] font-bold bg-primary/5">
+                              {user.name.charAt(0).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span className="font-semibold text-foreground">{user.name}</span>
                         </div>
                       </TableCell>
-                      <TableCell className="text-slate-500 font-medium">{user.email}</TableCell>
+                      <TableCell className="text-muted-foreground text-sm font-medium">{user.email}</TableCell>
                       <TableCell>
-                        <Badge variant="secondary" className="bg-slate-100 text-slate-600 font-semibold border-none">
+                        <Badge variant="outline" className="font-bold text-[10px] uppercase tracking-wider bg-primary/5 border-primary/20 text-primary">
                           {user.roles[0]?.name || 'Sin Rol'}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-center">
-                        <span className="text-xs font-medium text-slate-500 inline-flex items-center gap-1.5 bg-slate-50 px-2 py-1 rounded-md">
-                          <Shield size={12} className="text-slate-400" />
-                          {user.sucursal?.nombre || 'Acceso Global'}
-                        </span>
+                        <Badge variant="secondary" className="font-medium text-[10px] gap-1.5 py-0.5 px-2">
+                          <Storefront size={12} weight="bold" />
+                          {user.sucursal?.nombre || 'Global'}
+                        </Badge>
                       </TableCell>
                       <TableCell>
                         <div className="flex justify-center">
                            <Can permission="editar.usuario">
                               <Switch
                                 checked={user.active !== false}
+                                disabled={currentUser?.id === user.id}
                                 onCheckedChange={() => handleToggleActive(user)}
-                                className="data-[state=checked]:bg-green-500"
+                                className="data-[state=checked]:bg-emerald-500"
                               />
                            </Can>
                         </div>
                       </TableCell>
                       <TableCell className="text-right px-6">
-                        <div className="flex justify-end gap-1">
+                        <div className="flex justify-end gap-2">
                           <Can permission="editar.usuario">
-                            <Button variant="ghost" size="icon-sm" onClick={() => handleEdit(user)} className="text-slate-400 hover:text-black hover:bg-slate-100 rounded-sm">
-                              <Pencil className="w-4 h-4" />
+                            <Button variant="ghost" size="icon" onClick={() => handleEdit(user)} className="h-8 w-8 text-muted-foreground hover:text-primary">
+                              <PencilLine size={16} />
                             </Button>
                           </Can>
                           <Can permission="eliminar.usuario">
-                            <Button variant="ghost" size="icon-sm" onClick={() => handleDelete(user.id)} className="text-slate-400 hover:text-rose-600 hover:bg-rose-100 font-bold rounded-sm">
-                              <Trash2 className="w-4 h-4 text-destructive" />
+                            <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                onClick={() => handleDelete(user.id)} 
+                                disabled={currentUser?.id === user.id}
+                                className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                            >
+                              <Trash size={16} />
                             </Button>
                           </Can>
                         </div>
@@ -234,42 +263,51 @@ export default function UsuariosList() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {isLoading ? (
             [...Array(8)].map((_, i) => (
-              <div key={i} className="h-44 bg-white rounded-lg border border-slate-100 animate-pulse"></div>
+              <div key={i} className="h-44 bg-card rounded-xl border animate-pulse shadow-sm"></div>
             ))
           ) : filteredUsers.map(user => (
-            <Card key={user.id} className="border-none shadow-sm hover:shadow-md transition-all bg-white group overflow-hidden">
-              <div className={`h-1.5 w-full ${user.active !== false ? 'bg-primary' : 'bg-slate-200'}`}></div>
+            <Card key={user.id} className="border shadow-sm group hover:shadow-md transition-all overflow-hidden relative">
+              <div className={`absolute top-0 left-0 right-0 h-1 ${user.active !== false ? 'bg-primary' : 'bg-muted'}`} />
               <CardContent className="p-5">
                 <div className="flex items-start justify-between mb-4">
-                   <div className="h-10 w-10 rounded-sm bg-primary/5 text-primary flex items-center justify-center font-bold border border-primary/10">
-                      {user.name.charAt(0).toUpperCase()}
-                   </div>
+                   <Avatar className="h-10 w-10 border shadow-sm">
+                      <AvatarFallback className="font-bold bg-primary/5 text-primary">
+                        {user.name.charAt(0).toUpperCase()}
+                      </AvatarFallback>
+                   </Avatar>
                    <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <Can permission="editar.usuario">
-                        <Button variant="ghost" size="icon-sm" onClick={() => handleEdit(user)} className="h-8 w-8 text-slate-400 hover:text-black rounded-sm">
-                          <Pencil className="w-4 h-4" />
+                        <Button variant="ghost" size="icon" onClick={() => handleEdit(user)} className="h-8 w-8">
+                          <PencilLine size={16} />
                         </Button>
                       </Can>
                       <Can permission="eliminar.usuario">
-                        <Button variant="ghost" size="icon-sm" onClick={() => handleDelete(user.id)} className="h-8 w-8 text-slate-400 hover:text-rose-600 rounded-sm">
-                          <Trash2 className="w-4 h-4 text-destructive" />
+                        <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            onClick={() => handleDelete(user.id)} 
+                            disabled={currentUser?.id === user.id}
+                            className="h-8 w-8 text-destructive"
+                        >
+                          <Trash size={16} />
                         </Button>
                       </Can>
                    </div>
                 </div>
                 <div>
-                   <h3 className="font-semibold text-slate-800 truncate">{user.name}</h3>
-                   <p className="text-[11px] font-medium text-slate-400 mt-1 flex items-center gap-1.5">
-                      <Mail size={12} weight="duotone" /> {user.email}
-                   </p>
+                   <h3 className="font-bold text-base truncate">{user.name}</h3>
+                   <div className="flex items-center gap-1.5 mt-1 text-muted-foreground">
+                      <EnvelopeSimple size={14} weight="bold" />
+                      <span className="text-xs font-medium truncate">{user.email}</span>
+                   </div>
                 </div>
-                <div className="mt-4 pt-4 border-t border-slate-50 flex items-center justify-between">
-                   <Badge variant="secondary" className="bg-slate-50 text-slate-500 text-[10px] font-bold uppercase tracking-wider border-none">
+                <div className="mt-5 pt-4 border-t flex items-center justify-between">
+                   <Badge variant="outline" className="text-[9px] font-black uppercase tracking-widest py-0.5 border-primary/20 bg-primary/5 text-primary">
                       {user.roles[0]?.name || 'Sin Rol'}
                    </Badge>
-                   <span className="text-[10px] font-medium text-slate-400 bg-slate-50 px-2 py-0.5 rounded-md">
+                   <Badge variant="secondary" className="text-[9px] font-bold py-0.5">
                       {user.sucursal?.nombre || 'Global'}
-                   </span>
+                   </Badge>
                 </div>
               </CardContent>
             </Card>
@@ -278,52 +316,50 @@ export default function UsuariosList() {
       )}
 
       {meta.last_page > 1 && (
-        <div className="mt-8 flex justify-center">
+        <div className="mt-8">
           <DataPagination meta={meta} onPageChange={fetchData} />
         </div>
       )}
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent>
           <DialogHeader>
-            <DialogTitle className="text-xl font-semibold text-slate-800">
+            <DialogTitle>
               {editingUser ? 'Editar Usuario' : 'Nuevo Usuario'}
             </DialogTitle>
-            <DialogDescription className="text-slate-500">
+            <DialogDescription>
               Configura los datos de acceso y permisos del empleado.
             </DialogDescription>
           </DialogHeader>
-          <form onSubmit={handleSubmit} className="space-y-5 pt-4">
+          <form onSubmit={handleSubmit} className="space-y-4 pt-4">
             <div className="grid gap-4">
                 <div className="space-y-2">
-                  <label className="text-[10px] font-bold uppercase text-slate-400 tracking-wider">Nombre Completo</label>
+                  <label className="text-sm font-medium">Nombre Completo</label>
                   <Input 
                     placeholder="Ej. Juan Pérez"
                     value={formData.name}
                     onChange={(e) => setFormData({...formData, name: e.target.value})}
                     required
-                    className="bg-slate-50/50 border-slate-200"
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-bold uppercase text-slate-400 tracking-wider">Correo Electrónico</label>
+                  <label className="text-sm font-medium">Correo Electrónico</label>
                   <Input 
                     type="email"
                     placeholder="juan@ejemplo.com"
                     value={formData.email}
                     onChange={(e) => setFormData({...formData, email: e.target.value})}
                     required
-                    className="bg-slate-50/50 border-slate-200"
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-bold uppercase text-slate-400 tracking-wider">
+                  <label className="text-sm font-medium">
                     {editingUser ? 'Nueva Contraseña (opcional)' : 'Contraseña'}
                   </label>
                   <div className="relative">
-                    <Key size={16} className="absolute left-3 top-2.5 text-slate-400" />
+                    <Key size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
                     <Input 
-                      className="pl-10 bg-slate-50/50 border-slate-200"
+                      className="pl-10"
                       type="password"
                       placeholder="********"
                       value={formData.password}
@@ -334,13 +370,13 @@ export default function UsuariosList() {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <label className="text-[10px] font-bold uppercase text-slate-400 tracking-wider">Rol</label>
+                      <label className="text-sm font-medium">Rol</label>
                       <Select 
                         value={formData.role} 
                         onValueChange={(v) => setFormData({...formData, role: v})}
                         required
                       >
-                        <SelectTrigger className="w-full bg-slate-50/50 border-slate-200">
+                        <SelectTrigger>
                           <SelectValue placeholder="Rol..." />
                         </SelectTrigger>
                         <SelectContent>
@@ -349,12 +385,12 @@ export default function UsuariosList() {
                       </Select>
                     </div>
                     <div className="space-y-2">
-                      <label className="text-[10px] font-bold uppercase text-slate-400 tracking-wider">Sucursal</label>
+                      <label className="text-sm font-medium">Sucursal</label>
                       <Select 
                         value={formData.sucursal_id} 
                         onValueChange={(v) => setFormData({...formData, sucursal_id: v})}
                       >
-                        <SelectTrigger className="w-full bg-slate-50/50 border-slate-200">
+                        <SelectTrigger>
                           <SelectValue placeholder="Sucursal..." />
                         </SelectTrigger>
                         <SelectContent>
@@ -366,11 +402,11 @@ export default function UsuariosList() {
                 </div>
             </div>
             
-            <DialogFooter className="pt-6 border-t border-slate-50 gap-2">
-              <Button type="button" variant="ghost" onClick={() => setIsDialogOpen(false)} className="text-slate-500">
+            <DialogFooter className="pt-4 gap-2">
+              <Button type="button" variant="ghost" onClick={() => setIsDialogOpen(false)} className="flex-1">
                 Cancelar
               </Button>
-              <Button type="submit" className="min-w-[120px] rounded-sm">
+              <Button type="submit" className="flex-1">
                 {editingUser ? 'Actualizar' : 'Crear Usuario'}
               </Button>
             </DialogFooter>

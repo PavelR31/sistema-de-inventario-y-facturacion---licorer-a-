@@ -22,6 +22,13 @@ class UserController extends Controller
 
     public function store(Request $request)
     {
+        if (tenant()->isUserLimitReached()) {
+            return response()->json([
+                'message' => 'Límite de usuarios alcanzado.',
+                'error' => 'Tu plan actual no permite crear más usuarios.'
+            ], 403);
+        }
+
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
@@ -89,6 +96,44 @@ class UserController extends Controller
             'message' => $user->active ? 'Usuario activado' : 'Usuario desactivado',
             'active'  => $user->active,
         ]);
+    }
+
+    public function updateProfile(Request $request)
+    {
+        $user = auth()->user();
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|email|max:255|unique:users,email,' . $user->id,
+        ]);
+
+        $user->update([
+            'name' => $request->name,
+            'email' => $request->email,
+        ]);
+
+        return response()->json([
+            'message' => 'Perfil actualizado correctamente.',
+            'user' => $user->load('roles', 'sucursal')
+        ]);
+    }
+
+    public function updatePasswordProfile(Request $request)
+    {
+        $user = auth()->user();
+        $request->validate([
+            'current_password' => 'required',
+            'password' => 'required|string|min:8|confirmed',
+        ]);
+
+        if (!Hash::check($request->current_password, $user->password)) {
+            return response()->json(['message' => 'La contraseña actual es incorrecta.'], 422);
+        }
+
+        $user->update([
+            'password' => Hash::make($request->password)
+        ]);
+
+        return response()->json(['message' => 'Contraseña actualizada correctamente.']);
     }
 
     public function roles()

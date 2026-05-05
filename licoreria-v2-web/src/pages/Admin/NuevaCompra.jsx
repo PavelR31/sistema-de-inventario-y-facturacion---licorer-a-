@@ -137,8 +137,8 @@ export default function NuevaCompra() {
     <div className="space-y-6">
       <div className="flex justify-between items-center px-1">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900">Abastecimiento</h1>
-          <p className="text-slate-500 text-[11px] font-bold uppercase tracking-widest mt-1 opacity-70">
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">Abastecimiento</h1>
+          <p className="text-muted-foreground text-[11px] font-bold uppercase tracking-widest mt-1 opacity-70">
             Registrar compras para cargar stock en <strong>{branch?.nombre}</strong>
           </p>
         </div>
@@ -149,15 +149,15 @@ export default function NuevaCompra() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Cabecera de Compra */}
-        <Card className="lg:col-span-1 shadow-sm border-slate-200 rounded-sm">
-          <CardHeader className="bg-slate-50/50 border-b border-slate-100">
+        <Card className="lg:col-span-1 shadow-sm border-border rounded-sm bg-card">
+          <CardHeader className="bg-muted/50 border-b border-border">
             <CardTitle className="text-sm font-bold flex items-center gap-2">
               <Truck className="h-4 w-4 text-primary" /> Datos del Proveedor
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4 pt-6">
             <div className="space-y-1.5">
-              <label className="text-xs font-bold uppercase text-slate-500">Proveedor</label>
+              <label className="text-xs font-bold uppercase text-muted-foreground">Proveedor</label>
               <Select value={selectedProveedor} onValueChange={setSelectedProveedor}>
               <SelectTrigger className="rounded-sm">
                   <SelectValue placeholder="Seleccionar proveedor" />
@@ -168,16 +168,16 @@ export default function NuevaCompra() {
               </Select>
             </div>
             <div className="space-y-1.5">
-              <label className="text-xs font-bold uppercase text-slate-500">Número de Factura</label>
+              <label className="text-xs font-bold uppercase text-muted-foreground">Número de Factura</label>
               <Input
                 placeholder="Ej. F-001-992"
-                className="rounded-sm"
+                className="rounded-sm bg-background"
                 value={numeroFactura}
                 onChange={(e) => setNumeroFactura(e.target.value)}
               />
             </div>
             <div className="space-y-1.5">
-              <label className="text-xs font-bold uppercase text-slate-500">Fecha de Compra</label>
+              <label className="text-xs font-bold uppercase text-muted-foreground">Fecha de Compra</label>
               <div className="relative">
                 <Calendar className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -189,13 +189,13 @@ export default function NuevaCompra() {
                               </div>
             </div>
 
-            <div className="pt-4 border-t mt-6">
+            <div className="pt-4 border-t border-border mt-6">
               <div className="flex justify-between items-center mb-2">
-                <span className="text-sm text-slate-500 font-medium">Total de Artículos:</span>
-                <span className="font-bold">{cart.length}</span>
+                <span className="text-sm text-muted-foreground font-medium">Total de Artículos:</span>
+                <span className="font-bold text-foreground">{cart.length}</span>
               </div>
               <div className="flex justify-between items-center text-xl">
-                <span className="font-bold text-slate-900">TOTAL:</span>
+                <span className="font-bold text-foreground">TOTAL:</span>
                 <span className="font-black text-primary">${totalCompra.toFixed(2)}</span>
               </div>
             </div>
@@ -203,8 +203,8 @@ export default function NuevaCompra() {
         </Card>
 
         {/* Detalle de Productos */}
-        <Card className="lg:col-span-2 shadow-sm border-slate-200 rounded-sm">
-          <CardHeader className="bg-slate-50/50 border-b border-slate-100">
+        <Card className="lg:col-span-2 shadow-sm border-border rounded-sm bg-card">
+          <CardHeader className="bg-muted/50 border-b border-border">
             <CardTitle className="text-sm font-bold flex items-center gap-2">
               <Package className="h-5 w-5 text-primary" /> Items de la Compra
             </CardTitle>
@@ -229,17 +229,17 @@ export default function NuevaCompra() {
 
               {/* Dropdown on search */}
               {searchTerm.length > 0 && (
-                <div className="absolute z-10 w-full bg-white border mt-1 rounded-lg shadow-xl max-h-60 overflow-auto">
+                <div className="absolute z-10 w-full bg-card border border-border mt-1 rounded-lg shadow-xl max-h-60 overflow-auto">
                   {filteredSearch.length === 0 ? (
                     <div className="p-4 text-center text-sm text-muted-foreground">Sin resultados</div>
                   ) : filteredSearch.map(p => (
                     <div
                       key={p.id}
-                      className="p-3 hover:bg-slate-50 cursor-pointer flex justify-between items-center border-b last:border-0"
+                      className="p-3 hover:bg-muted/30 cursor-pointer flex justify-between items-center border-b border-border last:border-0"
                       onClick={() => handleProductClick(p)}
                     >
                       <div>
-                        <p className="font-bold text-sm text-slate-800">{p.nombre}</p>
+                        <p className="font-bold text-sm text-foreground">{p.nombre}</p>
                         <p className="text-[10px] text-muted-foreground uppercase">COD: {p.codigo || 'S/C'} &bull; Stock: {p.stock}</p>
                       </div>
                       <Plus className="h-4 w-4 text-primary" />
@@ -251,23 +251,23 @@ export default function NuevaCompra() {
 
             {/* Short product list (up to 15) */}
             {showFullList && (
-              <div className="border border-slate-200 rounded-sm overflow-hidden shadow-sm">
-                <div className="max-h-48 overflow-auto divide-y divide-slate-50">
+              <div className="border border-border rounded-sm overflow-hidden shadow-sm bg-card">
+                <div className="max-h-48 overflow-auto divide-y divide-border">
                   {productos.slice(0, 15).map(p => {
                     const inCart = cart.some(i => i.id === p.id);
                     return (
                       <div
                         key={p.id}
-                        className={`px-4 py-2.5 flex items-center justify-between cursor-pointer transition-colors ${inCart ? 'bg-green-50 opacity-60 cursor-default' : 'hover:bg-slate-50'
+                        className={`px-4 py-2.5 flex items-center justify-between cursor-pointer transition-colors ${inCart ? 'bg-green-500/10 opacity-60 cursor-default' : 'hover:bg-muted/30'
                           }`}
                         onClick={() => handleProductClick(p)}
                       >
                         <div className="min-w-0">
-                          <p className="font-medium text-sm text-slate-800 truncate">{p.nombre}</p>
+                          <p className="font-medium text-sm text-foreground truncate">{p.nombre}</p>
                           <p className="text-[10px] text-muted-foreground">{p.categoria?.nombre || 'General'} &bull; Stock: {p.stock}</p>
                         </div>
                         {inCart ? (
-                          <Badge className="ml-2 bg-green-100 text-green-700 border-0 text-[10px] shrink-0">Añadido</Badge>
+                          <Badge className="ml-2 bg-green-500/10 text-green-600 border-none text-[10px] shrink-0">Añadido</Badge>
                         ) : (
                           <Plus className="h-4 w-4 text-primary shrink-0 ml-2" />
                         )}
@@ -275,7 +275,7 @@ export default function NuevaCompra() {
                     );
                   })}
                   {productos.length > 15 && (
-                    <div className="px-4 py-2 text-center text-[11px] text-muted-foreground bg-slate-50">
+                    <div className="px-4 py-2 text-center text-[11px] text-muted-foreground bg-muted/30">
                       Usa el buscador para encontrar más productos
                     </div>
                   )}
@@ -283,9 +283,9 @@ export default function NuevaCompra() {
               </div>
             )}
 
-            <div className="border rounded-sm overflow-hidden">
+            <div className="border border-border rounded-sm overflow-hidden">
               <Table>
-                <TableHeader className="bg-slate-50">
+                <TableHeader className="bg-muted/50">
                   <TableRow>
                     <TableHead>Producto</TableHead>
                     <TableHead className="w-[100px] text-center">Cant.</TableHead>
@@ -308,7 +308,7 @@ export default function NuevaCompra() {
                       return (
                         <TableRow key={item.cartId}>
                           <TableCell>
-                            <p className="font-semibold text-sm text-slate-800">{item.nombre_mostrar || item.nombre}</p>
+                            <p className="font-semibold text-sm text-foreground">{item.nombre_mostrar || item.nombre}</p>
                             <p className="text-[10px] text-muted-foreground uppercase tracking-wider">
                               {item.unidades_por_item > 1
                                 ? `+${totalUnidades} unidades al stock`
@@ -328,7 +328,7 @@ export default function NuevaCompra() {
                             <span className={`text-xs font-bold px-2 py-0.5 rounded ${
                               item.unidades_por_item > 1
                                 ? 'bg-primary/10 text-primary'
-                                : 'bg-slate-100 text-slate-500'
+                                : 'bg-muted text-muted-foreground'
                             }`}>
                               ×{item.unidades_por_item ?? 1}
                             </span>
@@ -345,7 +345,7 @@ export default function NuevaCompra() {
                               />
                             </div>
                           </TableCell>
-                          <TableCell className="font-bold text-slate-700">
+                          <TableCell className="font-bold text-foreground">
                             ${(item.cantidad * item.costo).toFixed(2)}
                           </TableCell>
                           <TableCell>
@@ -369,18 +369,18 @@ export default function NuevaCompra() {
         open={!!selectedProductForPresentation} 
         onOpenChange={(open) => !open && setSelectedProductForPresentation(null)}
       >
-        <DialogContent className="sm:max-w-md border-none shadow-xl rounded-sm p-0 overflow-hidden bg-white">
+        <DialogContent className="sm:max-w-md border border-border shadow-xl rounded-sm p-0 overflow-hidden bg-card">
           {selectedProductForPresentation && (
             <div className="p-8 space-y-6">
               <div className="text-center space-y-2">
-                <div className="h-16 w-16 bg-slate-50 text-primary rounded-sm flex items-center justify-center mx-auto mb-4 border border-slate-100">
+                <div className="h-16 w-16 bg-muted/50 text-primary rounded-sm flex items-center justify-center mx-auto mb-4 border border-border">
                   <Package className="h-8 w-8" />
                 </div>
-                <h2 className="text-xl font-black text-slate-900 tracking-tight leading-tight">
+                <h2 className="text-xl font-black text-foreground tracking-tight leading-tight">
                   Formato de Compra
                 </h2>
-                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">
-                  {selectedProductForPresentation.nombre}
+                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest leading-none">
+                  {selectedProductForPresentation?.nombre}
                 </p>
               </div>
 
@@ -388,13 +388,13 @@ export default function NuevaCompra() {
                 {/* Base Unit Option */}
                 <button
                   onClick={() => confirmAddToCart(selectedProductForPresentation, null)}
-                  className="w-full flex items-center justify-between p-4 rounded-sm border border-slate-200 hover:border-primary hover:bg-slate-50 transition-all group text-left bg-white"
+                  className="w-full flex items-center justify-between p-4 rounded-sm border border-border hover:border-primary hover:bg-muted/30 transition-all group text-left bg-card"
                 >
                   <div>
-                    <span className="block text-sm font-bold text-slate-800">
+                    <span className="block text-sm font-bold text-foreground">
                       Unidad Suelta
                     </span>
-                    <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-1">
+                    <span className="block text-[10px] font-bold text-muted-foreground uppercase tracking-wider mt-1">
                       Agrega 1 unidad al inventario
                     </span>
                   </div>
@@ -405,13 +405,13 @@ export default function NuevaCompra() {
                   <button
                     key={pres.id}
                     onClick={() => confirmAddToCart(selectedProductForPresentation, pres)}
-                    className="w-full flex items-center justify-between p-4 rounded-sm border border-slate-200 hover:border-primary hover:bg-slate-50 transition-all group text-left bg-white"
+                    className="w-full flex items-center justify-between p-4 rounded-sm border border-border hover:border-primary hover:bg-muted/30 transition-all group text-left bg-card"
                   >
                     <div>
-                      <span className="block text-sm font-bold text-slate-800">
+                      <span className="block text-sm font-bold text-foreground">
                         {pres.nombre}
                       </span>
-                      <span className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-1">
+                      <span className="block text-[10px] font-bold text-muted-foreground uppercase tracking-wider mt-1">
                         Agrega {pres.cantidad_unidades} unidades al inventario
                       </span>
                     </div>
@@ -419,7 +419,7 @@ export default function NuevaCompra() {
                 ))}
               </div>
               
-              <Button variant="ghost" className="w-full h-10 rounded-sm text-xs font-bold text-slate-500 uppercase tracking-widest" onClick={() => setSelectedProductForPresentation(null)}>
+              <Button variant="ghost" className="w-full h-10 rounded-sm text-xs font-bold text-muted-foreground uppercase tracking-widest" onClick={() => setSelectedProductForPresentation(null)}>
                 Cancelar
               </Button>
             </div>

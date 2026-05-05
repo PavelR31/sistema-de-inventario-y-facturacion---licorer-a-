@@ -15,14 +15,16 @@ class Plan extends Model
         'slug',
         'description',
         'max_users',
+        'max_branches',
         'price',
         'is_active',
     ];
 
     protected $casts = [
-        'max_users' => 'integer',
-        'price'     => 'float',
-        'is_active' => 'boolean',
+        'max_users'    => 'integer',
+        'max_branches' => 'integer',
+        'price'        => 'float',
+        'is_active'    => 'boolean',
     ];
 
     /**

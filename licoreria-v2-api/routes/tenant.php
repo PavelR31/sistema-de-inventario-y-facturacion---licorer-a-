@@ -47,6 +47,8 @@ Route::middleware([
         });
 
         Route::post('/update-password', [TenantAuthController::class, 'updatePassword']);
+        Route::put('/perfil/update', [UserController::class, 'updateProfile']);
+        Route::put('/perfil/password', [UserController::class, 'updatePasswordProfile']);
 
         // Dashboard
         Route::get('dashboard/stats', [DashboardController::class, 'getStats'])
@@ -165,6 +167,7 @@ Route::middleware([
             });
 
             Route::get('pdf', [ReporteController::class, 'generarPdf']);
+            Route::get('global-search', [\App\Http\Controllers\Tenant\SearchController::class, 'global']);
         });
     });
 

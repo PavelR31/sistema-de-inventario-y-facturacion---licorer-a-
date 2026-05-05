@@ -135,6 +135,16 @@ class VentaController extends Controller
                 'estado' => 'vigente',
             ]);
 
+            // Actualizar balance de caja física si es en efectivo
+            if ($request->metodo_pago === 'efectivo') {
+                $sesion->caja->increment('balance_actual', $totalFinal);
+            } elseif ($request->metodo_pago === 'mixto') {
+                // En modo mixto, el monto que entra a caja es el total menos lo que no fue pagado en efectivo
+                // Por ahora, asumiremos que en mixto el 'monto_pagado' refleja lo que se entregó (incluyendo cambio)
+                // Para simplificar, incrementamos por el total si no hay desglose
+                $sesion->caja->increment('balance_actual', $totalFinal);
+            }
+
             // 5. Crear Detalles y Actualizar Stock
             foreach ($itemsData as $item) {
                 $cantidadDescontar   = $item['_cantidad_descontar'];
@@ -223,6 +233,13 @@ class VentaController extends Controller
                     ->where('producto_id', $detalle->producto_id)
                     ->where('sucursal_id', $venta->sucursal_id)
                     ->increment('stock_actual', $cantidadTotalRestaurar);
+            }
+
+            // 4. Restaurar balance de caja física si era efectivo
+            if ($venta->metodo_pago === 'efectivo' || $venta->metodo_pago === 'mixto') {
+                if ($venta->session && $venta->session->caja) {
+                    $venta->session->caja->decrement('balance_actual', $venta->total);
+                }
             }
 
             return response()->json([

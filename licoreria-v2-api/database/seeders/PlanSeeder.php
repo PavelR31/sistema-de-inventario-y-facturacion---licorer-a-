@@ -7,51 +7,49 @@ use App\Models\Central\Plan;
 
 class PlanSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
         $plans = [
             [
-                'name' => 'Trial (Prueba)',
+                'name' => 'Prueba (Trial)',
                 'slug' => 'trial',
-                'description' => 'Ideal para probar el sistema por 30 días.',
+                'description' => 'Periodo de evaluación de 30 días.',
                 'max_users' => 2,
+                'max_branches' => 1,
                 'price' => 0.00,
                 'is_active' => true,
             ],
             [
                 'name' => 'Básico',
                 'slug' => 'basico',
-                'description' => 'Para pequeñas licorerías.',
+                'description' => 'Ideal para pequeños negocios.',
                 'max_users' => 3,
-                'price' => 19.99, // Un aproximado, puedes cambiarlo
+                'max_branches' => 1,
+                'price' => 25.00,
                 'is_active' => true,
             ],
             [
-                'name' => 'Pro',
+                'name' => 'Profesional',
                 'slug' => 'pro',
-                'description' => 'Para negocios medianos con varios cajeros.',
+                'description' => 'Para negocios en crecimiento.',
                 'max_users' => 10,
-                'price' => 49.99,
+                'max_branches' => 3,
+                'price' => 50.00,
                 'is_active' => true,
             ],
             [
                 'name' => 'Enterprise',
                 'slug' => 'enterprise',
-                'description' => 'Sin límites de usuarios. Para corporaciones.',
-                'max_users' => 0, // 0 = Ilimitado
-                'price' => 99.99,
+                'description' => 'Sin límites para grandes cadenas.',
+                'max_users' => 0, // ilimitado
+                'max_branches' => 0, // ilimitado
+                'price' => 150.00,
                 'is_active' => true,
             ],
         ];
 
-        foreach ($plans as $planData) {
-            Plan::updateOrCreate(
-                ['slug' => $planData['slug']],
-                $planData
-            );
+        foreach ($plans as $plan) {
+            Plan::updateOrCreate(['slug' => $plan['slug']], $plan);
         }
     }
 }

@@ -40,8 +40,10 @@ class LicenseController extends Controller
                     'starts_at' => $tenant->license_starts_at,
                     'expires_at' => $tenant->license_expires_at,
                     'days_remaining' => $tenant->daysUntilExpiration(),
-                    'max_users' => $tenant->max_users,
+                    'max_users' => $tenant->plan?->max_users ?? $tenant->max_users,
                     'active_users' => $tenant->activeUserCount(),
+                    'max_branches' => $tenant->plan?->max_branches ?? 1,
+                    'active_branches' => $tenant->activeBranchCount(),
                     'is_usable' => $tenant->isLicenseUsable(),
                 ]
             ];
@@ -64,8 +66,10 @@ class LicenseController extends Controller
                 'starts_at' => $tenant->license_starts_at,
                 'expires_at' => $tenant->license_expires_at,
                 'days_remaining' => $tenant->daysUntilExpiration(),
-                'max_users' => $tenant->max_users,
+                'max_users' => $tenant->plan?->max_users ?? $tenant->max_users,
                 'active_users' => $tenant->activeUserCount(),
+                'max_branches' => $tenant->plan?->max_branches ?? 1,
+                'active_branches' => $tenant->activeBranchCount(),
                 'usage_percent' => $tenant->userUsagePercent(),
                 'is_usable' => $tenant->isLicenseUsable(),
             ]
@@ -84,16 +88,18 @@ class LicenseController extends Controller
 
         $plan = Plan::find($request->plan_id);
 
+        $months = (int) $request->months;
+
         // Calcular nueva fecha de expiración
         $currentExpiry = $tenant->license_expires_at;
         
         // Si ya expiró o estaba suspendido, contamos desde hoy. 
         // Si todavía tiene días, se los sumamos a partir de la fecha actual de expiración.
         if (!$currentExpiry || $currentExpiry->isPast() || $tenant->isLicenseSuspended()) {
-            $newExpiry = now()->addMonths($request->months);
+            $newExpiry = now()->addMonths($months);
             $newStarts = now();
         } else {
-            $newExpiry = $currentExpiry->copy()->addMonths($request->months);
+            $newExpiry = $currentExpiry->copy()->addMonths($months);
             $newStarts = $tenant->license_starts_at;
         }
 

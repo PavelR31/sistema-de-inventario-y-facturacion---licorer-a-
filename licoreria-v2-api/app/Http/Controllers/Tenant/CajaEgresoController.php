@@ -36,13 +36,18 @@ class CajaEgresoController extends Controller
             return response()->json(['message' => 'No tienes una sesión de caja abierta.'], 422);
         }
 
-        $egreso = CajaEgreso::create([
-            'caja_sesion_id' => $sesion->id,
-            'user_id' => $request->user()->id,
-            'monto' => $request->monto,
-            'motivo' => $request->motivo,
-        ]);
+        return DB::transaction(function () use ($sesion, $request) {
+            $egreso = CajaEgreso::create([
+                'caja_sesion_id' => $sesion->id,
+                'user_id' => $request->user()->id,
+                'monto' => $request->monto,
+                'motivo' => $request->motivo,
+            ]);
 
-        return response()->json($egreso, 201);
+            // Descontar del balance físico de la caja
+            $sesion->caja->decrement('balance_actual', $request->monto);
+
+            return $egreso;
+        });
     }
 }

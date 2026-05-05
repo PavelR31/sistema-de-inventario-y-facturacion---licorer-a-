@@ -32,6 +32,11 @@ class User extends Authenticatable
         return $this->belongsTo(\App\Models\Tenant\Sucursal::class);
     }
 
+    public function ventas()
+    {
+        return $this->hasMany(\App\Models\Tenant\Venta::class);
+    }
+
     /**
      * The attributes that should be hidden for serialization.
      *

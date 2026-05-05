@@ -73,32 +73,32 @@ export default function CajaFlow({ children }) {
 
   return (
     <div className="flex items-center justify-center py-12">
-      <Card className="w-full max-w-md border-none shadow-xl bg-white animate-in zoom-in duration-300 rounded-[2rem]">
-        <CardHeader className="text-center">
-          <div className="mx-auto bg-primary/10 w-16 h-16 rounded-full flex items-center justify-center mb-4">
+      <Card className="w-full max-w-md border border-border shadow-xl bg-card animate-in zoom-in duration-300 rounded-[1.5rem]">
+        <CardHeader className="text-center pt-8">
+          <div className="mx-auto bg-primary/10 w-16 h-16 rounded-full flex items-center justify-center mb-4 border border-primary/20">
             <Wallet className="h-8 w-8 text-primary" />
           </div>
-          <CardTitle className="text-2xl font-bold">Check-in de Usuario</CardTitle>
-          <CardDescription>
-            Inicia tu turno seleccionando una caja física en <strong>{branch?.nombre}</strong>.
+          <CardTitle className="text-2xl font-black text-foreground tracking-tight">Check-in de Usuario</CardTitle>
+          <CardDescription className="text-muted-foreground font-medium">
+            Inicia tu turno seleccionando una caja física en <strong className="text-foreground">{branch?.nombre}</strong>.
           </CardDescription>
         </CardHeader>
 
         {availableCajas.length === 0 && !loadingCajas && (
           <CardContent className="pb-8">
-            <div className="bg-amber-50 border border-amber-100 rounded-2xl p-6 text-center space-y-4">
-               <div className="mx-auto bg-amber-100 w-12 h-12 rounded-full flex items-center justify-center">
-                  <Store className="h-6 w-6 text-amber-600" />
+            <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-2xl p-6 text-center space-y-4">
+               <div className="mx-auto bg-yellow-500/20 w-12 h-12 rounded-full flex items-center justify-center">
+                  <Store className="h-6 w-6 text-yellow-600" />
                </div>
                <div className="space-y-1">
-                  <p className="text-sm font-bold text-amber-900">No hay cajas físicas registradas</p>
-                  <p className="text-xs text-amber-700 leading-relaxed">
+                  <p className="text-sm font-bold text-foreground">No hay cajas físicas registradas</p>
+                  <p className="text-xs text-muted-foreground leading-relaxed">
                     Debes registrar al menos una caja física en el panel de Administración antes de poder vender.
                   </p>
                </div>
                <Button 
                 variant="outline" 
-                className="w-full border-amber-200 text-amber-700 hover:bg-amber-100 font-bold"
+                className="w-full border-yellow-500/30 text-yellow-600 hover:bg-yellow-500/20 font-bold rounded-xl"
                 onClick={() => window.location.href = '/admin/cajas'}
                >
                  Ir a Configuración
@@ -111,46 +111,43 @@ export default function CajaFlow({ children }) {
           <form onSubmit={handleAbrir}>
           <CardContent className="space-y-6">
             <div className="space-y-2">
-              <label className="text-sm font-semibold text-slate-700">Caja Física Disponibles</label>
+              <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1">Caja Física Disponible</label>
               <Select value={selectedCajaId} onValueChange={setSelectedCajaId}>
-                <SelectTrigger className="h-12 border-slate-200">
+                <SelectTrigger className="h-12 border-border bg-background rounded-xl">
                   <SelectValue placeholder="Selecciona una caja..." />
                 </SelectTrigger>
                 <SelectContent>
                   {availableCajas.map((caja) => (
                     <SelectItem key={caja.id} value={caja.id.toString()}>
-                      {caja.nombre} - Saldo Actual: {caja.balance_actual}
+                      {caja.nombre} - Saldo: {caja.balance_actual}
                     </SelectItem>
                   ))}
-                  {availableCajas.length === 0 && !loadingCajas && (
-                    <SelectItem disabled value="none">Sin cajas disponibles</SelectItem>
-                  )}
                 </SelectContent>
               </Select>
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-semibold text-slate-700">Monto Real en Efectivo</label>
+              <label className="text-xs font-bold uppercase tracking-widest text-muted-foreground ml-1">Monto Inicial en Efectivo</label>
               <div className="relative">
-                <Landmark className="absolute left-3 top-3 h-5 w-5 text-slate-400" />
+                <Landmark className="absolute left-4 top-3.5 h-5 w-5 text-muted-foreground" />
                 <Input 
                   type="number" 
                   step="0.01"
-                  className="pl-10 h-12 text-lg font-bold border-slate-200 focus:ring-primary/20"
+                  className="pl-12 h-14 text-xl font-black border-border bg-background focus:ring-primary/20 rounded-xl"
                   value={monto}
                   onChange={(e) => setMonto(e.target.value)}
                   placeholder="0.00"
                   required
                 />
               </div>
-              <p className="text-[11px] text-muted-foreground italic">
-                * Cuenta el dinero físico que hay en la gaveta en este momento.
+              <p className="text-[10px] text-muted-foreground font-medium pl-1 italic">
+                * Cuenta el dinero físico que hay en la gaveta ahora mismo.
               </p>
             </div>
           </CardContent>
           <CardFooter className="pb-8">
-            <Button type="submit" className="w-full h-14 text-base font-bold gap-2 rounded-2xl shadow-lg shadow-primary/20" disabled={isSubmitting || availableCajas.length === 0}>
-              {isSubmitting ? <Loader2 className="h-5 w-5 animate-spin" /> : <>Iniciar Sesión y Continuar <ArrowRight className="h-5 w-5" /></>}
+            <Button type="submit" className="w-full h-14 text-base font-bold gap-2 rounded-xl shadow-lg shadow-primary/20" disabled={isSubmitting}>
+              {isSubmitting ? <Loader2 className="h-5 w-5 animate-spin" /> : <>Iniciar Sesión de Caja <ArrowRight className="h-5 w-5" /></>}
             </Button>
           </CardFooter>
         </form>
