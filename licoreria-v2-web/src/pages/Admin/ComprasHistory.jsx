@@ -48,16 +48,16 @@ export default function ComprasHistory() {
         onSearchChange={setSearchTerm}
         searchPlaceholder="Buscar por factura o proveedor..."
         action={
-          <Button variant="outline" className="gap-2 rounded-sm h-10 border-slate-200">
+          <Button variant="outline" className="gap-2 rounded-sm h-10">
              <Truck className="h-4 w-4" /> Nueva Orden
           </Button>
         }
       />
 
-      <Card className="border-none shadow-sm bg-white/50 backdrop-blur-sm overflow-hidden">
+      <Card className="border shadow-sm bg-card overflow-hidden">
         <CardContent className="p-0">
           <Table>
-            <TableHeader className="bg-slate-50/50">
+            <TableHeader className="bg-muted/50">
               <TableRow>
                 <TableHead className="py-4 px-6">Fecha</TableHead>
                 <TableHead>Factura</TableHead>
@@ -82,10 +82,10 @@ export default function ComprasHistory() {
                   </TableCell>
                 </TableRow>
               ) : (
-                compras.map((compra) => (
-                  <TableRow key={compra.id} className="hover:bg-slate-50/50 transition-colors">
+                 compras.map((compra) => (
+                  <TableRow key={compra.id} className="hover:bg-muted/30 transition-colors">
                     <TableCell className="px-6">
-                      <div className="flex items-center gap-2 text-slate-600">
+                      <div className="flex items-center gap-2 text-muted-foreground">
                         <Calendar className="h-3.5 w-3.5" />
                         <span className="font-medium">{new Date(compra.fecha_compra).toLocaleDateString()}</span>
                       </div>
@@ -99,10 +99,10 @@ export default function ComprasHistory() {
                         {compra.proveedor?.nombre}
                       </div>
                     </TableCell>
-                    <TableCell className="text-slate-500 text-sm">
+                    <TableCell className="text-muted-foreground text-sm">
                       {compra.sucursal?.nombre}
                     </TableCell>
-                    <TableCell className="font-bold text-slate-900">
+                    <TableCell className="font-bold text-foreground">
                       ${compra.total}
                     </TableCell>
                     <TableCell>
@@ -111,7 +111,7 @@ export default function ComprasHistory() {
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right px-6">
-                      <Button variant="ghost" size="icon-sm" className="h-8 w-8 text-slate-400 hover:text-black hover:bg-slate-100">
+                      <Button variant="ghost" size="icon-sm" className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-muted">
                         <Eye className="w-4 h-4" />
                       </Button>
                     </TableCell>

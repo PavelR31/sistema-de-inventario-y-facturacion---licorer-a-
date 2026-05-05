@@ -107,10 +107,15 @@ class Tenant extends BaseTenant implements TenantWithDatabase
     public function activeUserCount(): int
     {
         try {
-            // Utilizamos el helper run() de tenancy para ejecutar la consulta
-            // en el contexto específico de la base de datos de este tenant.
             return $this->run(function () {
-                return \DB::table('users')->where('active', true)->count();
+                $query = \DB::table('users');
+                
+                // Si la tabla tiene la columna active, filtramos, si no contamos todos
+                if (\Schema::hasColumn('users', 'active')) {
+                    $query->where('active', true);
+                }
+                
+                return $query->count();
             });
         } catch (\Throwable $e) {
             \Log::error("Error contando usuarios activos en tenant {$this->id}: " . $e->getMessage());
@@ -123,11 +128,41 @@ class Tenant extends BaseTenant implements TenantWithDatabase
      */
     public function isUserLimitReached(): bool
     {
-        if ($this->max_users === 0) {
+        $max = $this->plan?->max_users ?? $this->max_users;
+        
+        if ($max === 0) {
             return false; // ilimitado
         }
 
-        return $this->activeUserCount() >= $this->max_users;
+        return $this->activeUserCount() >= $max;
+    }
+
+    /**
+     * Cantidad de sucursales en la BD del tenant.
+     */
+    public function activeBranchCount(): int
+    {
+        try {
+            return $this->run(function () {
+                return \DB::table('sucursales')->count();
+            });
+        } catch (\Throwable $e) {
+            return 0;
+        }
+    }
+
+    /**
+     * ¿Se excedió el límite de sucursales? (0 = ilimitado)
+     */
+    public function isBranchLimitReached(): bool
+    {
+        $max = $this->plan?->max_branches ?? 1;
+        
+        if ($max === 0) {
+            return false; // ilimitado
+        }
+
+        return $this->activeBranchCount() >= $max;
     }
 
     /**

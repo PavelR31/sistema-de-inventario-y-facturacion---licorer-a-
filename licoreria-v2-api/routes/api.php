@@ -19,6 +19,8 @@ Route::middleware('auth:sanctum')->prefix('central')->group(function () {
     });
 
     Route::post('/update-password', [AuthController::class, 'updatePassword']);
+    Route::put('/perfil/update', [AuthController::class, 'updateProfile']);
+    Route::put('/perfil/password', [AuthController::class, 'updatePasswordProfile']);
 
     // Gestión de Tenants
     Route::apiResource('tenants', TenantController::class);

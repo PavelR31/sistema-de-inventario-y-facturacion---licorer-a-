@@ -99,7 +99,7 @@ export default function ProveedoresList() {
             <Button
               variant="outline"
               size="icon"
-              className="h-10 w-10 rounded-sm border-slate-200 text-slate-400"
+              className="h-10 w-10 rounded-sm border-border text-muted-foreground bg-card hover:bg-muted"
               onClick={() => fetchProveedores()}
               disabled={isLoading}
             >
@@ -107,7 +107,7 @@ export default function ProveedoresList() {
             </Button>
             <Can permission="crear.proveedor">
               <Button
-                className="rounded-sm"
+                className="rounded-sm shadow-sm"
                 onClick={() => { resetForm(); setIsDialogOpen(true); }}
               >
                 <Plus className="mr-2 h-4 w-4" /> Nuevo Proveedor
@@ -117,64 +117,64 @@ export default function ProveedoresList() {
         }
       />
 
-      <Card className="border-none shadow-sm bg-white/50 backdrop-blur-sm overflow-hidden">
+      <Card className="border shadow-sm bg-card overflow-hidden">
         <CardContent className="p-0">
         <Table>
-          <TableHeader className="bg-slate-50/50">
+          <TableHeader className="bg-muted/50">
             <TableRow>
-              <TableHead className="py-4 px-6">Entidad</TableHead>
-              <TableHead>RUC</TableHead>
-              <TableHead>Contacto</TableHead>
-              <TableHead>Ubicación</TableHead>
-              <TableHead className="text-right px-6">Acciones</TableHead>
+              <TableHead className="py-4 px-6 font-bold text-[10px] uppercase tracking-widest text-foreground/70">Entidad</TableHead>
+              <TableHead className="font-bold text-[10px] uppercase tracking-widest text-foreground/70">RUC</TableHead>
+              <TableHead className="font-bold text-[10px] uppercase tracking-widest text-foreground/70">Contacto</TableHead>
+              <TableHead className="font-bold text-[10px] uppercase tracking-widest text-foreground/70">Ubicación</TableHead>
+              <TableHead className="text-right px-6 font-bold text-[10px] uppercase tracking-widest text-foreground/70">Acciones</TableHead>
             </TableRow>
           </TableHeader>
-          <TableBody className="divide-y divide-slate-50">
+          <TableBody className="divide-y divide-border/40">
             {isLoading ? (
               <TableRow>
                 <TableCell colSpan={5} className="h-80 text-center">
-                  <RefreshCcw className="h-12 w-12 animate-spin mx-auto mb-4 text-slate-100" />
-                  <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-300">Sincronizando Proveedores...</p>
+                  <RefreshCcw className="h-12 w-12 animate-spin mx-auto mb-4 text-muted" />
+                  <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground/50">Sincronizando Proveedores...</p>
                 </TableCell>
               </TableRow>
             ) : proveedores.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={5} className="h-80 text-center">
-                  <div className="h-20 w-20 bg-slate-50 rounded-3xl flex items-center justify-center mx-auto mb-6 opacity-40">
-                    <Truck size={40} className="text-slate-300" />
+                  <div className="h-20 w-20 bg-muted/50 rounded-3xl flex items-center justify-center mx-auto mb-6 opacity-40">
+                    <Truck size={40} className="text-muted-foreground" />
                   </div>
-                  <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-300">No se encontraron registros activos</p>
+                  <p className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground/50">No se encontraron registros activos</p>
                 </TableCell>
               </TableRow>
             ) : (
               proveedores.map((prov) => (
-                <TableRow key={prov.id} className="hover:bg-slate-50/50 transition-colors group">
+                <TableRow key={prov.id} className="hover:bg-muted/30 transition-colors group">
                   <TableCell className="py-4 px-6">
                     <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 rounded-sm bg-primary/5 text-primary flex items-center justify-center border border-primary/10 transition-colors">
+                      <div className="h-10 w-10 rounded-sm bg-primary/10 text-primary flex items-center justify-center border border-primary/20 transition-colors">
                         <Truck size={18} />
                       </div>
                       <div className="flex flex-col">
-                        <span className="font-bold text-slate-900 text-sm tracking-tight">{prov.nombre}</span>
-                        <span className="text-[10px] text-slate-400 uppercase">ID: {prov.id.toString().padStart(3, '0')}</span>
+                        <span className="font-bold text-foreground text-sm tracking-tight">{prov.nombre}</span>
+                        <span className="text-[10px] text-muted-foreground uppercase">ID: {prov.id.toString().padStart(3, '0')}</span>
                       </div>
                     </div>
                   </TableCell>
-                  <TableCell className="text-xs font-mono font-bold text-slate-500">{prov.ruc || 'N/A'}</TableCell>
+                  <TableCell className="text-xs font-mono font-bold text-muted-foreground">{prov.ruc || 'N/A'}</TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2.5">
-                      <div className="h-2 w-2 rounded-full bg-emerald-500"></div>
-                      <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">{prov.telefono || 'SIN CONTACTO'}</span>
+                      <div className="h-2 w-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.4)]"></div>
+                      <span className="text-[10px] font-black text-foreground/70 uppercase tracking-widest">{prov.telefono || 'SIN CONTACTO'}</span>
                     </div>
                   </TableCell>
-                  <TableCell className="max-w-[180px] truncate text-[10px] font-bold text-slate-400 uppercase tracking-tight">
+                  <TableCell className="max-w-[180px] truncate text-[10px] font-bold text-muted-foreground uppercase tracking-tight">
                     {prov.direccion || 'DIRECCIÓN NO DISPONIBLE'}
                   </TableCell>
                   <TableCell className="text-right px-6">
-                    <div className="flex justify-end gap-1">
+                    <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <Can permission="editar.proveedor">
                         <Button
-                          variant="ghost" size="icon-sm" className="text-slate-400 hover:text-black hover:bg-slate-100"
+                          variant="ghost" size="icon-sm" className="text-muted-foreground hover:text-foreground hover:bg-muted"
                           onClick={() => handleEdit(prov)}
                         >
                           <Pencil className="h-4 w-4" />
@@ -182,7 +182,7 @@ export default function ProveedoresList() {
                       </Can>
                       <Can permission="eliminar.proveedor">
                         <Button
-                          variant="ghost" size="icon-sm" className="text-slate-400 hover:text-rose-600 hover:bg-rose-50"
+                          variant="ghost" size="icon-sm" className="text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                           onClick={() => handleDelete(prov.id)}
                         >
                           <Trash2 className="h-4 w-4" />
@@ -200,60 +200,60 @@ export default function ProveedoresList() {
 
       {/* Modal de Registro/Edición */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-lg bg-card">
           <DialogHeader>
-            <DialogTitle className="text-xl font-semibold text-slate-800">
+            <DialogTitle className="text-xl font-bold text-foreground">
               {editingProveedor ? 'Modificar Registro' : 'Nuevo Socio'}
             </DialogTitle>
-            <DialogDescription className="text-slate-500">
+            <DialogDescription className="text-muted-foreground">
               Ficha maestra de proveedor del negocio
             </DialogDescription>
           </DialogHeader>
-          <form onSubmit={handleSubmit} className="p-8 space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6 pt-4">
             <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 ml-1">Razón Social</label>
+              <label className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground ml-1">Razón Social</label>
               <Input
                 placeholder="Ej. DISTRIBUIDORA CENTRAL S.A."
                 value={formData.nombre}
                 onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-                className="h-10 rounded-sm border-slate-200 bg-slate-50/50"
+                className="h-10 rounded-sm border-border bg-background"
                 required
               />
             </div>
             <div className="grid grid-cols-2 gap-6">
               <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 ml-1">RUC / ID TRIBUTARIO</label>
+                <label className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground ml-1">RUC / ID TRIBUTARIO</label>
                 <Input
                   placeholder="000-000-000"
                   value={formData.ruc}
                   onChange={(e) => setFormData({ ...formData, ruc: e.target.value })}
-                  className="h-10 rounded-sm border-slate-200 bg-slate-50/50"
+                  className="h-10 rounded-sm border-border bg-background"
                 />
               </div>
               <div className="space-y-2">
-                <label className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 ml-1">Teléfono Directo</label>
+                <label className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground ml-1">Teléfono Directo</label>
                 <Input
                   placeholder="555-0000"
                   value={formData.telefono}
                   onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
-                  className="h-10 rounded-sm border-slate-200 bg-slate-50/50"
+                  className="h-10 rounded-sm border-border bg-background"
                 />
               </div>
             </div>
             <div className="space-y-2">
-              <label className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 ml-1">Dirección Operativa</label>
+              <label className="text-[10px] font-black uppercase tracking-[0.3em] text-muted-foreground ml-1">Dirección Operativa</label>
               <Input
                 placeholder="Calle comercial #123"
                 value={formData.direccion}
                 onChange={(e) => setFormData({ ...formData, direccion: e.target.value })}
-                className="h-10 rounded-sm border-slate-200 bg-slate-50/50"
+                className="h-10 rounded-sm border-border bg-background"
               />
             </div>
-            <DialogFooter className="pt-6 border-t border-slate-50 gap-2">
-              <Button type="button" variant="ghost" className="text-slate-500" onClick={() => setIsDialogOpen(false)}>
+            <DialogFooter className="pt-6 border-t border-border/50 gap-2">
+              <Button type="button" variant="ghost" className="text-muted-foreground hover:bg-muted" onClick={() => setIsDialogOpen(false)}>
                 Cancelar
               </Button>
-              <Button type="submit" className="min-w-[120px] rounded-sm">
+              <Button type="submit" className="min-w-[120px] rounded-sm font-bold shadow-sm">
                 {editingProveedor ? 'Actualizar Ficha' : 'Vincular Socio'}
               </Button>
             </DialogFooter>

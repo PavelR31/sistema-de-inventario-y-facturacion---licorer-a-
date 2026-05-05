@@ -209,7 +209,8 @@ class ReporteController extends Controller
         // El usuario pidió: "que pueda vender y tenga permiso para vender"
         
         $query = \App\Models\User::query()
-            ->select('users.id', 'users.name')
+            ->select('users.id', 'users.name', 'users.sucursal_id')
+            ->with('sucursal:id,nombre')
             ->withCount(['ventas as num_ventas' => function ($q) use ($fechaInicio, $fechaFin, $sucursalId) {
                 $q->where('estado', 'vigente')
                   ->whereBetween(DB::raw('DATE(created_at)'), [$fechaInicio, $fechaFin]);
@@ -231,9 +232,7 @@ class ReporteController extends Controller
             $user->num_ventas = $user->num_ventas ?? 0;
             $user->ticket_promedio = $user->num_ventas > 0 ? round($user->total_ventas / $user->num_ventas, 2) : 0;
             
-            // Intentar obtener la sucursal (simplificado: la del último registro de venta o la primera asignada)
-            // En un sistema multi-sucursal real, un usuario podría vender en varias.
-            // Para el reporte, mostraremos su nombre y sus totales.
+            $user->sucursal_nombre = $user->sucursal?->nombre ?? 'Sin Asignar';
             return $user;
         });
 
@@ -456,14 +455,22 @@ class ReporteController extends Controller
     {
         $tipo = $request->tipo;
         $data = [];
-        $title = "Reporte";
-        $headers = [];
-        $rows = [];
         $total_formatted = "";
+        $metadata = [
+            'generado_por' => auth()->user()->name,
+            'fecha_generacion' => now()->format('d/m/Y H:i:s'),
+            'sucursal' => 'Todas'
+        ];
 
         // Obtener configuración de moneda
-        $simbolo = Configuracion::getVal('simbolo_moneda', '$');
+        $simbolo = Configuracion::getVal('simbolo_moneda', 'C$');
         $nombreEmpresa = Configuracion::getVal('nombre_empresa', 'Licorería');
+        $logo = Configuracion::getVal('logo_empresa');
+
+        // Determinar sucursal para el header si hay un ID
+        if ($request->sucursal_id && $request->sucursal_id !== 'all') {
+            $metadata['sucursal'] = Sucursal::find($request->sucursal_id)?->nombre ?? 'Todas';
+        }
 
         switch ($tipo) {
             case 'ventas':
@@ -489,7 +496,7 @@ class ReporteController extends Controller
                 $title = "Rendimiento por Vendedor";
                 $headers = ['Usuario', 'Sucursal', 'Ventas', 'T. Promedio', 'Total'];
                 foreach ($res['usuarios'] as $u) {
-                    $rows[] = [$u['name'], $u['sucursal'], $u['num_ventas'], $simbolo . number_format($u['ticket_promedio'], 2), $simbolo . number_format($u['total_ventas'], 2)];
+                    $rows[] = [$u['name'], $u['sucursal_nombre'], $u['num_ventas'], $simbolo . number_format($u['ticket_promedio'], 2), $simbolo . number_format($u['total_ventas'], 2)];
                 }
                 $total_formatted = $simbolo . number_format(collect($res['usuarios'])->sum('total_ventas'), 2);
                 break;
@@ -519,12 +526,24 @@ class ReporteController extends Controller
                     $rows[] = [$s['nombre'], $s['sku'], $s['categoria'], $s['sucursal'], $s['stock_actual'], $s['stock_minimo'], $simbolo . number_format($s['precio_venta'], 2)];
                 }
                 break;
+            case 'anulaciones':
+                $res = $this->anulaciones($request)->getData(true);
+                $title = "Reporte de Ventas Anuladas";
+                $headers = ['Factura', 'Fecha', 'Vendedor', 'Sucursal', 'Motivo', 'Total'];
+                foreach ($res['data'] as $v) {
+                    $vendedor = $v['user']['name'] ?? '—';
+                    $sucursal = $v['sucursal']['nombre'] ?? '—';
+                    $motivo = $v['ventas_anuladas'][0]['motivo'] ?? '—';
+                    $rows[] = [$v['numero_factura'], date('d/m/Y', strtotime($v['created_at'])), $vendedor, $sucursal, $motivo, $simbolo . number_format($v['total'], 2)];
+                }
+                $total_formatted = $simbolo . number_format($res['total'], 2);
+                break;
         }
 
         $fecha_inicio = $request->fecha_inicio ?? now()->startOfMonth()->toDateString();
         $fecha_fin = $request->fecha_fin ?? now()->toDateString();
 
-        $pdf = Pdf::loadView('reports.general', compact('title', 'headers', 'rows', 'fecha_inicio', 'fecha_fin', 'total_formatted', 'nombreEmpresa'));
+        $pdf = Pdf::loadView('reports.general', compact('title', 'headers', 'rows', 'fecha_inicio', 'fecha_fin', 'total_formatted', 'nombreEmpresa', 'logo', 'metadata'));
         return $pdf->stream($tipo . '_reporte_' . now()->format('Ymd') . '.pdf');
     }
 }

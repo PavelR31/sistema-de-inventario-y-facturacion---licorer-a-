@@ -102,13 +102,13 @@ export default function AjustesStock() {
   const getTipoBadge = (tipo) => {
     if (tipo === 'entrada') {
       return (
-        <span className="flex items-center gap-1 text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded border border-emerald-100 uppercase">
+        <span className="flex items-center gap-1 text-[10px] font-bold text-green-600 bg-green-600/10 px-2 py-1 rounded border border-green-600/20 uppercase dark:text-green-400">
           <ArrowUpRight size={12} /> Entrada
         </span>
       );
     }
     return (
-      <span className="flex items-center gap-1 text-[10px] font-bold text-rose-600 bg-rose-50 px-2 py-1 rounded border border-rose-100 uppercase">
+      <span className="flex items-center gap-1 text-[10px] font-bold text-destructive bg-destructive/10 px-2 py-1 rounded border border-destructive/20 uppercase">
         <ArrowDownRight size={12} /> Salida
       </span>
     );
@@ -133,41 +133,41 @@ export default function AjustesStock() {
         }
       />
 
-      <Card className="border-none shadow-sm bg-white/50 backdrop-blur-sm">
+      <Card className="border shadow-sm bg-card overflow-hidden">
         <CardContent className="p-0">
           <Table>
-            <TableHeader className="bg-slate-50/50">
+            <TableHeader className="bg-muted/50">
               <TableRow>
-                <TableHead className="font-semibold text-slate-800 py-4 px-6">Fecha y Hora</TableHead>
-                <TableHead className="font-semibold text-slate-800">Tipo</TableHead>
-                <TableHead className="font-semibold text-slate-800">Producto / Empaque</TableHead>
-                <TableHead className="font-semibold text-slate-800">Cantidad</TableHead>
-                <TableHead className="font-semibold text-slate-800">Motivo</TableHead>
-                <TableHead className="font-semibold text-slate-800 text-right px-6">Usuario</TableHead>
+                <TableHead className="font-semibold text-foreground/80 py-4 px-6">Fecha y Hora</TableHead>
+                <TableHead className="font-semibold text-foreground/80">Tipo</TableHead>
+                <TableHead className="font-semibold text-foreground/80">Producto / Empaque</TableHead>
+                <TableHead className="font-semibold text-foreground/80">Cantidad</TableHead>
+                <TableHead className="font-semibold text-foreground/80">Motivo</TableHead>
+                <TableHead className="font-semibold text-foreground/80 text-right px-6">Usuario</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {isLoading ? (
                 [...Array(5)].map((_, i) => (
                   <TableRow key={i}>
-                    <TableCell className="px-6"><div className="h-4 w-24 bg-slate-100 animate-pulse rounded"></div></TableCell>
-                    <TableCell><div className="h-6 w-16 bg-slate-100 animate-pulse rounded"></div></TableCell>
-                    <TableCell><div className="h-4 w-48 bg-slate-100 animate-pulse rounded"></div></TableCell>
-                    <TableCell><div className="h-4 w-12 bg-slate-100 animate-pulse rounded"></div></TableCell>
-                    <TableCell><div className="h-4 w-32 bg-slate-100 animate-pulse rounded"></div></TableCell>
-                    <TableCell className="px-6 flex justify-end"><div className="h-4 w-20 bg-slate-100 animate-pulse rounded"></div></TableCell>
+                    <TableCell className="px-6"><div className="h-4 w-24 bg-muted animate-pulse rounded"></div></TableCell>
+                    <TableCell><div className="h-6 w-16 bg-muted animate-pulse rounded"></div></TableCell>
+                    <TableCell><div className="h-4 w-48 bg-muted animate-pulse rounded"></div></TableCell>
+                    <TableCell><div className="h-4 w-12 bg-muted animate-pulse rounded"></div></TableCell>
+                    <TableCell><div className="h-4 w-32 bg-muted animate-pulse rounded"></div></TableCell>
+                    <TableCell className="px-6 flex justify-end"><div className="h-4 w-20 bg-muted animate-pulse rounded"></div></TableCell>
                   </TableRow>
                 ))
               ) : ajustes.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="h-32 text-center text-slate-400 font-medium">
+                  <TableCell colSpan={6} className="h-32 text-center text-muted-foreground font-medium">
                     No se encontraron registros de ajustes de stock
                   </TableCell>
                 </TableRow>
               ) : (
                 ajustes.map((ajuste) => (
-                  <TableRow key={ajuste.id} className="hover:bg-slate-50/50 transition-colors">
-                    <TableCell className="px-6 text-xs text-slate-500 font-medium">
+                  <TableRow key={ajuste.id} className="hover:bg-muted/30 transition-colors">
+                    <TableCell className="px-6 text-xs text-muted-foreground font-medium">
                       {format(new Date(ajuste.created_at), 'dd MMM yyyy, hh:mm a')}
                     </TableCell>
                     <TableCell>
@@ -175,25 +175,25 @@ export default function AjustesStock() {
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-3">
-                        <div className="h-8 w-8 rounded-sm bg-primary/5 text-primary flex items-center justify-center border border-primary/10">
+                        <div className="h-8 w-8 rounded-sm bg-primary/10 text-primary flex items-center justify-center border border-primary/20">
                           <Package size={16} weight="bold" />
                         </div>
                         <div>
-                          <span className="font-bold text-slate-700 text-sm block">{ajuste.producto?.nombre}</span>
-                          <span className="text-[10px] text-slate-400 uppercase tracking-widest font-bold">
+                          <span className="font-bold text-foreground text-sm block">{ajuste.producto?.nombre}</span>
+                          <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-bold">
                             {ajuste.presentacion ? `Formato: ${ajuste.presentacion.nombre}` : 'Unidades Sueltas'}
                           </span>
                         </div>
                       </div>
                     </TableCell>
                     <TableCell>
-                      <span className="font-black text-slate-800">{ajuste.cantidad}</span>
+                      <span className="font-black text-foreground">{ajuste.cantidad}</span>
                     </TableCell>
-                    <TableCell className="text-slate-500 font-medium text-sm">
+                    <TableCell className="text-muted-foreground font-medium text-sm">
                       {ajuste.motivo}
                     </TableCell>
                     <TableCell className="text-right px-6">
-                      <div className="flex justify-end items-center gap-2 text-slate-500 text-xs">
+                      <div className="flex justify-end items-center gap-2 text-muted-foreground text-xs">
                          <User size={12} /> {ajuste.user?.name || 'Sistema'}
                       </div>
                     </TableCell>
@@ -213,12 +213,12 @@ export default function AjustesStock() {
 
       {/* Creat/Edit Dialog Modal */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-xl">
+        <DialogContent className="max-w-xl bg-card">
           <DialogHeader>
-            <DialogTitle className="text-xl font-black text-slate-800 tracking-tight">
+            <DialogTitle className="text-xl font-black text-foreground tracking-tight">
               Registrar Ajuste de Stock
             </DialogTitle>
-            <DialogDescription className="text-slate-500">
+            <DialogDescription className="text-muted-foreground">
               Modifica manualmente el inventario por mermas, vencimientos, u otras razones excepcionales.
             </DialogDescription>
           </DialogHeader>
@@ -227,20 +227,20 @@ export default function AjustesStock() {
             <div className="grid grid-cols-2 gap-4">
               {/* Product Selection */}
               <div className="space-y-2 col-span-2">
-                <label className="text-[10px] font-bold uppercase text-slate-400 tracking-wider">Buscar Producto</label>
+                <label className="text-[10px] font-bold uppercase text-muted-foreground tracking-wider">Buscar Producto</label>
                 <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 h-4 w-4" />
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
                     <Input 
                       placeholder="Buscar por nombre o escanear código..."
                       value={searchProduct}
                       onChange={(e) => setSearchProduct(e.target.value)}
-                      className="pl-9 bg-slate-50/50 border-slate-200"
+                      className="pl-9 bg-background border-border"
                     />
                 </div>
               </div>
 
               <div className="space-y-2 col-span-2">
-                <label className="text-[10px] font-bold uppercase text-slate-400 tracking-wider">Producto a Ajustar*</label>
+                <label className="text-[10px] font-bold uppercase text-muted-foreground tracking-wider">Producto a Ajustar*</label>
                 <Select 
                   value={formData.producto_id} 
                   onValueChange={(val) => {
@@ -248,10 +248,10 @@ export default function AjustesStock() {
                   }} 
                   required
                 >
-                  <SelectTrigger className="bg-slate-50/50 border-slate-200">
+                  <SelectTrigger className="bg-background border-border">
                     <SelectValue placeholder="Seleccione un producto" />
                   </SelectTrigger>
-                  <SelectContent className="max-h-60">
+                  <SelectContent className="max-h-60 bg-card">
                     {productos.map(p => (
                        <SelectItem key={p.id} value={p.id.toString()}>
                          {p.nombre} — {p.stock_total} en stock total
@@ -263,16 +263,16 @@ export default function AjustesStock() {
 
               {/* Formato / Presentación */}
               <div className="space-y-2 col-span-2">
-                 <label className="text-[10px] font-bold uppercase text-slate-400 tracking-wider">Formato afectado</label>
+                 <label className="text-[10px] font-bold uppercase text-muted-foreground tracking-wider">Formato afectado</label>
                  <Select 
                     value={formData.presentacion_id} 
                     onValueChange={(val) => setFormData({...formData, presentacion_id: val})} 
                     disabled={!selectedProduct}
                  >
-                    <SelectTrigger className="bg-slate-50/50 border-slate-200">
+                    <SelectTrigger className="bg-background border-border">
                       <SelectValue placeholder="Selecciona si es unidad suelta o un empaque" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-card">
                        <SelectItem value="null">Unidad Suelta (Descuenta/Agrega solo 1 unid por cantidad)</SelectItem>
                        {selectedProduct?.presentaciones?.map(pres => (
                           <SelectItem key={pres.id} value={pres.id.toString()}>
@@ -284,48 +284,48 @@ export default function AjustesStock() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-[10px] font-bold uppercase text-slate-400 tracking-wider">Tipo de Movimiento*</label>
+                <label className="text-[10px] font-bold uppercase text-muted-foreground tracking-wider">Tipo de Movimiento*</label>
                 <Select 
                   value={formData.tipo} 
                   onValueChange={(val) => setFormData({...formData, tipo: val})} 
                   required
                 >
-                  <SelectTrigger className="bg-slate-50/50 border-slate-200 font-bold">
+                  <SelectTrigger className="bg-background border-border font-bold">
                     <SelectValue placeholder="Seleccione tipo" />
                   </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="entrada" className="text-emerald-600 font-bold">ENTRADA (Añadir Stock)</SelectItem>
-                    <SelectItem value="salida" className="text-rose-600 font-bold">SALIDA (Reducir Stock)</SelectItem>
+                  <SelectContent className="bg-card">
+                    <SelectItem value="entrada" className="text-green-600 font-bold dark:text-green-400">ENTRADA (Añadir Stock)</SelectItem>
+                    <SelectItem value="salida" className="text-destructive font-bold">SALIDA (Reducir Stock)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="space-y-2">
-                 <label className="text-[10px] font-bold uppercase text-slate-400 tracking-wider">Cantidad Física (Empaques o unid.)*</label>
+                 <label className="text-[10px] font-bold uppercase text-muted-foreground tracking-wider">Cantidad Física (Empaques o unid.)*</label>
                  <Input 
                    type="number"
                    min="1"
                    value={formData.cantidad}
                    onChange={(e) => setFormData({...formData, cantidad: parseInt(e.target.value) || 1})}
                    required
-                   className="bg-slate-50/50 border-slate-200"
+                   className="bg-background border-border"
                  />
               </div>
 
               <div className="space-y-2 col-span-2">
-                <label className="text-[10px] font-bold uppercase text-slate-400 tracking-wider">Motivo de Ajuste*</label>
+                <label className="text-[10px] font-bold uppercase text-muted-foreground tracking-wider">Motivo de Ajuste*</label>
                 <Input 
                   placeholder="Ej: Producto vencido, Merma por daño, Error de conteo..."
                   value={formData.motivo}
                   onChange={(e) => setFormData({...formData, motivo: e.target.value})}
                   required
-                  className="bg-slate-50/50 border-slate-200"
+                  className="bg-background border-border"
                 />
               </div>
             </div>
 
-            <DialogFooter className="pt-6 border-t border-slate-50 gap-2">
-              <Button type="button" variant="ghost" onClick={() => setIsDialogOpen(false)} className="text-slate-500 rounded-sm" disabled={isSubmitting}>
+            <DialogFooter className="pt-6 border-t border-border/50 gap-2">
+              <Button type="button" variant="ghost" onClick={() => setIsDialogOpen(false)} className="text-muted-foreground rounded-sm hover:bg-muted" disabled={isSubmitting}>
                 Cancelar
               </Button>
               <Button type="submit" className="min-w-[140px] rounded-sm font-bold" disabled={isSubmitting}>

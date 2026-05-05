@@ -97,53 +97,53 @@ export default function MedidasList() {
       />
 
       {viewMode === 'table' ? (
-        <Card className="border-none shadow-sm bg-white/50 backdrop-blur-sm">
+        <Card className="border shadow-sm bg-card overflow-hidden">
           <CardContent className="p-0">
             <Table>
-              <TableHeader className="bg-slate-50/50">
+              <TableHeader className="bg-muted/50">
                 <TableRow>
-                  <TableHead className="font-semibold text-slate-800 py-4 px-6 w-[300px]">Nombre</TableHead>
-                  <TableHead className="font-semibold text-slate-800">Abreviatura</TableHead>
-                  <TableHead className="font-semibold text-slate-800 text-right px-6">Acciones</TableHead>
+                  <TableHead className="font-bold text-[10px] uppercase tracking-widest text-foreground/70 py-4 px-6 w-[300px]">Nombre</TableHead>
+                  <TableHead className="font-bold text-[10px] uppercase tracking-widest text-foreground/70">Abreviatura</TableHead>
+                  <TableHead className="font-bold text-[10px] uppercase tracking-widest text-foreground/70 text-right px-6">Acciones</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {isLoading ? (
                   [...Array(5)].map((_, i) => (
                     <TableRow key={i}>
-                      <TableCell className="px-6"><div className="h-4 w-40 bg-slate-100 animate-pulse rounded"></div></TableCell>
-                      <TableCell><div className="h-4 w-60 bg-slate-100 animate-pulse rounded"></div></TableCell>
-                      <TableCell className="text-right px-6"><div className="h-8 w-20 bg-slate-100 animate-pulse rounded ml-auto"></div></TableCell>
+                      <TableCell className="px-6"><div className="h-4 w-40 bg-muted animate-pulse rounded"></div></TableCell>
+                      <TableCell><div className="h-4 w-60 bg-muted animate-pulse rounded"></div></TableCell>
+                      <TableCell className="text-right px-6"><div className="h-8 w-20 bg-muted animate-pulse rounded ml-auto"></div></TableCell>
                     </TableRow>
                   ))
                 ) : medidas.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={3} className="h-32 text-center text-slate-400 font-medium">
+                    <TableCell colSpan={3} className="h-32 text-center text-muted-foreground font-medium">
                       No se encontraron medidas
                     </TableCell>
                   </TableRow>
                 ) : (
                   medidas.map((med) => (
-                    <TableRow key={med.id} className="hover:bg-slate-50/50 transition-colors">
+                    <TableRow key={med.id} className="hover:bg-muted/30 transition-colors group">
                       <TableCell className="px-6">
                         <div className="flex items-center gap-3">
-                          <div className="h-8 w-8 rounded-sm bg-primary/5 text-primary flex items-center justify-center border border-primary/10">
+                          <div className="h-8 w-8 rounded-sm bg-primary/10 text-primary flex items-center justify-center border border-primary/20">
                             <Ruler size={16} weight="bold" />
                           </div>
-                          <span className="font-medium text-slate-700">{med.nombre}</span>
+                          <span className="font-semibold text-foreground">{med.nombre}</span>
                         </div>
                       </TableCell>
-                      <TableCell className="text-slate-500 font-medium">{med.abreviatura || '-'}</TableCell>
+                      <TableCell className="text-muted-foreground font-medium">{med.abreviatura || '-'}</TableCell>
                       <TableCell className="text-right px-6">
-                        <div className="flex justify-end gap-1">
+                        <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                           <Can permission="editar.producto">
-                            <Button variant="ghost" size="icon-sm" onClick={() => handleEdit(med)} className="text-slate-400 hover:text-black hover:bg-slate-100 rounded-sm">
+                            <Button variant="ghost" size="icon-sm" onClick={() => handleEdit(med)} className="text-muted-foreground hover:text-foreground hover:bg-muted rounded-sm">
                               <Pencil className="w-4 h-4" />
                             </Button>
                           </Can>
                           <Can permission="eliminar.producto">
-                            <Button variant="ghost" size="icon-sm" onClick={() => handleDelete(med.id)} className="text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-sm">
-                              <Trash2 className="w-4 h-4 text-destructive" />
+                            <Button variant="ghost" size="icon-sm" onClick={() => handleDelete(med.id)} className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-sm">
+                              <Trash2 className="w-4 h-4" />
                             </Button>
                           </Can>
                         </div>
@@ -159,29 +159,29 @@ export default function MedidasList() {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {isLoading ? (
             [...Array(8)].map((_, i) => (
-              <div key={i} className="h-32 bg-white rounded-sm border border-slate-100 animate-pulse"></div>
+              <div key={i} className="h-32 bg-card rounded-sm border animate-pulse shadow-sm"></div>
             ))
           ) : medidas.map(med => (
-            <Card key={med.id} className="border-none transition-all bg-white group p-5">
+            <Card key={med.id} className="border shadow-sm bg-card group p-5 hover:shadow-md transition-all">
               <div className="flex items-start justify-between mb-3">
-                 <div className="h-10 w-10 rounded-sm bg-primary/5 text-primary flex items-center justify-center border border-primary/10">
+                 <div className="h-10 w-10 rounded-sm bg-primary/10 text-primary flex items-center justify-center border border-primary/20">
                     <Ruler size={20} weight="bold" />
                  </div>
                   <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <Can permission="editar.producto">
-                      <Button variant="ghost" size="icon-sm" onClick={() => handleEdit(med)} className="h-8 w-8 text-slate-400 hover:text-primary rounded-sm">
+                      <Button variant="ghost" size="icon-sm" onClick={() => handleEdit(med)} className="h-8 w-8 text-muted-foreground hover:text-foreground rounded-sm">
                         <Pencil className="w-4 h-4" />
                       </Button>
                     </Can>
                     <Can permission="eliminar.producto">
-                      <Button variant="ghost" size="icon-sm" onClick={() => handleDelete(med.id)} className="h-8 w-8 text-slate-400 hover:text-rose-500 rounded-sm">
-                        <Trash2 className="w-4 h-4 text-destructive" />
+                      <Button variant="ghost" size="icon-sm" onClick={() => handleDelete(med.id)} className="h-8 w-8 text-muted-foreground hover:text-destructive rounded-sm">
+                        <Trash2 className="w-4 h-4" />
                       </Button>
                     </Can>
                   </div>
               </div>
-              <h3 className="font-semibold text-slate-800 truncate">{med.nombre}</h3>
-              <p className="text-[11px] font-medium text-slate-400 mt-1 line-clamp-2 min-h-[32px]">
+              <h3 className="font-bold text-foreground truncate">{med.nombre}</h3>
+              <p className="text-[11px] font-bold text-muted-foreground mt-1 line-clamp-2 min-h-[32px] uppercase tracking-wider">
                 {med.abreviatura || '-'}
               </p>
             </Card>
@@ -196,40 +196,40 @@ export default function MedidasList() {
       )}
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-md bg-card">
           <DialogHeader>
-            <DialogTitle className="text-xl font-semibold text-slate-800">
+            <DialogTitle className="text-xl font-bold text-foreground">
               {editingMedida ? 'Editar Medida' : 'Nueva Medida'}
             </DialogTitle>
-            <DialogDescription className="text-slate-500">
+            <DialogDescription className="text-muted-foreground">
               Ingresa el nombre y abreviatura de la medida (Ej. 1 Litro / 1L).
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-5 pt-4">
             <div className="space-y-2">
-              <label className="text-[10px] font-bold uppercase text-slate-400 tracking-wider">Nombre</label>
+              <label className="text-[10px] font-bold uppercase text-muted-foreground tracking-wider">Nombre</label>
               <Input 
                 placeholder="Ej. 12 onzas"
                 value={formData.nombre}
                 onChange={(e) => setFormData({...formData, nombre: e.target.value})}
                 required
-                className="bg-slate-50/50 border-slate-200"
+                className="bg-background border-border"
               />
             </div>
             <div className="space-y-2">
-              <label className="text-[10px] font-bold uppercase text-slate-400 tracking-wider">Abreviatura (Opcional)</label>
+              <label className="text-[10px] font-bold uppercase text-muted-foreground tracking-wider">Abreviatura (Opcional)</label>
               <Input 
                 placeholder="Ej. 12 oz"
                 value={formData.abreviatura}
                 onChange={(e) => setFormData({...formData, abreviatura: e.target.value})}
-                className="bg-slate-50/50 border-slate-200"
+                className="bg-background border-border"
               />
             </div>
-            <DialogFooter className="pt-6 border-t border-slate-50 gap-2">
-              <Button type="button" variant="ghost" onClick={() => setIsDialogOpen(false)} className="text-slate-500 rounded-sm">
+            <DialogFooter className="pt-6 border-t border-border/50 gap-2">
+              <Button type="button" variant="ghost" onClick={() => setIsDialogOpen(false)} className="text-muted-foreground rounded-sm hover:bg-muted">
                 Cancelar
               </Button>
-              <Button type="submit" className="min-w-[120px] rounded-sm">
+              <Button type="submit" className="min-w-[120px] rounded-sm font-bold shadow-sm">
                 {editingMedida ? 'Actualizar' : 'Crear'}
               </Button>
             </DialogFooter>

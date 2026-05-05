@@ -38,6 +38,7 @@ import { useAuthStore } from "@/store/useAuthStore"
 import { Link, useLocation } from "react-router-dom"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
+import { Logo } from "@/components/ui/Logo"
 
 // Todos los ítems del menú con su permiso requerido.
 // Si permission es null, cualquier usuario autenticado lo ve (ej. el Escritorio básico).
@@ -77,7 +78,7 @@ const ALL_MENU_ITEMS = [
   { permission: 'ajustes.sistema',        label: "Configuración", title: "Respaldos",            url: "/admin/backups",  icon: HardDrives },
 ];
 
-export function AppSidebar() {
+export default function AppSidebar() {
   const { roles, user, logout, branch, hasPermission, hasRole } = useAuthStore()
   const location = useLocation()
   const role = roles?.[0] || ''
@@ -102,72 +103,80 @@ export function AppSidebar() {
   }, [])
 
   return (
-    <Sidebar variant="inset" className="border-r border-sidebar-border bg-sidebar">
-      <SidebarHeader className="h-20 border-b border-sidebar-border px-6 flex flex-col justify-center bg-sidebar">
-        <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 items-center justify-center rounded-sm bg-white">
-            <Buildings className="h-5 w-5 text-black" weight="bold" />
-          </div>
-          <div className="flex flex-col">
-            <span className="text-sm font-bold tracking-tight text-white">Licora</span>
-            <span className="text-[9px] font-bold text-white/40 uppercase tracking-[0.2em]">V2 System</span>
-          </div>
-        </div>
+    <Sidebar className="border-r bg-background">
+      <SidebarHeader className="h-14 flex items-center justify-center border-none">
+        <Logo className="h-8 w-auto" />
       </SidebarHeader>
       
-      <SidebarContent className="px-4 py-8 bg-sidebar space-y-8">
+      <SidebarContent className="px-4 py-4 space-y-4">
         {groups.map((group) => (
           <SidebarGroup key={group.label} className="p-0">
-            <SidebarGroupLabel className="px-3 text-[9px] font-bold uppercase tracking-[0.2em] text-white/30 mb-4">
+            <SidebarGroupLabel className="px-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70 mb-2">
               {group.label}
             </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu className="gap-1">
-                {group.items.map((item) => (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton 
-                      asChild 
-                      isActive={location.pathname === item.url}
-                      className={`h-10 transition-all duration-150 rounded-sm hover:bg-sidebar-accent/10 group ${location.pathname === item.url ? 'bg-sidebar-accent text-white hover:bg-sidebar-accent/90' : 'text-sidebar-foreground/60 hover:text-white'}`}
-                    >
-                      <Link to={item.url} className="flex items-center gap-3">
-                        <item.icon 
-                          className={`h-4 w-4 transition-colors ${location.pathname === item.url ? 'text-white' : 'text-sidebar-foreground/30 group-hover:text-white'}`} 
-                          weight={location.pathname === item.url ? 'bold' : 'regular'}
-                        />
-                        <span className="text-xs font-bold uppercase tracking-wider">
-                          {item.title}
-                        </span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
+                {group.items.map((item) => {
+                  const isActive = location.pathname === item.url;
+                  return (
+                    <SidebarMenuItem key={item.title}>
+                      <SidebarMenuButton 
+                        asChild 
+                        isActive={isActive}
+                        className={`h-9 px-3 transition-all rounded-lg group ${
+                          isActive 
+                            ? '!bg-primary !text-primary-foreground shadow-sm' 
+                            : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                        }`}
+                      >
+                        <Link to={item.url} className="flex items-center gap-3">
+                          <item.icon 
+                            className={`h-4 w-4 transition-colors ${
+                              isActive ? '!text-primary-foreground' : 'group-hover:text-foreground'
+                            }`} 
+                            weight={isActive ? 'bold' : 'regular'}
+                          />
+                          <span className={`text-[13px] font-medium ${isActive ? '!text-primary-foreground' : ''}`}>
+                            {item.title}
+                          </span>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
         ))}
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-sidebar-border p-6 bg-sidebar">
-        <div className="flex items-center gap-3 mb-6">
-          <Avatar className="h-9 w-9 border border-white/10 bg-white/5 rounded-sm">
-            <AvatarFallback className="bg-transparent text-white font-bold text-[10px]">
-              {user?.name?.substring(0, 2).toUpperCase() || "US"}
+      <SidebarFooter className="border-t bg-muted/20 p-4">
+        <Link to="/admin/perfil" className="flex items-center gap-3 mb-4 px-2 hover:bg-muted/50 p-2 rounded-lg transition-colors group">
+          <Avatar className="h-9 w-9 border border-border shadow-sm group-hover:border-primary/30 transition-colors">
+            <AvatarFallback className="text-[11px] font-bold bg-primary text-primary-foreground">
+                      {(() => {
+                        if (!user?.name) return "US";
+                        const parts = user.name.trim().split(/\s+/);
+                        if (parts.length === 0) return "US";
+                        if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+                        return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+                      })()}
             </AvatarFallback>
           </Avatar>
           <div className="flex flex-1 flex-col overflow-hidden">
-            <span className="text-xs font-bold text-white truncate">{user?.name || "Usuario"}</span>
-            <span className="text-[10px] text-white/40 truncate uppercase tracking-widest">{branch?.nombre || role}</span>
+            <span className="text-sm font-semibold truncate text-foreground group-hover:text-primary transition-colors">{user?.name || "Usuario"}</span>
+            <span className="text-[10px] text-muted-foreground truncate uppercase tracking-tighter font-medium group-hover:text-primary/70 transition-colors">Mi Perfil</span>
           </div>
-        </div>
+          <Gear className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+        </Link>
         <Button 
-          variant="outline" 
+          variant="ghost" 
           size="sm" 
-          className="w-full h-10 border-white/10 bg-transparent text-white/60 hover:bg-rose-600 hover:text-white hover:border-rose-600 rounded-sm transition-all gap-2"
+          className="w-full h-10 justify-start text-muted-foreground hover:bg-destructive/10 hover:text-destructive rounded-lg px-2 transition-all gap-2"
           onClick={logout}
         >
           <SignOut className="h-4 w-4" weight="bold" />
-          <span className="text-[10px] font-bold uppercase tracking-widest">Cerrar Sesión</span>
+          <span className="text-xs font-semibold">Cerrar Sesión</span>
         </Button>
       </SidebarFooter>
     </Sidebar>

@@ -27,10 +27,14 @@ class CajaController extends Controller
         $request->validate([
             'sucursal_id' => 'required|exists:sucursales,id',
             'nombre' => 'required|string|max:100',
-            'balance_actual' => 'nullable|numeric|min:0',
         ]);
 
-        $caja = Caja::create($request->all());
+        $caja = Caja::create([
+            'sucursal_id' => $request->sucursal_id,
+            'nombre' => $request->nombre,
+            'balance_actual' => 0, // Las cajas nuevas siempre inician en 0
+            'activa' => true
+        ]);
         return response()->json($caja, 201);
     }
 
@@ -43,11 +47,11 @@ class CajaController extends Controller
     {
         $request->validate([
             'nombre' => 'sometimes|required|string|max:100',
-            'balance_actual' => 'sometimes|required|numeric|min:0',
             'activa' => 'sometimes|required|boolean',
         ]);
 
-        $caja->update($request->all());
+        // Protegemos el balance_actual para que solo se mueva por transacciones o cierres oficiales
+        $caja->update($request->only(['nombre', 'activa']));
         return response()->json($caja);
     }
 

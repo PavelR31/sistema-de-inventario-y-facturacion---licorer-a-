@@ -44,6 +44,7 @@ export default function SettingsPage() {
   const [newRoleName, setNewRoleName] = useState('');
   
   const [ivaPorcentaje, setIvaPorcentaje] = useState(0);
+  const [nombreEmpresa, setNombreEmpresa] = useState('');
   const [logoBase64, setLogoBase64] = useState(null);
 
   useEffect(() => {
@@ -71,6 +72,10 @@ export default function SettingsPage() {
 
       if (configRes.data?.logo_empresa) {
         setLogoBase64(configRes.data.logo_empresa);
+      }
+
+      if (configRes.data?.nombre_empresa) {
+        setNombreEmpresa(configRes.data.nombre_empresa);
       }
       
       if (rolesRes.data.length > 0 && !selectedRole) {
@@ -161,6 +166,16 @@ export default function SettingsPage() {
       toast.success('Porcentaje de IVA actualizado');
     } catch (error) {
       toast.error('Error al guardar el IVA');
+    }
+  };
+
+  const handleNombreChange = async (value) => {
+    try {
+      await api.put('/api/configuraciones', { clave: 'nombre_empresa', valor: value });
+      setNombreEmpresa(value);
+      toast.success('Nombre de la empresa actualizado');
+    } catch (error) {
+      toast.error('Error al guardar el nombre');
     }
   };
 
@@ -290,70 +305,69 @@ export default function SettingsPage() {
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-700 pb-10">
+    <div className="container mx-auto py-6 space-y-8 animate-in fade-in duration-500">
       <PageHeader 
-        title="Configuraciones" 
-        subtitle="Panel de control maestro y seguridad"
+        title="Configuración" 
+        subtitle="Administra los ajustes del sistema y permisos de seguridad"
         icon={Gear}
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         <div className="space-y-6">
-          <Card className="border-none shadow-xl shadow-slate-200/50 bg-white/80 backdrop-blur-sm overflow-hidden rounded-[2rem]">
-            <CardHeader className="bg-slate-50/50 border-b border-slate-100 px-6 py-5">
-              <CardTitle className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2">
-                <Coins size={14} weight="duotone" className="text-primary" /> Preferencias Globales
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                <Coins size={18} className="text-primary" /> Preferencias
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-6 space-y-6">
-              <div className="space-y-3">
-                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Divisa Principal</label>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-xs font-medium text-muted-foreground">Nombre de la Licorería</label>
+                <Input 
+                   value={nombreEmpresa}
+                   onChange={(e) => setNombreEmpresa(e.target.value)}
+                   onBlur={(e) => handleNombreChange(e.target.value)}
+                   placeholder="Ej. Licorería El Oasis"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-medium text-muted-foreground">Divisa Principal</label>
                 <Select value={currency} onValueChange={handleCurrencyChange}>
-                  <SelectTrigger className="w-full h-11 bg-slate-50 border-none rounded-xl focus:ring-primary/20 font-bold">
+                  <SelectTrigger>
                     <SelectValue placeholder="Seleccionar moneda" />
                   </SelectTrigger>
-                  <SelectContent className="rounded-xl border-none shadow-2xl">
-                    <SelectItem value="NIO">
-                      <div className="flex items-center gap-2 font-bold text-xs text-slate-700">
-                        <Bank className="h-4 w-4 text-blue-600" weight="duotone" />
-                        <span>Córdoba (C$)</span>
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="USD">
-                      <div className="flex items-center gap-2 font-bold text-xs text-slate-700">
-                        <Globe className="h-4 w-4 text-green-600" weight="duotone" />
-                        <span>Dólar ($)</span>
-                      </div>
-                    </SelectItem>
+                  <SelectContent>
+                    <SelectItem value="NIO">Córdoba (C$)</SelectItem>
+                    <SelectItem value="USD">Dólar ($)</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
-              <div className="space-y-3 pt-4 border-t border-slate-50">
-                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Impuesto Local (IVA %)</label>
+              <div className="space-y-2">
+                <label className="text-xs font-medium text-muted-foreground">Impuesto (IVA %)</label>
                 <Input 
                    type="number"
                    value={ivaPorcentaje}
                    onChange={(e) => setIvaPorcentaje(e.target.value)}
                    onBlur={(e) => handleIvaChange(e.target.value)}
-                   className="h-11 bg-slate-50 border-none rounded-xl focus-visible:ring-primary/20 font-black text-lg"
                    placeholder="Ej. 15"
                 />
               </div>
 
-              <div className="space-y-3 pt-4 border-t border-slate-50">
-                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400 ml-1">Identidad Visual</label>
-                <div className="flex flex-col items-center gap-4 p-6 border-2 border-dashed border-slate-100 rounded-[1.5rem] bg-slate-50/50 hover:bg-slate-100/50 transition-colors group">
+              <div className="space-y-2">
+                <label className="text-xs font-medium text-muted-foreground">Logotipo Empresa</label>
+                <div className="flex flex-col items-center gap-4 p-4 border-2 border-dashed rounded-lg bg-muted/50 transition-colors">
                     {logoBase64 ? (
-                        <img src={logoBase64} alt="Logo" className="h-20 w-auto object-contain rounded-xl shadow-lg border border-white" />
+                        <img src={logoBase64} alt="Logo" className="h-16 w-auto object-contain rounded-md" />
                     ) : (
-                        <div className="h-20 w-20 rounded-2xl bg-white flex items-center justify-center text-slate-300 shadow-sm">
-                            <Storefront size={40} weight="thin" />
+                        <div className="h-16 w-16 rounded-md bg-background flex items-center justify-center text-muted-foreground border">
+                            <Storefront size={32} />
                         </div>
                     )}
                     <label className="w-full">
-                        <Button variant="outline" className="w-full h-9 text-[10px] font-black uppercase tracking-widest rounded-xl border-slate-200 hover:bg-white" asChild>
-                            <span>Actualizar Logotipo</span>
+                        <Button variant="outline" size="sm" className="w-full" asChild>
+                            <span>Cambiar Logo</span>
                         </Button>
                         <input type="file" accept="image/*" className="hidden" onChange={handleLogoUpload} />
                     </label>
@@ -362,125 +376,106 @@ export default function SettingsPage() {
             </CardContent>
           </Card>
 
-          <Card className="border-none shadow-xl shadow-slate-200/50 bg-white/80 backdrop-blur-sm overflow-hidden rounded-[2rem]">
-            <CardHeader className="bg-slate-50/50 border-b border-slate-100 px-6 py-5">
-              <CardTitle className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 flex items-center gap-2">
-                <Key size={14} weight="duotone" className="text-primary" /> Matriz de Cargos
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0">
+              <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                <Users size={18} className="text-primary" /> Roles
               </CardTitle>
+              <Button variant="ghost" size="icon" onClick={() => setIsNewRoleOpen(true)}>
+                <Plus size={16} />
+              </Button>
             </CardHeader>
-            <CardContent className="p-2 space-y-1">
+            <CardContent className="px-2">
                 {isLoading ? (
-                  <div className="p-12 flex justify-center"><CircleNotch className="animate-spin h-6 w-6 text-primary/30" weight="bold" /></div>
-                ) : roles.map((role) => (
-                  <div 
-                    key={role.id}
-                    onClick={() => handleSelectRole(role)}
-                    className={`p-4 mx-1 rounded-2xl flex items-center justify-between cursor-pointer transition-all duration-300 group ${selectedRole?.id === role.id ? 'bg-primary/5 shadow-inner' : 'hover:bg-slate-50'}`}
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className={`h-11 w-11 rounded-2xl flex items-center justify-center transition-all ${selectedRole?.id === role.id ? 'bg-primary text-white shadow-lg shadow-primary/20' : 'bg-slate-50 text-slate-400 group-hover:bg-white'}`}>
-                        <Users className="h-5 w-5" weight="duotone" />
-                      </div>
-                      <div>
-                        <p className={`text-xs font-black capitalize tracking-tight ${selectedRole?.id === role.id ? 'text-primary' : 'text-slate-700'}`}>{role.name.replace(/-/g, ' ')}</p>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter mt-1 opacity-70">{role.permissions.length} privilegios</p>
-                      </div>
-                    </div>
-                    {role.name !== 'Administrador' && (
-                      <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        className="h-9 w-9 rounded-xl text-slate-300 hover:text-rose-500 hover:bg-rose-50 opacity-0 group-hover:opacity-100 transition-all"
-                        onClick={(e) => { e.stopPropagation(); handleDeleteRole(role.id); }}
+                  <div className="p-8 flex justify-center"><CircleNotch className="animate-spin h-5 w-5 text-muted-foreground" /></div>
+                ) : (
+                  <div className="space-y-1">
+                    {roles.map((role) => (
+                      <button 
+                        key={role.id}
+                        onClick={() => handleSelectRole(role)}
+                        className={`w-full p-3 rounded-md flex items-center justify-between text-left transition-colors ${selectedRole?.id === role.id ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'}`}
                       >
-                        <Trash weight="bold" size={16} />
-                      </Button>
-                    )}
+                        <div className="flex items-center gap-3">
+                          <ShieldCheck size={16} className={selectedRole?.id === role.id ? 'text-primary-foreground' : 'text-primary'} />
+                          <div>
+                            <p className="text-sm font-medium capitalize">{role.name.replace(/-/g, ' ')}</p>
+                            <p className={`text-[10px] ${selectedRole?.id === role.id ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>
+                              {role.permissions.length} permisos
+                            </p>
+                          </div>
+                        </div>
+                        {role.name !== 'Administrador' && selectedRole?.id !== role.id && (
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                            onClick={(e) => { e.stopPropagation(); handleDeleteRole(role.id); }}
+                          >
+                            <Trash size={14} />
+                          </Button>
+                        )}
+                      </button>
+                    ))}
                   </div>
-                ))}
-                <div className="p-3">
-                    <Button variant="ghost" className="w-full h-11 border-2 border-dashed border-slate-100 rounded-2xl hover:bg-white hover:border-primary/20 hover:text-primary gap-2 transition-all group" onClick={() => setIsNewRoleOpen(true)}>
-                        <Plus size={16} weight="bold" className="group-hover:scale-125 transition-transform" />
-                        <span className="text-[10px] font-black uppercase tracking-widest">Añadir Cargo</span>
-                    </Button>
-                </div>
+                )}
             </CardContent>
           </Card>
         </div>
 
         <div className="lg:col-span-2">
           {selectedRole ? (
-            <Card className="border-none shadow-2xl shadow-slate-200/50 bg-white/90 backdrop-blur-xl h-full flex flex-col rounded-[2.5rem] overflow-hidden">
-              <CardHeader className="border-b border-slate-100 bg-white/50 px-8 py-8">
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-                  <div>
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="h-10 w-10 rounded-2xl bg-primary/10 flex items-center justify-center text-primary">
-                        <LockKey size={24} weight="duotone" />
-                      </div>
-                      <div>
-                        <h2 className="text-2xl font-black capitalize tracking-tight text-slate-800 leading-none">{selectedRole.name.replace(/-/g, ' ')}</h2>
-                        <div className="flex items-center gap-2 mt-2">
-                            <Badge className="bg-primary/10 text-primary hover:bg-primary/20 border-none font-black text-[9px] uppercase tracking-widest px-2 py-0.5 rounded-lg">Módulo de Seguridad</Badge>
-                            <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest">•</span>
-                            <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest">ID: {selectedRole.id}</span>
-                        </div>
-                      </div>
+            <Card className="h-full">
+              <CardHeader className="border-b">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                      <LockKey size={20} />
+                    </div>
+                    <div>
+                      <CardTitle className="text-lg font-bold capitalize">{selectedRole.name.replace(/-/g, ' ')}</CardTitle>
+                      <CardDescription>Gestión de matriz de accesos</CardDescription>
                     </div>
                   </div>
                   <Button 
                     onClick={handleSavePermissions} 
                     disabled={isSaving || selectedRole.name === 'Administrador'}
-                    className="h-12 px-8 rounded-2xl shadow-xl shadow-primary/20 font-black uppercase tracking-widest text-[10px] gap-3"
+                    className="gap-2"
                   >
-                    {isSaving ? <CircleNotch className="h-5 w-5 animate-spin" weight="bold" /> : <FloppyDisk size={20} weight="duotone" />}
-                    Confirmar Matriz
+                    {isSaving ? <CircleNotch className="h-4 w-4 animate-spin" /> : <FloppyDisk size={18} />}
+                    Guardar Cambios
                   </Button>
                 </div>
               </CardHeader>
-              <CardContent className="p-8 overflow-y-auto max-h-[700px] bg-slate-50/30 thin-scrollbar">
+              <CardContent className="p-6">
                 {selectedRole.name === 'Administrador' && (
-                  <div className="mb-8 p-6 bg-primary/5 border border-primary/10 rounded-[1.5rem] flex gap-4 text-slate-600 animate-in slide-in-from-top-4 duration-500">
-                    <ShieldCheck size={32} className="shrink-0 text-primary" weight="duotone" />
-                    <div>
-                        <p className="text-[10px] font-black uppercase tracking-widest text-primary mb-1">Perfil Maestro Protegido</p>
-                        <p className="text-xs font-bold leading-relaxed text-slate-500">
-                          Este cargo posee privilegios absolutos a nivel de base de datos. Para garantizar la operatividad continua del sistema, las restricciones manuales están deshabilitadas para este nivel jerárquico.
-                        </p>
-                    </div>
+                  <div className="mb-6 p-4 bg-primary/5 border rounded-lg text-sm text-muted-foreground flex gap-3">
+                    <ShieldCheck size={20} className="text-primary shrink-0" />
+                    <p>Este rol tiene permisos de superusuario y no puede ser modificado manualmente.</p>
                   </div>
                 )}
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  {Object.entries(groupedPermissions).map(([resource, perms], idx) => (
-                    <div key={resource} 
-                         className="space-y-5 bg-white p-7 rounded-[2rem] border border-slate-100 shadow-sm hover:shadow-xl hover:shadow-primary/5 transition-all duration-500 group relative overflow-hidden"
-                         style={{ animationDelay: `${idx * 50}ms` }}>
-                      <div className="absolute top-0 right-0 p-8 opacity-[0.03] group-hover:scale-150 group-hover:opacity-[0.05] transition-all duration-700">
-                        {getResourceIcon(resource)}
-                      </div>
-                      <h3 className="text-[10px] font-black uppercase text-slate-400 tracking-[0.2em] border-b border-slate-50 pb-4 flex items-center gap-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {Object.entries(groupedPermissions).map(([resource, perms]) => (
+                    <div key={resource} className="space-y-4 p-4 border rounded-lg">
+                      <h3 className="text-sm font-bold flex items-center gap-2 text-primary">
                         {getResourceIcon(resource)}
                         {resource}
                       </h3>
-                      <div className="space-y-4 pt-1">
+                      <div className="grid gap-3">
                         {perms.map((p) => (
-                          <div key={p.id} className="flex items-start space-x-4 group/item">
+                          <div key={p.id} className="flex items-center space-x-3">
                             <Checkbox 
                               id={p.name} 
                               checked={editedPermissions.includes(p.name)}
                               disabled={selectedRole.name === 'Administrador'}
                               onCheckedChange={() => togglePermission(p.name)}
-                              className="mt-0.5 rounded-lg h-5 w-5 border-slate-200 data-[state=checked]:bg-primary transition-all duration-300"
                             />
-                            <div className="grid gap-1 leading-none">
-                              <label 
-                                htmlFor={p.name}
-                                className="text-xs font-black tracking-tight cursor-pointer group-hover/item:text-primary transition-colors text-slate-700"
-                              >
+                            <div className="grid gap-0.5">
+                              <label htmlFor={p.name} className="text-sm font-medium leading-none cursor-pointer">
                                 {PERMISSION_LABELS[p.name] || p.name}
                               </label>
-                              <p className="text-[9px] text-slate-300 font-bold uppercase tracking-tighter">{p.name}</p>
+                              <p className="text-[10px] text-muted-foreground">{p.name}</p>
                             </div>
                           </div>
                         ))}
@@ -489,51 +484,33 @@ export default function SettingsPage() {
                   ))}
                 </div>
               </CardContent>
-              <CardFooter className="bg-white/80 backdrop-blur-sm border-t border-slate-100 p-6 flex items-center gap-3">
-                <div className="h-2 w-2 rounded-full bg-primary/40 animate-pulse"></div>
-                <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 opacity-60">
-                   Sincronización de seguridad activa • Los cambios requieren reinicio de sesión
-                </span>
-              </CardFooter>
             </Card>
           ) : (
-            <div className="h-full min-h-[500px] bg-white/40 backdrop-blur-sm border-2 border-dashed border-slate-200 rounded-[3rem] flex flex-col items-center justify-center text-slate-400 space-y-4 group">
-               <div className="h-24 w-24 rounded-full bg-slate-50 flex items-center justify-center group-hover:scale-110 transition-transform duration-500">
-                  <ShieldCheck size={48} className="text-slate-100 group-hover:text-primary/10 transition-colors" weight="duotone" />
-               </div>
-               <div className="text-center space-y-1">
-                 <p className="font-black text-[10px] uppercase tracking-[0.2em]">Seguridad del Sistema</p>
-                 <p className="text-xs font-bold text-slate-400">Selecciona un cargo lateral para gestionar su matriz</p>
-               </div>
+            <div className="h-full min-h-[400px] border-2 border-dashed rounded-xl flex flex-col items-center justify-center text-muted-foreground text-center p-8">
+               <ShieldCheck size={48} className="mb-4 opacity-20" />
+               <p className="text-sm font-medium">Selecciona un rol para ver sus permisos</p>
             </div>
           )}
         </div>
       </div>
 
       <Dialog open={isNewRoleOpen} onOpenChange={setIsNewRoleOpen}>
-        <DialogContent className="sm:max-w-[425px] border-none shadow-2xl bg-white/95 backdrop-blur-xl rounded-[2.5rem]">
-          <DialogHeader className="p-4">
-            <DialogTitle className="text-2xl font-black text-slate-800 tracking-tight">Nuevo Perfil de Cargo</DialogTitle>
-            <DialogDescription className="text-xs font-bold text-slate-400 uppercase tracking-widest">
-              Asigna un nombre descriptivo para identificar el cargo
-            </DialogDescription>
+        <DialogContent className="sm:max-w-[400px]">
+          <DialogHeader>
+            <DialogTitle>Nuevo Rol</DialogTitle>
+            <DialogDescription>Crea un nuevo perfil para asignar permisos específicos</DialogDescription>
           </DialogHeader>
-          <div className="px-4 py-4 space-y-6">
-            <div className="space-y-3">
-              <label className="text-[10px] font-black uppercase text-slate-400 tracking-widest ml-1">Denominación del Puesto</label>
-              <Input 
-                placeholder="Ej. Supervisor de Inventario, Cajero Senior" 
-                value={newRoleName}
-                onChange={(e) => setNewRoleName(e.target.value)}
-                className="h-12 bg-slate-50 border-none rounded-2xl focus-visible:ring-primary/20 font-bold"
-              />
-            </div>
+          <div className="py-4">
+            <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Nombre del Rol</label>
+            <Input 
+              placeholder="Ej. Cajero, Supervisor" 
+              value={newRoleName}
+              onChange={(e) => setNewRoleName(e.target.value)}
+            />
           </div>
-          <DialogFooter className="p-4">
-            <Button variant="ghost" className="rounded-xl font-bold text-xs" onClick={() => setIsNewRoleOpen(false)}>Cancelar</Button>
-            <Button onClick={handleCreateRole} disabled={!newRoleName.trim()} className="rounded-xl px-8 h-11 font-black uppercase tracking-widest text-xs shadow-lg shadow-primary/20">
-                Crear Perfil Maestro
-            </Button>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setIsNewRoleOpen(false)}>Cancelar</Button>
+            <Button onClick={handleCreateRole} disabled={!newRoleName.trim()}>Crear Rol</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

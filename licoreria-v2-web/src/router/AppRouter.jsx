@@ -1,35 +1,47 @@
+import React, { Suspense } from 'react';
 import { createBrowserRouter, RouterProvider, Navigate } from "react-router-dom";
 import { useAuthStore } from "@/store/useAuthStore";
 import MainLayout from "@/components/layout/MainLayout";
 import Login from "@/pages/Auth/Login";
-import ChangePassword from "@/pages/Auth/ChangePassword";
-import BranchSelection from "@/pages/Auth/BranchSelection";
-import TenantsList from "@/pages/Central/TenantsList";
-import CentralDashboard from "@/pages/Central/CentralDashboard";
-import CentralBackups from "@/pages/Central/CentralBackups";
-import AdminDashboard from "@/pages/Admin/AdminDashboard";
-import SucursalesList from "@/pages/Admin/SucursalesList";
-import UsuariosList from "@/pages/Admin/UsuariosList";
-import ProductosList from "@/pages/Admin/ProductosList";
-import CategoriasList from "@/pages/Admin/CategoriasList";
-import MedidasList from "@/pages/Admin/MedidasList";
-import ProveedoresList from "@/pages/Admin/ProveedoresList";
-import LicenseManagement from "@/pages/Central/LicenseManagement";
-import NuevaCompra from "@/pages/Admin/NuevaCompra";
-import ComprasHistory from "@/pages/Admin/ComprasHistory";
-import SalesHistory from "@/pages/Admin/SalesHistory";
-import SettingsPage from "@/pages/Admin/SettingsPage";
-import Reportes from "@/pages/Admin/Reportes";
-import CajasList from "@/pages/Admin/CajasList";
-import POS from "@/pages/POS/POS";
-import MySales from "@/pages/POS/MySales";
-import CajaFlow from "@/components/layout/CajaFlow";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ShieldCheck } from "lucide-react";
+import { ShieldCheck, Loader2 } from "lucide-react";
 
-import AjustesStock from "@/pages/Admin/AjustesStock";
-import BackupsPage from "@/pages/Admin/BackupsPage";
+// Lazy Loaded Pages
+const ChangePassword = React.lazy(() => import("@/pages/Auth/ChangePassword"));
+const BranchSelection = React.lazy(() => import("@/pages/Auth/BranchSelection"));
+const TenantsList = React.lazy(() => import("@/pages/Central/TenantsList"));
+const CentralDashboard = React.lazy(() => import("@/pages/Central/CentralDashboard"));
+const CentralBackups = React.lazy(() => import("@/pages/Central/CentralBackups"));
+const AdminDashboard = React.lazy(() => import("@/pages/Admin/AdminDashboard"));
+const SucursalesList = React.lazy(() => import("@/pages/Admin/SucursalesList"));
+const UsuariosList = React.lazy(() => import("@/pages/Admin/UsuariosList"));
+const ProductosList = React.lazy(() => import("@/pages/Admin/ProductosList"));
+const CategoriasList = React.lazy(() => import("@/pages/Admin/CategoriasList"));
+const MedidasList = React.lazy(() => import("@/pages/Admin/MedidasList"));
+const ProveedoresList = React.lazy(() => import("@/pages/Admin/ProveedoresList"));
+const LicenseManagement = React.lazy(() => import("@/pages/Central/LicenseManagement"));
+const NuevaCompra = React.lazy(() => import("@/pages/Admin/NuevaCompra"));
+const ComprasHistory = React.lazy(() => import("@/pages/Admin/ComprasHistory"));
+const SalesHistory = React.lazy(() => import("@/pages/Admin/SalesHistory"));
+const SettingsPage = React.lazy(() => import("@/pages/Admin/SettingsPage"));
+const Reportes = React.lazy(() => import("@/pages/Admin/Reportes"));
+const CajasList = React.lazy(() => import("@/pages/Admin/CajasList"));
+const POS = React.lazy(() => import("@/pages/POS/POS"));
+const MySales = React.lazy(() => import("@/pages/POS/MySales"));
+const CajaFlow = React.lazy(() => import("@/components/layout/CajaFlow"));
+const AjustesStock = React.lazy(() => import("@/pages/Admin/AjustesStock"));
+const BackupsPage = React.lazy(() => import("@/pages/Admin/BackupsPage"));
+const ProfilePage = React.lazy(() => import("@/pages/Admin/ProfilePage"));
+
+const LoadingFallback = () => (
+  <div className="flex h-screen w-full items-center justify-center bg-background text-primary">
+    <Loader2 className="h-8 w-8 animate-spin" />
+  </div>
+);
+
+
+
 
 // Placeholder Pages
 const Dashboard = () => {
@@ -214,10 +226,18 @@ const router = createBrowserRouter([
         path: "pos/mis-ventas",
         element: <ProtectedRoute requiredPermission="crear.venta"><MySales /></ProtectedRoute>,
       },
+      {
+        path: "admin/perfil",
+        element: <ProtectedRoute><ProfilePage /></ProtectedRoute>,
+      },
     ],
   },
 ]);
 
 export default function AppRouter() {
-  return <RouterProvider router={router} />;
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <RouterProvider router={router} />
+    </Suspense>
+  );
 }

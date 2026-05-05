@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { RefreshCcw, ShieldAlert, KeyRound, CalendarDays, Users, CheckCircle2, Play, Pause, RefreshCw } from 'lucide-react';
+import { RefreshCcw, ShieldAlert, KeyRound, CalendarDays, Users, CheckCircle2, Play, Pause, RefreshCw, Store } from 'lucide-react';
 import { toast } from 'sonner';
 import api from '@/lib/api';
 
@@ -107,16 +107,17 @@ export default function LicenseManagement() {
         </div>
       </div>
 
-      <Card className="shadow-sm border-slate-100 overflow-hidden">
+      <Card className="shadow-none border border-slate-100 overflow-hidden">
         <CardContent className="p-0">
           <div className="relative w-full overflow-auto">
             <Table>
-              <TableHeader className="bg-slate-50/50">
+              <TableHeader className="bg-transparent border-b">
                 <TableRow>
                   <TableHead className="py-4">Negocio</TableHead>
                   <TableHead>Estado</TableHead>
                   <TableHead>Plan Actual</TableHead>
                   <TableHead>Usuarios (Seats)</TableHead>
+                  <TableHead>Sucursales</TableHead>
                   <TableHead>Expiración</TableHead>
                   <TableHead className="text-right px-6">Acciones</TableHead>
                 </TableRow>
@@ -173,6 +174,14 @@ export default function LicenseManagement() {
                             />
                           </div>
                         )}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Store className="h-4 w-4 text-slate-400" />
+                          <span className="text-sm">
+                            {tenant.license.active_branches} / {tenant.license.max_branches === 0 ? '∞' : tenant.license.max_branches}
+                          </span>
+                        </div>
                       </TableCell>
                       <TableCell>
                         <div className="flex flex-col">

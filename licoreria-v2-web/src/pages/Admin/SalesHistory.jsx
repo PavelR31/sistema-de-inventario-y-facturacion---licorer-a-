@@ -104,16 +104,16 @@ export default function SalesHistory() {
         onSearchChange={setSearchTerm}
         searchPlaceholder="Buscar por Ticket ID o Sucursal..."
         action={
-          <Button variant="outline" className="gap-2 rounded-sm h-10 border-slate-200">
+          <Button variant="outline" className="gap-2 rounded-sm h-10">
             <Download className="h-4 w-4" /> Exportar Reporte
           </Button>
         }
       />
 
-      <Card className="shadow-sm border-slate-100 overflow-hidden">
+      <Card className="shadow-sm border-border overflow-hidden bg-card">
         <CardContent className="p-0">
           <Table>
-            <TableHeader className="bg-slate-50/50">
+            <TableHeader className="bg-muted/50">
               <TableRow>
                 <TableHead className="py-4 px-6">Ticket ID</TableHead>
                 <TableHead>Fecha / Hora</TableHead>
@@ -138,7 +138,7 @@ export default function SalesHistory() {
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        <Store className="h-3.5 w-3.5 text-slate-400" />
+                        <Store className="h-3.5 w-3.5 text-muted-foreground/60" />
                         <span className="text-sm font-medium">{v.sucursal?.nombre}</span>
                       </div>
                     </TableCell>
@@ -148,14 +148,14 @@ export default function SalesHistory() {
                         {v.metodo_pago}
                       </Badge>
                     </TableCell>
-                    <TableCell className="font-black text-slate-900">{formatMoney(v.total)}</TableCell>
+                    <TableCell className="font-black text-foreground">{formatMoney(v.total)}</TableCell>
                     <TableCell>
                       <Badge variant={v.estado === 'vigente' ? 'default' : 'destructive'} className="text-[10px] uppercase">
                         {v.estado}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right px-6">
-                      <Button variant="ghost" size="icon-sm" className="h-8 w-8 text-slate-400 hover:text-black hover:bg-slate-100" onClick={() => openDetail(v.id)}>
+                      <Button variant="ghost" size="icon-sm" className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-muted" onClick={() => openDetail(v.id)}>
                         <Eye className="w-4 h-4" />
                       </Button>
                     </TableCell>
@@ -181,33 +181,33 @@ export default function SalesHistory() {
           {selectedVenta && (
             <div className="space-y-6 py-4">
               <div className="grid grid-cols-2 gap-4">
-                <div className="p-4 bg-slate-50 rounded-xl space-y-1">
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Información General</p>
+                <div className="p-4 bg-muted/50 rounded-xl space-y-1 border border-border/50">
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Información General</p>
                   <div className="flex items-center gap-2 text-sm">
                     <Calendar className="h-4 w-4 text-primary" />
-                    <span className="font-medium">{new Date(selectedVenta.created_at).toLocaleString()}</span>
+                    <span className="font-medium text-foreground">{new Date(selectedVenta.created_at).toLocaleString()}</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
                     <Store className="h-4 w-4 text-primary" />
-                    <span className="font-medium">{selectedVenta.sucursal?.nombre}</span>
+                    <span className="font-medium text-foreground">{selectedVenta.sucursal?.nombre}</span>
                   </div>
                 </div>
-                <div className="p-4 bg-slate-50 rounded-xl space-y-1">
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Cajero / Cliente</p>
+                <div className="p-4 bg-muted/50 rounded-xl space-y-1 border border-border/50">
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Cajero / Cliente</p>
                   <div className="flex items-center gap-2 text-sm">
                     <User className="h-4 w-4 text-primary" />
-                    <span className="font-medium">{selectedVenta.user?.name}</span>
+                    <span className="font-medium text-foreground">{selectedVenta.user?.name}</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
                     <FileText className="h-4 w-4 text-primary" />
-                    <span className="font-medium">{selectedVenta.cliente?.nombre || 'Venta al Mostrador'}</span>
+                    <span className="font-medium text-foreground">{selectedVenta.cliente?.nombre || 'Venta al Mostrador'}</span>
                   </div>
                 </div>
               </div>
 
-              <div className="border rounded-xl overflow-hidden">
+              <div className="border border-border rounded-xl overflow-hidden bg-card">
                 <Table>
-                  <TableHeader className="bg-slate-50">
+                  <TableHeader className="bg-muted/50">
                     <TableRow>
                       <TableHead>Producto</TableHead>
                       <TableHead className="text-center">Cant.</TableHead>
@@ -231,15 +231,15 @@ export default function SalesHistory() {
               <div className="flex justify-end">
                 <div className="w-64 space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span className="text-slate-500">Monto Recibido:</span>
-                    <span className="font-medium">{formatMoney(selectedVenta.monto_pagado)}</span>
+                    <span className="text-muted-foreground">Monto Recibido:</span>
+                    <span className="font-medium text-foreground">{formatMoney(selectedVenta.monto_pagado)}</span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-slate-500">Cambio:</span>
-                    <span className="font-medium">{formatMoney(selectedVenta.cambio)}</span>
+                    <span className="text-muted-foreground">Cambio:</span>
+                    <span className="font-medium text-foreground">{formatMoney(selectedVenta.cambio)}</span>
                   </div>
-                  <div className="flex justify-between items-center pt-2 border-t text-xl">
-                    <span className="font-black text-slate-900">TOTAL:</span>
+                  <div className="flex justify-between items-center pt-2 border-t border-border text-xl">
+                    <span className="font-black text-foreground">TOTAL:</span>
                     <span className="font-black text-primary">{formatMoney(selectedVenta.total)}</span>
                   </div>
                 </div>
@@ -280,9 +280,9 @@ export default function SalesHistory() {
 
           <div className="py-4 space-y-4">
             <div className="space-y-2">
-              <label className="text-sm font-bold text-slate-700 uppercase">Motivo de Anulación</label>
+              <label className="text-sm font-bold text-muted-foreground uppercase">Motivo de Anulación</label>
               <textarea
-                className="w-full min-h-[100px] p-3 rounded-lg border bg-slate-50 text-sm focus:ring-2 focus:ring-primary outline-none transition-all"
+                className="w-full min-h-[100px] p-3 rounded-lg border border-border bg-muted/50 text-sm focus:ring-2 focus:ring-primary outline-none transition-all text-foreground"
                 placeholder="Ej. Error en el cobro, Devolución de producto..."
                 value={motivoAnulacion}
                 onChange={(e) => setMotivoAnulacion(e.target.value)}

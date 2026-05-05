@@ -1,6 +1,6 @@
-import { useTheme } from "next-themes"
+import { useTheme } from "@/components/theme-provider"
 import { Toaster as Sonner } from "sonner";
-import { CheckCircleIcon, InfoIcon, WarningIcon, XCircleIcon, SpinnerIcon } from "@phosphor-icons/react"
+import { CheckCircle, Info, Warning, XCircle, CircleNotch } from "@phosphor-icons/react"
 
 const Toaster = ({
   ...props
@@ -13,19 +13,19 @@ const Toaster = ({
       className="toaster group"
       icons={{
         success: (
-          <CheckCircleIcon className="size-4" />
+          <CheckCircle className="size-4" />
         ),
         info: (
-          <InfoIcon className="size-4" />
+          <Info className="size-4" />
         ),
         warning: (
-          <WarningIcon className="size-4" />
+          <Warning className="size-4" />
         ),
         error: (
-          <XCircleIcon className="size-4" />
+          <XCircle className="size-4" />
         ),
         loading: (
-          <SpinnerIcon className="size-4 animate-spin" />
+          <CircleNotch className="size-4 animate-spin" />
         ),
       }}
       style={

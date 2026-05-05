@@ -36,6 +36,13 @@ class SucursalController extends Controller
 
     public function store(Request $request)
     {
+        if (tenant()->isBranchLimitReached()) {
+            return response()->json([
+                'message' => 'Límite de sucursales alcanzado.',
+                'error' => 'Tu plan actual no permite crear más sucursales.'
+            ], 403);
+        }
+
         $request->validate([
             'nombre' => 'required|string|max:100',
             'direccion' => 'nullable|string',

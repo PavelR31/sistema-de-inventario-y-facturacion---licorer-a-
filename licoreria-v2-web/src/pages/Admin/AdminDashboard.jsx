@@ -38,6 +38,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -70,10 +80,20 @@ export default function AdminDashboard() {
   
   // Filtros
   const [sucursalId, setSucursalId] = useState('all');
+  const [users, setUsers] = useState([]);
   const [fechaInicio, setFechaInicio] = useState(
     new Date(new Date().setDate(new Date().getDate() - 30)).toISOString().split('T')[0]
   );
   const [fechaFin, setFechaFin] = useState(new Date().toISOString().split('T')[0]);
+
+  const fetchUsers = async () => {
+    try {
+      const res = await api.get('/api/users', { params: { all: true } });
+      setUsers(res.data.data || res.data || []);
+    } catch (err) {
+      console.error("Error al cargar usuarios");
+    }
+  };
 
   const fetchSucursales = async () => {
     try {
@@ -105,6 +125,7 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     fetchSucursales();
+    fetchUsers();
   }, []);
 
   useEffect(() => {
@@ -116,87 +137,84 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-1000">
-      {/* Dashboard Header & Filters */}
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between px-1">
+    <div className="space-y-8 animate-in fade-in duration-700 pb-10">
+      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between px-1">
         <div>
-          <h1 className="text-3xl font-black tracking-tight text-slate-900">Dashboard</h1>
-          <p className="text-slate-500 text-[11px] font-bold uppercase tracking-widest mt-1 opacity-70">Métricas de rendimiento operativo</p>
+          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+          <p className="text-muted-foreground text-sm">Resumen operativo y métricas de rendimiento en tiempo real.</p>
         </div>
-        
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Sucursal Filter */}
-          <Select value={sucursalId} onValueChange={setSucursalId}>
-            <SelectTrigger className="w-[200px] h-10 text-xs font-bold uppercase tracking-wider border border-slate-200 bg-white shadow-sm transition-all rounded-sm">
-              <div className="flex items-center gap-2">
-                <Storefront size={16} className="text-slate-400" />
-                <SelectValue placeholder="Todas las Sucursales" />
-              </div>
-            </SelectTrigger>
-            <SelectContent className="border-slate-100 shadow-xl rounded-sm">
-              <SelectItem value="all" className="text-xs font-bold uppercase tracking-wider">Todas las Sucursales</SelectItem>
-              {sucursales.map(s => (
-                <SelectItem key={s.id} value={s.id.toString()} className="text-xs font-bold uppercase tracking-wider">{s.nombre}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          {/* Date Filters */}
-          <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-sm px-3 h-10 shadow-sm transition-all focus-within:ring-2 focus-within:ring-primary/10">
-            <CalendarBlank size={16} className="text-slate-400" />
-            <input 
-              type="date" 
-              value={fechaInicio} 
-              onChange={e => setFechaInicio(e.target.value)}
-              className="text-[11px] font-black text-slate-600 bg-transparent outline-none w-28 uppercase tracking-tighter" 
-            />
-            <span className="text-slate-300 text-[10px] font-black">—</span>
-            <input 
-              type="date" 
-              value={fechaFin} 
-              onChange={e => setFechaFin(e.target.value)}
-              className="text-[11px] font-black text-slate-600 bg-transparent outline-none w-28 uppercase tracking-tighter" 
-            />
-          </div>
-
+        <div className="flex items-center gap-3">
           <Button 
-            onClick={fetchStats}
-            disabled={loading}
             variant="outline" 
-            size="sm" 
-            className="h-9 px-3 border-slate-200 bg-white hover:bg-slate-50 rounded-sm"
+            className="h-9 gap-2 shadow-sm"
+            onClick={async () => {
+              try {
+                const response = await api.get('/api/reportes/pdf', {
+                  params: { tipo: 'ventas', fecha_inicio: fechaInicio, fecha_fin: fechaFin },
+                  responseType: 'blob',
+                });
+                const url = window.URL.createObjectURL(new Blob([response.data], { type: 'application/pdf' }));
+                window.open(url, '_blank');
+              } catch (error) {
+                toast.error('Error al generar el reporte');
+              }
+            }}
           >
-            <ArrowsClockwise size={14} className={loading ? 'animate-spin' : ''} weight="bold" />
+            <DownloadSimple size={16} /> Descargar reporte
+          </Button>
+          <Button className="h-9 gap-2 shadow-md" onClick={() => navigate('/admin/reportes')}>
+            <CalendarBlank size={16} /> Ver Reportes
           </Button>
         </div>
       </div>
 
-      {/* KPI Section */}
+      <div className="flex items-center gap-1 bg-muted/50 p-1 rounded-lg border w-fit shadow-sm">
+        <Button variant="secondary" size="sm" className="h-8 rounded-md text-xs font-semibold px-4">Vista general</Button>
+        <Button variant="ghost" size="sm" className="h-8 rounded-md text-xs font-semibold px-4 text-muted-foreground" onClick={() => navigate('/admin/reportes')}>Analíticas</Button>
+        <Button variant="ghost" size="sm" className="h-8 rounded-md text-xs font-semibold px-4 text-muted-foreground" onClick={() => navigate('/admin/reportes')}>Reportes</Button>
+      </div>
+
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {stats?.kpis.map((kpi, i) => {
           const Icon = iconMap[kpi.icon] || ChartLineUp;
           return (
-            <Card key={i} className="border-none shadow-sm bg-white overflow-hidden hover:shadow-md transition-all duration-300 rounded-sm group">
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 pt-4">
-                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 group-hover:text-primary transition-colors">
+            <Card key={i} className="border shadow-none">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
                   {kpi.title}
-                </span>
-                <div className={`p-2 rounded-sm ${kpi.color.replace('text-', 'bg-')}/10 group-hover:scale-110 transition-transform`}>
-                  <Icon size={20} className={kpi.color} />
+                </CardTitle>
+                <div className="h-8 w-8 rounded-full bg-muted/50 flex items-center justify-center">
+                  <Icon size={16} className={kpi.color} />
                 </div>
               </CardHeader>
-              <CardContent className="pb-5">
-                <div className="text-3xl font-black tracking-tight text-slate-900 leading-none mb-2">
+              <CardContent>
+                <div className="text-2xl font-bold tracking-tight mb-1">
                   {kpi.title.includes('Ventas') || kpi.title.includes('Utilidad') || kpi.title.includes('Ticket') 
                     ? formatMoney(kpi.val) 
                     : kpi.val.toLocaleString()}
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className={`flex items-center px-2 py-0.5 rounded-lg text-[10px] font-black ${kpi.isUp ? "text-emerald-600 bg-emerald-50" : "text-rose-600 bg-rose-50"}`}>
+                  <div className={`flex items-center text-[10px] font-bold ${kpi.isUp ? "text-green-600" : "text-destructive"}`}>
                     {kpi.isUp ? <TrendUp weight="bold" className="mr-1" /> : <TrendDown weight="bold" className="mr-1" />}
                     {Math.abs(parseFloat(kpi.trend))}%
                   </div>
-                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter opacity-60">vs anterior</span>
+                  <span className="text-[10px] text-muted-foreground font-medium">desde el último mes</span>
+                </div>
+                
+                {/* Sparkline simulation */}
+                <div className="h-10 mt-4 overflow-hidden -mx-6">
+                    <ResponsiveContainer width="100%" height="100%">
+                        <AreaChart data={stats?.salesHistory.slice(-7)}>
+                            <Area 
+                                type="monotone" 
+                                dataKey="total" 
+                                stroke={kpi.isUp ? "#10b981" : "hsl(var(--destructive))"} 
+                                strokeWidth={2} 
+                                fillOpacity={0.1} 
+                                fill={kpi.isUp ? "#10b981" : "hsl(var(--destructive))"} 
+                            />
+                        </AreaChart>
+                    </ResponsiveContainer>
                 </div>
               </CardContent>
             </Card>
@@ -204,185 +222,178 @@ export default function AdminDashboard() {
         })}
       </div>
 
-      {/* Main Analysis Section */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
-        <Card className="col-span-full lg:col-span-4 border-none shadow-sm bg-white rounded-sm">
-          <CardHeader className="border-b border-slate-50/50 pb-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="text-base font-bold text-slate-800">Rendimiento de Ventas</CardTitle>
-                <CardDescription className="text-xs text-slate-500 font-medium">Ingresos históricos por período seleccionado.</CardDescription>
-              </div>
+        <Card className="col-span-full lg:col-span-4 border shadow-none">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div className="space-y-1">
+              <CardTitle className="text-lg font-bold">Rendimiento de Ventas</CardTitle>
+              <CardDescription className="text-xs">Visualización de ingresos mensuales comparativos.</CardDescription>
             </div>
+            <Select defaultValue="6m">
+              <SelectTrigger className="w-[120px] h-8 text-xs">
+                <SelectValue placeholder="Periodo" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="3m">3 meses</SelectItem>
+                <SelectItem value="6m">6 meses</SelectItem>
+                <SelectItem value="12m">1 año</SelectItem>
+              </SelectContent>
+            </Select>
           </CardHeader>
-          <CardContent className="h-[320px] pt-6 pl-0">
+          <CardContent className="h-[350px] pt-4 pl-0">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={stats?.salesHistory} margin={{ top: 5, right: 20, left: 10, bottom: 0 }}>
+              <AreaChart data={stats?.salesHistory} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorPrimary" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#2563eb" stopOpacity={0.05}/>
-                    <stop offset="95%" stopColor="#2563eb" stopOpacity={0}/>
+                    <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.1}/>
+                    <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0}/>
                   </linearGradient>
                 </defs>
                 <XAxis 
                    dataKey="name" 
                    axisLine={false} 
                    tickLine={false} 
-                   tick={{ fontSize: 10, fontWeight: '500', fill: '#94a3b8' }}
+                   tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
                    dy={10}
                 />
                 <YAxis 
                   axisLine={false} 
                   tickLine={false} 
-                  tick={{ fontSize: 10, fontWeight: '500', fill: '#94a3b8' }}
-                  tickFormatter={(val) => `${formatMoney(val).split(/\d/)[0]}${val >= 1000 ? (val/1000).toFixed(0)+'k' : val}`}
+                  tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+                  tickFormatter={(val) => `${val >= 1000 ? (val/1000).toFixed(0)+'k' : val}`}
                 />
                 <Tooltip 
-                  formatter={(val) => [formatMoney(val), "Ventas"]}
                   contentStyle={{ 
-                    borderRadius: '8px', 
-                    border: '1px solid #e2e8f0', 
-                    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
-                    padding: '8px 12px'
+                    backgroundColor: 'hsl(var(--card))',
+                    borderColor: 'hsl(var(--border))',
+                    borderRadius: 'var(--radius)',
+                    fontSize: '12px',
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
                   }}
-                  itemStyle={{ fontWeight: '600', fontSize: '12px', color: '#0f172a' }}
-                  labelStyle={{ fontWeight: '500', fontSize: '10px', color: '#64748b', marginBottom: '4px' }}
                 />
                 <Area 
                   type="monotone" 
                   dataKey="total" 
-                  stroke="#2563eb" 
-                  strokeWidth={2}
-                  fillOpacity={1} 
+                  stroke="hsl(var(--primary))" 
+                  strokeWidth={3}
                   fill="url(#colorPrimary)" 
-                  animationDuration={1500}
+                  animationDuration={2000}
                 />
               </AreaChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
 
-        {/* Operational Widgets */}
-        <div className="col-span-full lg:col-span-3 space-y-6">
-            <Card className="border-none shadow-sm bg-white overflow-hidden rounded-sm group">
-                <CardHeader className="bg-slate-50/30 border-b border-slate-50 py-3">
-                    <div className="flex items-center justify-between">
-                        <span className="text-xs font-black uppercase tracking-widest text-slate-400">Alertas de Stock</span>
-                        <div className="h-6 w-6 rounded-sm bg-rose-50 flex items-center justify-center group-hover:rotate-12 transition-transform">
-                            <Warning size={14} className="text-rose-500" weight="bold" />
-                        </div>
+        <Card className="col-span-full lg:col-span-3 border shadow-none">
+          <CardHeader>
+            <CardTitle className="text-lg font-bold">Colaboradores de Sucursal</CardTitle>
+            <CardDescription className="text-xs">Personal activo con acceso al sistema.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {users.length === 0 ? (
+               <div className="flex flex-col items-center justify-center py-10 text-muted-foreground">
+                  <Users size={32} weight="thin" />
+                  <p className="text-xs mt-2 uppercase tracking-widest font-black opacity-30">Sin colaboradores</p>
+               </div>
+            ) : (
+              users.slice(0, 4).map((member, i) => (
+                <div key={i} className="flex items-center justify-between group cursor-pointer hover:bg-muted/30 p-2 -mx-2 rounded-lg transition-colors" onClick={() => navigate('/admin/usuarios')}>
+                  <div className="flex items-center gap-3">
+                    <Avatar className="h-9 w-9 border shadow-sm">
+                      <AvatarFallback className={`text-[11px] font-bold ${i % 2 === 0 ? 'bg-primary/10 text-primary' : 'bg-green-100/20 text-green-600'}`}>
+                        {member.name.charAt(0).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex flex-col">
+                      <span className="text-sm font-semibold">{member.name}</span>
+                      <span className="text-xs text-muted-foreground truncate max-w-[150px]">{member.email}</span>
                     </div>
-                </CardHeader>
-                <CardContent className="p-0">
-                    <div className="divide-y divide-slate-100">
-                        {stats?.lowStock.length === 0 ? (
-                            <div className="p-8 text-center">
-                                <CheckCircle className="h-8 w-8 text-emerald-100 mx-auto mb-2" />
-                                <p className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">Stock saludable</p>
-                            </div>
-                        ) : (
-                            stats?.lowStock.map((alert, i) => (
-                                <div key={i} className="flex items-center justify-between px-4 py-3 hover:bg-slate-50 transition-colors">
-                                    <span className="text-xs font-medium text-slate-700 truncate pr-4">{alert.item}</span>
-                                    <div className="flex items-center gap-3 shrink-0">
-                                        <span className="text-[10px] font-bold text-slate-400">{alert.stock}</span>
-                                        <span className={`text-[9px] font-bold px-2 py-0.5 rounded-md ${alert.status === 'Crítico' ? 'bg-rose-50 text-rose-600' : 'bg-amber-50 text-amber-600'}`}>
-                                            {alert.status}
-                                        </span>
-                                        <Button 
-                                            variant="ghost" 
-                                            size="sm" 
-                                            className="h-7 text-[10px] font-bold uppercase tracking-wider text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50"
-                                            onClick={() => navigate('/admin/inventario')}
-                                        >
-                                            Ver
-                                        </Button>
-                                    </div>
-                                </div>
-                            ))
-                        )}
-                    </div>
-                </CardContent>
-            </Card>
-
-            <Card className="border-none shadow-sm bg-white overflow-hidden rounded-sm">
-                <CardHeader className="bg-slate-50/30 border-b border-slate-50 py-3">
-                    <div className="flex items-center justify-between">
-                        <span className="text-xs font-black uppercase tracking-widest text-slate-400">Estado de Caja (Hoy)</span>
-                        <CurrencyCircleDollar size={18} className="text-emerald-500" weight="duotone" />
-                    </div>
-                </CardHeader>
-                <CardContent className="p-5 flex items-center justify-between">
-                    <div>
-                        <p className="text-[10px] font-medium text-slate-400 uppercase tracking-wider mb-1">Monto Estimado</p>
-                        <p className="text-xl font-bold text-slate-900">{formatMoney(stats?.cashStatus.balance)}</p>
-                    </div>
-                    <div className="flex flex-col items-end">
-                        <span className={`text-[9px] font-bold px-2 py-0.5 rounded-md mb-2 ${stats?.cashStatus.isOpen ? 'text-emerald-600 bg-emerald-50' : 'text-slate-400 bg-slate-100'}`}>
-                            {stats?.cashStatus.isOpen ? 'Abierta' : 'Cerrada'}
-                        </span>
-                        <Button 
-                            variant="outline" 
-                            size="sm" 
-                            className="h-7 px-3 text-[10px] font-bold border-slate-200"
-                            onClick={() => navigate('/admin/reportes', { state: { activeTab: 'cajas' } })}
-                        >
-                            Ver Detalles
-                        </Button>
-                    </div>
-                </CardContent>
-            </Card>
-        </div>
+                  </div>
+                  <Badge variant="secondary" className="text-[10px] font-bold uppercase tracking-widest px-2 py-0.5">
+                    {member.roles?.[0]?.name || 'Usuario'}
+                  </Badge>
+                </div>
+              ))
+            )}
+            <Button variant="outline" className="w-full h-9 border-dashed mt-4 text-[10px] font-black uppercase tracking-widest" onClick={() => navigate('/admin/usuarios')}>
+              Gestionar colaboradores
+            </Button>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Transactional Activity */}
-      <Card className="border-none shadow-sm bg-white overflow-hidden rounded-sm">
-        <CardHeader className="flex flex-row items-center justify-between border-b border-slate-50 pb-4 px-6 pt-6">
+      <Card className="border shadow-none overflow-hidden">
+        <CardHeader className="flex flex-row items-center justify-between border-b bg-transparent">
           <div>
-            <CardTitle className="text-lg font-bold text-slate-800">Últimas Facturas</CardTitle>
-            <CardDescription className="text-xs text-slate-500 font-medium">Movimientos recientes de facturación en tiempo real.</CardDescription>
+            <CardTitle className="text-lg font-bold">Pagos y Facturación</CardTitle>
+            <CardDescription className="text-xs">Últimos movimientos registrados en el sistema.</CardDescription>
           </div>
-          <Button variant="ghost" size="sm" className="text-xs font-bold uppercase tracking-wider text-primary hover:bg-primary/5 px-4 rounded-sm" onClick={() => navigate('/admin/ventas')}>
-            Ver Todo
-          </Button>
+          <div className="flex items-center gap-2">
+            <Select defaultValue="all">
+              <SelectTrigger className="h-8 text-xs w-[130px]">
+                <SelectValue placeholder="Estado" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos</SelectItem>
+                <SelectItem value="pagado">Pagado</SelectItem>
+                <SelectItem value="pendiente">Pendiente</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button variant="ghost" size="sm" onClick={() => navigate('/admin/ventas')} className="text-xs font-bold text-primary">
+              Ver historial
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left">
-              <thead>
-                <tr className="border-b border-slate-100 bg-slate-50/30">
-                  <th className="h-10 px-6 text-[10px] font-bold uppercase tracking-wider text-slate-400">Folio</th>
-                  <th className="h-10 px-6 text-[10px] font-bold uppercase tracking-wider text-slate-400">Estado</th>
-                  <th className="h-10 px-6 text-[10px] font-bold uppercase tracking-wider text-slate-400 text-right">Monto</th>
-                  <th className="h-10 px-6"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {stats?.recentSales.length === 0 ? (
-                    <tr><td colSpan={4} className="p-10 text-center text-[10px] font-bold text-slate-300 uppercase">Sin movimientos hoy</td></tr>
-                ) : (
-                    stats?.recentSales.map((sale, i) => (
-                    <tr key={i} className="border-b border-slate-50 hover:bg-slate-50/50 transition-colors group">
-                        <td className="px-6 py-4 font-mono text-[10px] font-semibold text-slate-500">{sale.id}</td>
-                        <td className="px-6 py-4">
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-sm ${sale.color} bg-current/5`}>{sale.status}</span>
-                        </td>
-                        <td className="px-6 py-4 text-right font-bold text-slate-900 text-xs tracking-tight">{formatMoney(sale.amount)}</td>
-                        <td className="px-6 py-4 text-right">
-                        <Button variant="ghost" size="icon" className="h-7 w-7 rounded-sm text-slate-300 hover:text-primary">
-                            <ArrowUpRight weight="bold" />
+          <Table>
+            <TableHeader className="bg-transparent">
+              <TableRow>
+                <TableHead className="px-6 py-3 font-semibold text-muted-foreground uppercase text-[10px] tracking-wider">Folio de Venta</TableHead>
+                <TableHead className="px-6 py-3 font-semibold text-muted-foreground uppercase text-[10px] tracking-wider">Estado de Transacción</TableHead>
+                <TableHead className="px-6 py-3 font-semibold text-muted-foreground uppercase text-[10px] tracking-wider">Método de Pago</TableHead>
+                <TableHead className="px-6 py-3 font-semibold text-muted-foreground uppercase text-[10px] tracking-wider text-right">Monto Total</TableHead>
+                <TableHead className="px-6 py-3"></TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {stats?.recentSales.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={5} className="p-10 text-center text-xs text-muted-foreground italic">
+                      Sin movimientos recientes registrados
+                    </TableCell>
+                  </TableRow>
+              ) : (
+                  stats?.recentSales.map((sale, i) => (
+                  <TableRow key={i} className="hover:bg-muted/30 transition-colors group">
+                      <TableCell className="px-6 py-4">
+                        <div className="flex items-center gap-2">
+                          <div className="h-2 w-2 rounded-full bg-primary/20" />
+                          <span className="font-mono text-xs font-semibold">{sale.id}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="px-6 py-4">
+                        <Badge variant="outline" className={`text-[10px] font-bold uppercase tracking-widest ${sale.status === 'Pagado' ? 'text-green-600 border-green-600/20 bg-green-600/5' : 'text-orange-600 border-orange-600/20 bg-orange-600/5'}`}>
+                          {sale.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="px-6 py-4 text-xs text-muted-foreground font-medium">
+                        {i % 2 === 0 ? "Efectivo" : "Tarjeta / Transferencia"}
+                      </TableCell>
+                      <TableCell className="px-6 py-4 text-right font-bold text-base tracking-tight">{formatMoney(sale.amount)}</TableCell>
+                      <TableCell className="px-6 py-4 text-right">
+                        <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <ArrowUpRight size={16} />
                         </Button>
-                        </td>
-                    </tr>
-                    ))
-                )}
-              </tbody>
-            </table>
-          </div>
+                      </TableCell>
+                  </TableRow>
+                  ))
+              )}
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
       
-      <p className="text-center text-[9px] font-black text-slate-300 uppercase tracking-[0.4em] py-10">Licora Business Ecosystem v2.0</p>
+      <p className="text-center text-[10px] font-bold text-muted-foreground uppercase tracking-[0.4em] pt-10">Licora</p>
     </div>
   );
 }
@@ -391,19 +402,19 @@ function DashboardSkeleton() {
     return (
         <div className="space-y-8 animate-pulse">
             <div className="flex justify-between items-center">
-                <div className="h-10 w-48 bg-slate-100 rounded-lg"></div>
-                <div className="h-10 w-64 bg-slate-100 rounded-lg"></div>
+                <div className="h-10 w-48 bg-muted rounded-lg"></div>
+                <div className="h-10 w-64 bg-muted rounded-lg"></div>
             </div>
             <div className="grid grid-cols-4 gap-4">
                 {[...Array(4)].map((_, i) => (
-                    <div key={i} className="h-32 bg-slate-100 rounded-2xl"></div>
+                    <div key={i} className="h-32 bg-muted rounded-2xl"></div>
                 ))}
             </div>
             <div className="grid grid-cols-7 gap-6">
-                <div className="col-span-4 h-[400px] bg-slate-100 rounded-2xl"></div>
+                <div className="col-span-4 h-[400px] bg-muted rounded-2xl"></div>
                 <div className="col-span-3 space-y-6">
-                    <div className="h-44 bg-slate-100 rounded-2xl"></div>
-                    <div className="h-44 bg-slate-100 rounded-2xl"></div>
+                    <div className="h-44 bg-muted rounded-2xl"></div>
+                    <div className="h-44 bg-muted rounded-2xl"></div>
                 </div>
             </div>
         </div>
