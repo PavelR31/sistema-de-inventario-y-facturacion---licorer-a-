@@ -10,6 +10,7 @@ use App\Http\Controllers\Central\BackupController;
 
 // Rutas Públicas Centrales
 Route::post('/central/login', [AuthController::class, 'login']);
+Route::post('/central/forgot-password', [AuthController::class, 'forgotPassword']);
 
 // Rutas Protegidas Centrales (Super Admins)
 Route::middleware('auth:sanctum')->prefix('central')->group(function () {
