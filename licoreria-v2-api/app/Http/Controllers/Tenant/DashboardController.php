@@ -9,10 +9,100 @@ use App\Models\Tenant\Caja;
 use App\Models\Tenant\Cliente;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use App\Models\Tenant\CompraProveedor;
+use App\Models\Tenant\VentaAnulada;
+use App\Models\Tenant\AjusteInventario;
 use Carbon\Carbon;
 
 class DashboardController extends Controller
 {
+    public function getTimeline(Request $request)
+    {
+        $sucursalId = $request->header('X-Branch-Id');
+        $limit = $request->limit ?? 10;
+
+        // 1. Obtener Ventas Recientes
+        $ventas = Venta::with(['user', 'sucursal'])
+            ->when($sucursalId, fn($q) => $q->where('sucursal_id', $sucursalId))
+            ->latest()
+            ->limit($limit)
+            ->get()
+            ->map(fn($v) => [
+                'id' => "v-{$v->id}",
+                'type' => 'venta',
+                'title' => "Nueva Venta: {$v->numero_factura}",
+                'description' => "Realizada por {$v->user->name} por un monto de " . number_format($v->total, 2),
+                'amount' => (float)$v->total,
+                'status' => $v->estado,
+                'time' => $v->created_at->toISOString(),
+                'icon' => 'receipt'
+            ]);
+
+        // 2. Obtener Anulaciones
+        $anulaciones = VentaAnulada::with(['venta', 'user'])
+            ->whereHas('venta', function($q) use ($sucursalId) {
+                if ($sucursalId) $q->where('sucursal_id', $sucursalId);
+            })
+            ->latest()
+            ->limit($limit)
+            ->get()
+            ->map(fn($a) => [
+                'id' => "a-{$a->id}",
+                'type' => 'anulacion',
+                'title' => "Venta Anulada: {$a->venta->numero_factura}",
+                'description' => "Anulada por {$a->user->name}. Motivo: {$a->motivo}",
+                'amount' => (float)$a->venta->total,
+                'status' => 'anulada',
+                'time' => $a->created_at->toISOString(),
+                'icon' => 'x-circle'
+            ]);
+
+        // 3. Obtener Compras (Abastecimiento)
+        $compras = CompraProveedor::with(['proveedor', 'user'])
+            ->when($sucursalId, fn($q) => $q->where('sucursal_id', $sucursalId))
+            ->latest()
+            ->limit($limit)
+            ->get()
+            ->map(fn($c) => [
+                'id' => "c-{$c->id}",
+                'type' => 'compra',
+                'title' => "Abastecimiento: {$c->proveedor->nombre}",
+                'description' => "Ingreso de mercadería por factura #{$c->numero_factura}",
+                'amount' => (float)$c->total,
+                'status' => 'completado',
+                'time' => $c->created_at->toISOString(),
+                'icon' => 'package'
+            ]);
+
+        // 4. Obtener Ajustes de Stock
+        $ajustes = AjusteInventario::with(['producto', 'user'])
+            ->when($sucursalId, fn($q) => $q->where('sucursal_id', $sucursalId))
+            ->latest()
+            ->limit($limit)
+            ->get()
+            ->map(fn($aj) => [
+                'id' => "aj-{$aj->id}",
+                'type' => 'ajuste',
+                'title' => "Ajuste de Stock: {$aj->producto->nombre}",
+                'description' => "Se ajustó " . ($aj->tipo === 'entrada' ? '+' : '-') . "{$aj->cantidad} unidades. Motivo: {$aj->motivo}",
+                'amount' => null,
+                'status' => 'ajustado',
+                'time' => $aj->created_at->toISOString(),
+                'icon' => 'arrows-left-right'
+            ]);
+
+        // Combinar y ordenar
+        $timeline = collect($ventas)
+            ->concat($anulaciones)
+            ->concat($compras)
+            ->concat($ajustes)
+            ->sortByDesc('time')
+            ->values()
+            ->take($limit);
+
+        return response()->json($timeline);
+    }
+
     public function getStats(Request $request)
     {
         $sucursalId = $request->sucursal_id;
@@ -157,7 +247,8 @@ class DashboardController extends Controller
             'cashStatus' => [
                 'balance' => $cashBalance,
                 'isOpen' => $openCajas->count() > 0
-            ]
+            ],
+            'timeline' => $this->getTimeline($request)->original
         ]);
     }
 }

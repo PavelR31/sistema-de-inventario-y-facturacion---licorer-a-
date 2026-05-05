@@ -116,9 +116,17 @@ class ProductoController extends Controller
             'presentaciones.*.precio_venta' => 'required_with:presentaciones|numeric|min:0',
             'presentaciones.*.codigo_barras' => 'nullable|string|max:50',
             'presentaciones.*.es_principal' => 'boolean',
+            'imagen' => 'nullable|image|max:2048',
         ]);
 
-        $producto->update($request->except(['sucursales', 'presentaciones']));
+        $data = $request->except(['sucursales', 'presentaciones', 'imagen']);
+
+        if ($request->hasFile('imagen')) {
+            $path = $request->file('imagen')->store('productos', 'public');
+            $data['imagen_ruta'] = $path;
+        }
+
+        $producto->update($data);
 
         if ($request->has('sucursales')) {
             $syncData = [];
