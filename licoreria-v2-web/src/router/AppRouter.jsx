@@ -10,6 +10,7 @@ import { ShieldCheck, Loader2 } from "lucide-react";
 // Lazy Loaded Pages
 const ChangePassword = React.lazy(() => import("@/pages/Auth/ChangePassword"));
 const BranchSelection = React.lazy(() => import("@/pages/Auth/BranchSelection"));
+const Impersonate = React.lazy(() => import("@/pages/Auth/Impersonate"));
 const TenantsList = React.lazy(() => import("@/pages/Central/TenantsList"));
 const CentralDashboard = React.lazy(() => import("@/pages/Central/CentralDashboard"));
 const CentralBackups = React.lazy(() => import("@/pages/Central/CentralBackups"));
@@ -104,6 +105,10 @@ const router = createBrowserRouter([
   {
     path: "/login",
     element: <Login />,
+  },
+  {
+    path: "/impersonate",
+    element: <Impersonate />,
   },
   {
     path: "/select-branch",

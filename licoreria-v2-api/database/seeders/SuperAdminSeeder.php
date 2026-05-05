@@ -17,15 +17,14 @@ class SuperAdminSeeder extends Seeder
             ['email' => 'superadmin@licoreria.com'],
             [
                 'name'                 => 'Super Administrador',
-                'password'             => Hash::make('SuperAdmin2026!'),
+                'password'             => Hash::make('admin123'),
                 'is_super_admin'       => true,
-                'must_change_password' => true,
+                'must_change_password' => false,
             ]
         );
 
         $this->command->info("✅ SuperAdmin creado/actualizado:");
         $this->command->info("   Email:    superadmin@licoreria.com");
-        $this->command->info("   Password: SuperAdmin2026!");
-        $this->command->info("   ⚠️  Se le pedirá cambiar la contraseña en el primer inicio de sesión.");
+        $this->command->info("   Password: admin123");
     }
 }

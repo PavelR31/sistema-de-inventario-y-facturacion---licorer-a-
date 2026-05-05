@@ -39,6 +39,7 @@ Route::middleware([
     
     // Auth de Tokens (para Inquilinos)
     Route::post('/login', [TenantAuthController::class, 'login']);
+    Route::post('/forgot-password', [TenantAuthController::class, 'forgotPassword']);
 
     // Rutas protegidas (Requieren autenticación del empleado via Sanctum y licencia activa)
     Route::middleware(['auth:sanctum', 'tenant.license'])->group(function () {

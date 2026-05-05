@@ -7,6 +7,8 @@ use App\Models\Central\Tenant;
 use App\Models\Central\Plan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\TenantWelcomeMail;
 
 class TenantController extends Controller
 {
@@ -63,10 +65,21 @@ class TenantController extends Controller
             'domain' => $request->domain
         ]);
 
+        // Enviar correo de bienvenida con las credenciales
+        try {
+            Mail::to($request->email)->send(new TenantWelcomeMail(
+                $request->name,
+                $request->domain,
+                $request->email,
+                $tempPassword
+            ));
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Error enviando correo de bienvenida: ' . $e->getMessage());
+        }
+
         return response()->json([
-            'message' => 'Licorería creada e inicializada exitosamente.',
+            'message' => 'Licorería creada exitosamente. Las credenciales han sido enviadas al correo administrativo.',
             'tenant' => $tenant->load('domains'),
-            'temporary_password' => $tempPassword, // Devolvemos la clave para que el FE la muestre
         ], 201);
     }
 

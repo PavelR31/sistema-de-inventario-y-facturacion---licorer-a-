@@ -4,12 +4,13 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
-import { Plus, ArrowsClockwise, Trash, Globe, Key, PencilLine, CheckCircle } from "@phosphor-icons/react";
+import { Plus, ArrowsClockwise, Trash, Globe, Key, PencilLine, CheckCircle, User } from "@phosphor-icons/react";
 import { toast } from 'sonner';
 import api from '@/lib/api';
 import PageHeader from '@/components/layout/PageHeader';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import { TenantUsersModal } from './TenantUsersModal';
 
 export default function TenantsList() {
   const [tenants, setTenants] = useState([]);
@@ -22,6 +23,8 @@ export default function TenantsList() {
   const [editingTenant, setEditingTenant] = useState(null);
   const [lastCreatedTenant, setLastCreatedTenant] = useState(null);
   const [createdPassword, setCreatedPassword] = useState('');
+  const [isUsersModalOpen, setIsUsersModalOpen] = useState(false);
+  const [selectedTenantForUsers, setSelectedTenantForUsers] = useState(null);
 
   const fetchTenants = async () => {
     setIsLoading(true);
@@ -91,6 +94,11 @@ export default function TenantsList() {
   const openEditDialog = (tenant) => {
     setEditingTenant({ ...tenant });
     setIsEditOpen(true);
+  };
+
+  const openUsersModal = (tenant) => {
+    setSelectedTenantForUsers(tenant);
+    setIsUsersModalOpen(true);
   };
 
   return (
@@ -215,6 +223,15 @@ export default function TenantsList() {
                           variant="ghost" 
                           size="icon" 
                           className="h-8 w-8 text-muted-foreground hover:text-primary transition-colors"
+                          onClick={() => openUsersModal(tenant)}
+                          title="Gestionar Usuarios"
+                        >
+                          <User size={16} />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8 text-muted-foreground hover:text-primary transition-colors"
                           onClick={() => openEditDialog(tenant)}
                           title="Editar"
                         >
@@ -318,6 +335,13 @@ export default function TenantsList() {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Modal de Usuarios del Tenant */}
+      <TenantUsersModal 
+        isOpen={isUsersModalOpen} 
+        onClose={setIsUsersModalOpen} 
+        tenant={selectedTenantForUsers} 
+      />
     </div>
   );
 }

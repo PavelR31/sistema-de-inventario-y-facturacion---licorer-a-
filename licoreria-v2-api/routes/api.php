@@ -25,6 +25,11 @@ Route::middleware('auth:sanctum')->prefix('central')->group(function () {
     // Gestión de Tenants
     Route::apiResource('tenants', TenantController::class);
     
+    // Gestión de Usuarios de Tenants
+    Route::get('/tenants/{tenant}/users', [\App\Http\Controllers\Central\TenantUserController::class, 'index']);
+    Route::put('/tenants/{tenant}/users/{user}', [\App\Http\Controllers\Central\TenantUserController::class, 'update']);
+    Route::post('/tenants/{tenant}/users/{user}/impersonate', [\App\Http\Controllers\Central\TenantUserController::class, 'impersonate']);
+    
     // Gestión de Licencias
     Route::get('/plans', [LicenseController::class, 'plans']);
     Route::apiResource('licenses', LicenseController::class)->only(['index', 'show']);

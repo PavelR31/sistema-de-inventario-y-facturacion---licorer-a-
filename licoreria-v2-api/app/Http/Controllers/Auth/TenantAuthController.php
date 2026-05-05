@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\ResetPasswordMail;
 use Illuminate\Validation\ValidationException;
 
 class TenantAuthController extends Controller
@@ -64,5 +66,38 @@ class TenantAuthController extends Controller
     public function me(Request $request)
     {
         return response()->json($request->user());
+    }
+
+    public function forgotPassword(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+        ]);
+
+        $user = User::where('email', $request->email)->first();
+
+        if (!$user) {
+            // Devolvemos éxito de todos modos por seguridad (no revelar si el email existe)
+            return response()->json([
+                'message' => 'Si el correo está registrado, recibirás una nueva contraseña en breve.',
+            ]);
+        }
+
+        // Generar clave temporal
+        $newPassword = \Illuminate\Support\Str::random(10);
+
+        $user->password = Hash::make($newPassword);
+        $user->must_change_password = true;
+        $user->save();
+
+        try {
+            Mail::to($user->email)->send(new ResetPasswordMail($user->name, $newPassword));
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Error enviando correo de reset: ' . $e->getMessage());
+        }
+
+        return response()->json([
+            'message' => 'Si el correo está registrado, recibirás una nueva contraseña en breve.',
+        ]);
     }
 }

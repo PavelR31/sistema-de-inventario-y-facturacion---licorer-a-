@@ -8,6 +8,8 @@ use App\Models\Tenant\CajaSesion;
 use App\Models\Tenant\Venta;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\DailyCashRegisterReportMail;
 use Carbon\Carbon;
 
 class CajaSesionController extends Controller
@@ -138,6 +140,34 @@ class CajaSesionController extends Controller
             $caja->update([
                 'balance_actual' => $cierreReal
             ]);
+
+            // Enviar correo de reporte de cierre
+            try {
+                $adminEmail = tenant('email');
+                if ($adminEmail) {
+                    $ventasTotales = Venta::where('caja_sesion_id', $sesion->id)->where('estado', 'vigente')->sum('total');
+                    $ingresosExtra = 0; // Podrías implementar ingresos manuales luego
+
+                    $reportData = [
+                        'sucursal' => $caja->sucursal->nombre ?? 'Sucursal Principal',
+                        'apertura' => $sesion->fecha_apertura,
+                        'cierre' => $sesion->fecha_cierre,
+                        'usuario' => $sesion->user->name ?? 'Usuario',
+                        'monto_inicial' => number_format($sesion->apertura_real, 2),
+                        'ventas_totales' => number_format($ventasTotales, 2),
+                        'ingresos_extra' => number_format($ingresosExtra, 2),
+                        'egresos' => number_format($egresos, 2),
+                        'monto_esperado' => number_format($cierreEsperado, 2),
+                        'monto_real' => number_format($cierreReal, 2),
+                        'diferencia' => number_format($discrepancia, 2),
+                        'observaciones' => $request->observaciones ?? 'Ninguna',
+                    ];
+
+                    Mail::to($adminEmail)->send(new DailyCashRegisterReportMail($reportData));
+                }
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error("Error enviando reporte de caja: " . $e->getMessage());
+            }
 
             return response()->json($sesion);
         });
