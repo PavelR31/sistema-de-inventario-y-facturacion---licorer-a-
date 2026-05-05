@@ -1,16 +1,43 @@
-# React + Vite
+# Licora Web - Frontend (React)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+La interfaz de usuario de Licora es una Single Page Application (SPA) moderna desarrollada con React y Vite, diseñada para consumir la API multi-tenant de forma eficiente y segura.
 
-Currently, two official plugins are available:
+## Sistema de Autenticación
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+La aplicación utiliza un sistema basado en **Tokens (Bearer)** gestionado a través de **Laravel Sanctum**.
 
-## React Compiler
+*   **Persistencia**: Los tokens se almacenan de forma segura y se gestionan mediante un Store de **Zustand**.
+*   **Interceptores Axios**: Se utiliza una instancia configurada de Axios que adjunta automáticamente el token de autenticación en las cabeceras de cada petición y maneja las respuestas de error (como tokens expirados) de forma centralizada.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Gestión de Permisos (RBAC)
 
-## Expanding the ESLint configuration
+El sistema implementa un Control de Acceso Basado en Roles (RBAC) granular:
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+*   **Sincronización con API**: Los permisos del usuario se cargan en el momento del login y se validan en tiempo real en el frontend.
+*   **Componente <Can />**: Se utiliza un componente de envoltura personalizado para proteger elementos de la interfaz, asegurando que los usuarios solo vean y operen sobre módulos para los que tienen autorización explícita.
+*   **Protección de Rutas**: Las rutas de la aplicación están protegidas por Middlewares de React que validan tanto la sesión activa como los privilegios necesarios para acceder a secciones administrativas.
+
+## Instalación
+
+1.  **Instalar paquetes**:
+    ```bash
+    npm install
+    ```
+
+2.  **Configuración de API**:
+    Define la URL de tu API en el archivo `.env`:
+    ```env
+    VITE_API_URL=http://tu-dominio-api.com
+    ```
+
+3.  **Ejecutar en desarrollo**:
+    ```bash
+    npm run dev
+    ```
+
+## Stack Técnico Principal
+*   **React + Vite**: Motor de la aplicación.
+*   **Shadcn UI**: Sistema de componentes basado en Radix UI.
+*   **Tailwind CSS**: Framework de estilos.
+*   **Zustand**: Gestión de estado global ligera y rápida.
+*   **React Query**: Sincronización de datos con el servidor y gestión de caché.
