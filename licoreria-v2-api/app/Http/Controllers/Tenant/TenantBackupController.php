@@ -126,11 +126,16 @@ class TenantBackupController extends Controller
     public function upload(Request $request)
     {
         $request->validate([
-            'file' => 'required|file|mimes:zip|max:512000', // max 500MB
+            'file' => 'required|file|max:512000', // max 500MB
         ]);
 
         $tenantId = tenant('id');
         $file = $request->file('file');
+        $extension = strtolower($file->getClientOriginalExtension());
+        
+        if (!in_array($extension, ['zip', 'sql'])) {
+            return response()->json(['message' => 'Solo se permiten archivos ZIP o SQL.'], 422);
+        }
         
         $timestamp = now()->format('Y-m-d_H-i-s');
         $filename = "import_{$timestamp}_" . $file->getClientOriginalName();
@@ -184,24 +189,31 @@ class TenantBackupController extends Controller
             $tempDir = storage_path('app/backup-temp/restore_' . time());
             mkdir($tempDir, 0755, true);
 
-            // Copiar ZIP a temp
-            $zipPath = "{$tempDir}/" . basename($path);
-            file_put_contents($zipPath, $disk->get($path));
+            // Copiar archivo a temp
+            $filePath = "{$tempDir}/" . basename($path);
+            file_put_contents($filePath, $disk->get($path));
 
-            // Extraer ZIP
-            $zip = new ZipArchive();
-            if ($zip->open($zipPath) !== true) {
-                throw new \RuntimeException('No se pudo abrir el archivo ZIP');
-            }
-            $zip->extractTo($tempDir);
-            $zip->close();
+            $sqlPath = null;
+            if (str_ends_with(strtolower($path), '.zip')) {
+                // Extraer ZIP
+                $zip = new ZipArchive();
+                if ($zip->open($filePath) !== true) {
+                    throw new \RuntimeException('No se pudo abrir el archivo ZIP');
+                }
+                $zip->extractTo($tempDir);
+                $zip->close();
 
-            // Buscar el archivo .sql dentro del ZIP extraído
-            $sqlFiles = glob("{$tempDir}/*.sql");
-            if (empty($sqlFiles)) {
-                throw new \RuntimeException('No se encontró un archivo SQL en el respaldo');
+                // Buscar el archivo .sql dentro del ZIP extraído
+                $sqlFiles = glob("{$tempDir}/*.sql");
+                if (empty($sqlFiles)) {
+                    throw new \RuntimeException('No se encontró un archivo SQL en el respaldo ZIP');
+                }
+                $sqlPath = $sqlFiles[0];
+            } else if (str_ends_with(strtolower($path), '.sql')) {
+                $sqlPath = $filePath;
+            } else {
+                throw new \RuntimeException('Formato de archivo no soportado para restauración');
             }
-            $sqlPath = $sqlFiles[0];
 
             // Ejecutar mysql import
             $dumpBinaryPath = config('database.connections.mysql.dump.dump_binary_path', '');

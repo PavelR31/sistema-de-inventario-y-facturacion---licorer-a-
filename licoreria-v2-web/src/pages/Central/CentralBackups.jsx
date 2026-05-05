@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -15,6 +15,7 @@ import {
   WarningCircle,
   FileZip,
   ArrowsClockwise,
+  ArrowCounterClockwise,
   Broom,
   Heartbeat,
   Buildings,
@@ -29,6 +30,11 @@ export default function CentralBackups() {
   const [isLoading, setIsLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
   const [isCleaning, setIsCleaning] = useState(false);
+  const [isRestoring, setIsRestoring] = useState(false);
+  const [tenants, setTenants] = useState([]);
+  const [selectedTenant, setSelectedTenant] = useState('');
+  const [restoreFile, setRestoreFile] = useState(null);
+  const fileInputRef = useRef(null);
   const [confirmDialog, setConfirmDialog] = useState({ open: false, type: null, path: null, filename: null });
 
   useEffect(() => { fetchAll(); }, []);
@@ -108,6 +114,84 @@ export default function CentralBackups() {
     }
   };
 
+  const fetchTenantsList = async () => {
+    if (tenants.length === 0) {
+      try {
+        const res = await api.get('/api/central/tenants');
+        setTenants(res.data.data || res.data);
+      } catch (e) {
+        toast.error('Error al cargar licorerías');
+      }
+    }
+  };
+
+  const openRestoreDialog = () => {
+    setConfirmDialog({ open: true, type: 'restore_tenant' });
+    setSelectedTenant('');
+    setRestoreFile(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    fetchTenantsList();
+  };
+
+  const openCreateTenantBackupDialog = () => {
+    setConfirmDialog({ open: true, type: 'create_tenant_backup' });
+    setSelectedTenant('');
+    fetchTenantsList();
+  };
+
+  const handleCreateTenantBackup = async () => {
+    if (!selectedTenant) {
+      toast.warning('Selecciona una licorería.');
+      return;
+    }
+    setIsCreating(true);
+    setConfirmDialog({ open: false });
+    try {
+      const res = await api.post('/api/central/backups/tenant', { tenant_id: selectedTenant }, { responseType: 'blob' });
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const a = document.createElement('a');
+      a.href = url;
+      const disposition = res.headers['content-disposition'];
+      let filename = `backup_${selectedTenant}.zip`;
+      if (disposition && disposition.indexOf('filename="') !== -1) {
+          filename = disposition.split('filename="')[1].split('"')[0];
+      }
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+      toast.success('Backup individual descargado correctamente.');
+    } catch (e) {
+      toast.error('Error al descargar backup individual.');
+    } finally {
+      setIsCreating(false);
+    }
+  };
+
+  const handleRestoreTenant = async () => {
+    if (!selectedTenant || !restoreFile) {
+      toast.warning('Selecciona una licorería y un archivo ZIP o SQL.');
+      return;
+    }
+    const formData = new FormData();
+    formData.append('tenant_id', selectedTenant);
+    formData.append('file', restoreFile);
+
+    setIsRestoring(true);
+    try {
+      const res = await api.post('/api/central/backups/restore-tenant', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      toast.success(res.data.message || 'Licorería restaurada exitosamente.');
+      setConfirmDialog({ open: false });
+    } catch (e) {
+      toast.error(e.response?.data?.message || 'Error al restaurar.');
+    } finally {
+      setIsRestoring(false);
+    }
+  };
+
   const formatDate = (d) => {
     if (!d) return '—';
     return new Date(d).toLocaleDateString('es-NI', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
@@ -137,6 +221,10 @@ export default function CentralBackups() {
           <Button onClick={handleCleanup} disabled={isCleaning} variant="outline" size="sm" className="h-9 px-3 border-slate-200 bg-white rounded-sm gap-2 text-xs font-bold uppercase tracking-wider">
             {isCleaning ? <ArrowsClockwise size={14} className="animate-spin" weight="bold" /> : <Broom size={14} weight="bold" />}
             Limpiar
+          </Button>
+          <Button onClick={openRestoreDialog} disabled={isCreating} className="h-9 px-4 rounded-sm gap-2 text-xs font-bold uppercase tracking-wider bg-amber-50 text-amber-700 hover:bg-amber-100 hover:text-amber-800 border border-amber-200">
+            <ArrowCounterClockwise size={14} weight="bold" />
+            Restaurar Licorería
           </Button>
           <Button onClick={() => setConfirmDialog({ open: true, type: 'create' })} disabled={isCreating} className="h-9 px-4 rounded-sm gap-2 text-xs font-bold uppercase tracking-wider">
             {isCreating ? <ArrowsClockwise size={14} className="animate-spin" weight="bold" /> : <Plus size={14} weight="bold" />}
@@ -277,14 +365,24 @@ export default function CentralBackups() {
         <DialogContent aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle>
-              {confirmDialog.type === 'create' ? 'Crear Backup' : 'Eliminar Backup'}
+              {confirmDialog.type === 'create' && 'Crear Backup'}
+              {confirmDialog.type === 'delete' && 'Eliminar Backup'}
+              {confirmDialog.type === 'restore_tenant' && 'Restaurar Licorería'}
+              {confirmDialog.type === 'create_tenant_backup' && 'Backup Individual'}
             </DialogTitle>
-            {confirmDialog.type === 'create' ? (
+            {confirmDialog.type === 'create' && (
               <DialogDescription>Selecciona el tipo de respaldo que deseas crear.</DialogDescription>
-            ) : (
+            )}
+            {confirmDialog.type === 'delete' && (
               <DialogDescription>
                 Se eliminará permanentemente <span className="font-bold text-slate-800">{confirmDialog.filename}</span>. Esta acción no se puede deshacer.
               </DialogDescription>
+            )}
+            {confirmDialog.type === 'restore_tenant' && (
+              <DialogDescription>Restaura los datos de una licorería desde un archivo .zip o .sql</DialogDescription>
+            )}
+            {confirmDialog.type === 'create_tenant_backup' && (
+              <DialogDescription>Selecciona la licorería para generar y descargar su respaldo.</DialogDescription>
             )}
           </DialogHeader>
 
@@ -304,6 +402,13 @@ export default function CentralBackups() {
                   <p className="text-[10px] text-slate-400">Central + todas las BDs de licorerías</p>
                 </div>
               </Button>
+              <Button variant="outline" className="w-full justify-start h-12 rounded-sm gap-3 text-left" onClick={openCreateTenantBackupDialog}>
+                <Database size={18} weight="duotone" className="text-amber-600 shrink-0" />
+                <div>
+                  <p className="text-xs font-bold">Backup Individual (Licorería)</p>
+                  <p className="text-[10px] text-slate-400">Descarga un respaldo en ZIP de un tenant específico</p>
+                </div>
+              </Button>
             </div>
           )}
 
@@ -312,6 +417,73 @@ export default function CentralBackups() {
               <Button variant="ghost" onClick={() => setConfirmDialog({ open: false })} className="rounded-sm">Cancelar</Button>
               <Button variant="destructive" onClick={() => handleDelete(confirmDialog.path)} className="rounded-sm">Eliminar</Button>
             </DialogFooter>
+          )}
+
+          {confirmDialog.type === 'restore_tenant' && (
+            <div className="space-y-4 py-2">
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-700">Licorería a restaurar</label>
+                <select 
+                  className="w-full text-sm rounded-sm border-slate-200 h-9 px-3 outline-none focus:ring-2 focus:ring-primary/20 transition-all border"
+                  value={selectedTenant}
+                  onChange={(e) => setSelectedTenant(e.target.value)}
+                >
+                  <option value="">Selecciona una licorería...</option>
+                  {tenants.map(t => (
+                    <option key={t.id} value={t.id}>{t.name} ({t.id})</option>
+                  ))}
+                </select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-700">Archivo de respaldo (ZIP o SQL)</label>
+                <input 
+                  type="file" 
+                  accept=".zip,.sql"
+                  ref={fileInputRef}
+                  className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-sm file:border-0 file:text-xs file:font-bold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
+                  onChange={(e) => setRestoreFile(e.target.files[0])}
+                />
+              </div>
+              <div className="p-3 bg-amber-50 rounded-sm border border-amber-200 flex gap-2 items-start mt-2">
+                <WarningCircle size={16} className="text-amber-600 shrink-0 mt-0.5" weight="fill" />
+                <p className="text-xs text-amber-800 leading-tight">
+                  <strong className="block mb-1">¡Advertencia crítica!</strong>
+                  Esto sobreescribirá todos los datos de la licorería seleccionada con el contenido del respaldo. Esta acción es irreversible.
+                </p>
+              </div>
+              <DialogFooter className="mt-4 border-t border-slate-50 pt-4">
+                <Button variant="ghost" onClick={() => setConfirmDialog({ open: false })} className="rounded-sm" disabled={isRestoring}>Cancelar</Button>
+                <Button variant="destructive" className="bg-amber-600 hover:bg-amber-700 text-white rounded-sm" onClick={handleRestoreTenant} disabled={isRestoring || !selectedTenant || !restoreFile}>
+                  {isRestoring ? <ArrowsClockwise size={14} className="animate-spin mr-2" /> : <ArrowCounterClockwise size={14} className="mr-2" />}
+                  Restaurar Datos
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
+
+          {confirmDialog.type === 'create_tenant_backup' && (
+            <div className="space-y-4 py-2">
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-700">Licorería a respaldar</label>
+                <select 
+                  className="w-full text-sm rounded-sm border-slate-200 h-9 px-3 outline-none focus:ring-2 focus:ring-primary/20 transition-all border"
+                  value={selectedTenant}
+                  onChange={(e) => setSelectedTenant(e.target.value)}
+                >
+                  <option value="">Selecciona una licorería...</option>
+                  {tenants.map(t => (
+                    <option key={t.id} value={t.id}>{t.name} ({t.id})</option>
+                  ))}
+                </select>
+              </div>
+              <DialogFooter className="mt-4 border-t border-slate-50 pt-4">
+                <Button variant="ghost" onClick={() => setConfirmDialog({ open: false })} className="rounded-sm" disabled={isCreating}>Cancelar</Button>
+                <Button className="bg-primary hover:bg-primary/90 text-white rounded-sm" onClick={handleCreateTenantBackup} disabled={isCreating || !selectedTenant}>
+                  {isCreating ? <ArrowsClockwise size={14} className="animate-spin mr-2" /> : <DownloadSimple size={14} className="mr-2" />}
+                  Descargar Respaldo
+                </Button>
+              </DialogFooter>
+            </div>
           )}
         </DialogContent>
       </Dialog>

@@ -37,9 +37,11 @@ Route::middleware('auth:sanctum')->prefix('central')->group(function () {
     Route::prefix('backups')->group(function () {
         Route::get('/',          [BackupController::class, 'index']);      // Listar backups
         Route::post('/',         [BackupController::class, 'store']);      // Crear backup manual
+        Route::post('/tenant',   [BackupController::class, 'backupTenant']); // Crear backup de tenant individual
         Route::get('/health',    [BackupController::class, 'health']);     // Estado de salud
         Route::post('/download', [BackupController::class, 'download']);   // Descargar backup
         Route::post('/cleanup',  [BackupController::class, 'cleanup']);    // Limpiar backups viejos
         Route::delete('/',       [BackupController::class, 'destroy']);    // Eliminar un backup
+        Route::post('/restore-tenant', [BackupController::class, 'restoreTenant']); // Restaurar tenant especifico
     });
 });

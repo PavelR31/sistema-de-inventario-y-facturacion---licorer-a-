@@ -214,6 +214,82 @@ class BackupController extends Controller
     }
 
     /**
+     * Crear backup de un tenant individual y devolverlo.
+     */
+    public function backupTenant(Request $request)
+    {
+        $request->validate(['tenant_id' => 'required|string']);
+        $tenantId = $request->input('tenant_id');
+        $tenant = Tenant::find($tenantId);
+        
+        if (!$tenant) {
+            return response()->json(['message' => 'Licorería no encontrada.'], 404);
+        }
+
+        $tenantDb = $tenant->run(function () {
+            return \Illuminate\Support\Facades\DB::connection()->getDatabaseName();
+        });
+
+        $tempDir = null;
+        try {
+            $timestamp = now()->format('Y-m-d_H-i-s');
+            $sqlFilename = "{$tenantDb}_{$timestamp}.sql";
+            $zipFilename = "{$tenantDb}_{$timestamp}.zip";
+
+            $tempDir = storage_path('app/backup-temp/single_' . $timestamp);
+            if (!is_dir($tempDir)) {
+                mkdir($tempDir, 0755, true);
+            }
+
+            $sqlPath = "{$tempDir}/{$sqlFilename}";
+            $zipPath = "{$tempDir}/{$zipFilename}";
+
+            // Ejecutar mysqldump
+            $dumpBinaryPath = config('database.connections.mysql.dump.dump_binary_path', '');
+            $mysqldump = $dumpBinaryPath ? "{$dumpBinaryPath}/mysqldump" : 'mysqldump';
+            $host     = config('database.connections.mysql.host');
+            $port     = config('database.connections.mysql.port');
+            $username = config('database.connections.mysql.username');
+            $password = config('database.connections.mysql.password');
+
+            $result = $this->dumpDatabase($mysqldump, $host, $port, $username, $password, $tenantDb, $sqlPath);
+            if ($result !== true) {
+                throw new \Exception("Error dump: " . $result);
+            }
+
+            // Crear ZIP
+            $zip = new ZipArchive();
+            if ($zip->open($zipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) === true) {
+                $zip->addFile($sqlPath, $sqlFilename);
+                $zip->close();
+            } else {
+                throw new \RuntimeException('No se pudo crear el archivo ZIP');
+            }
+
+            // Obtener el contenido para devolverlo directamente
+            $fileContents = file_get_contents($zipPath);
+            $this->cleanupDir($tempDir);
+            
+            Log::info("Backup individual creado por SuperAdmin para tenant {$tenantId}", [
+                'user_id' => $request->user()->id,
+            ]);
+
+            return response($fileContents)
+                ->header('Content-Type', 'application/zip')
+                ->header('Content-Disposition', 'attachment; filename="' . $zipFilename . '"');
+        } catch (\Throwable $e) {
+            if ($tempDir) {
+                $this->cleanupDir($tempDir);
+            }
+            Log::error('Error al crear backup individual de tenant: ' . $e->getMessage());
+            return response()->json([
+                'message' => 'Error al crear el backup del tenant.',
+                'error'   => $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
      * Ejecutar mysqldump para una base de datos específica.
      */
     private function dumpDatabase(string $mysqldump, string $host, string $port, string $username, string $password, string $database, string $outputPath): true|string
@@ -291,6 +367,125 @@ class BackupController extends Controller
         ]);
 
         return response()->json(['message' => 'Backup eliminado exitosamente.']);
+    }
+
+    /**
+     * Restaurar la base de datos de un tenant desde un ZIP o SQL.
+     */
+    public function restoreTenant(Request $request)
+    {
+        $request->validate([
+            'tenant_id' => 'required|string',
+            'file'      => 'required|file',
+        ]);
+
+        $tenantId = $request->input('tenant_id');
+        $file     = $request->file('file');
+
+        $tenant = Tenant::find($tenantId);
+        if (!$tenant) {
+            return response()->json(['message' => 'Licorería no encontrada.'], 404);
+        }
+
+        $tempDir = null;
+        try {
+            $timestamp = now()->format('Y-m-d_H-i-s');
+            $tempDir = storage_path('app/backup-temp/restore_' . $timestamp);
+            if (!is_dir($tempDir)) {
+                mkdir($tempDir, 0755, true);
+            }
+
+            $sqlFile = null;
+            $extension = strtolower($file->getClientOriginalExtension());
+
+            if ($extension === 'zip') {
+                $zip = new ZipArchive();
+                if ($zip->open($file->getPathname()) === true) {
+                    $zip->extractTo($tempDir);
+                    $zip->close();
+                    
+                    $files = glob($tempDir . '/*.sql');
+                    if (count($files) > 0) {
+                        $tenantDb = $tenant->run(function () {
+                            return \Illuminate\Support\Facades\DB::connection()->getDatabaseName();
+                        });
+                        $exactMatch = $tempDir . '/' . $tenantDb . '.sql';
+                        if (file_exists($exactMatch)) {
+                            $sqlFile = $exactMatch;
+                        } else {
+                            $sqlFile = $files[0];
+                        }
+                    }
+                } else {
+                    throw new \Exception('No se pudo abrir el archivo ZIP.');
+                }
+            } else if ($extension === 'sql') {
+                $sqlFile = $tempDir . '/' . $file->getClientOriginalName();
+                move_uploaded_file($file->getPathname(), $sqlFile);
+            } else {
+                throw new \Exception('Formato de archivo no soportado. Solo .zip o .sql');
+            }
+
+            if (!$sqlFile || !file_exists($sqlFile)) {
+                throw new \Exception('No se encontró ningún archivo SQL válido para restaurar.');
+            }
+
+            $tenantDb = $tenant->run(function () {
+                return \Illuminate\Support\Facades\DB::connection()->getDatabaseName();
+            });
+
+            $host     = config('database.connections.mysql.host');
+            $port     = config('database.connections.mysql.port');
+            $username = config('database.connections.mysql.username');
+            $password = config('database.connections.mysql.password');
+
+            $mysqlBinaryPath = config('database.connections.mysql.dump.dump_binary_path', '');
+            $mysqlClient = $mysqlBinaryPath ? "{$mysqlBinaryPath}/mysql" : 'mysql';
+
+            $command = [
+                $mysqlClient,
+                '--host=' . $host,
+                '--port=' . $port,
+                '--user=' . $username,
+                $tenantDb,
+            ];
+
+            $env = null;
+            if ($password) {
+                $env = array_merge(getenv(), $_SERVER, ['MYSQL_PWD' => $password]);
+            }
+
+            $process = new Process($command, null, $env);
+            $process->setTimeout(600);
+            
+            $process->setInput(file_get_contents($sqlFile));
+            $process->run();
+
+            if (!$process->isSuccessful()) {
+                throw new \Exception('Error al restaurar base de datos: ' . $process->getErrorOutput());
+            }
+
+            $this->cleanupDir($tempDir);
+
+            Log::info('Tenant restaurado por SuperAdmin', [
+                'user_id'   => $request->user()->id,
+                'tenant_id' => $tenantId,
+            ]);
+
+            return response()->json([
+                'message' => 'Licorería restaurada exitosamente.'
+            ]);
+
+        } catch (\Throwable $e) {
+            if ($tempDir) {
+                $this->cleanupDir($tempDir);
+            }
+            Log::error('Error al restaurar tenant: ' . $e->getMessage());
+            return response()->json([
+                'message' => 'Error al restaurar la licorería.',
+                'error'   => $e->getMessage(),
+            ], 500);
+        }
     }
 
     /**

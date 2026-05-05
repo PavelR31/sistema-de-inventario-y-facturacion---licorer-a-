@@ -51,8 +51,8 @@ export default function BackupsPage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!file.name.endsWith('.zip')) {
-      toast.error('Solo se permiten archivos ZIP');
+    if (!file.name.endsWith('.zip') && !file.name.endsWith('.sql')) {
+      toast.error('Solo se permiten archivos ZIP o SQL');
       return;
     }
 
@@ -161,6 +161,22 @@ export default function BackupsPage() {
         <div className="flex items-center gap-2">
           <Button onClick={fetchBackups} disabled={isLoading} variant="outline" size="sm" className="h-9 px-3 border-slate-200 bg-white hover:bg-slate-50 rounded-sm">
             <ArrowsClockwise size={14} className={isLoading ? 'animate-spin' : ''} weight="bold" />
+          </Button>
+          <input 
+            type="file" 
+            accept=".zip,.sql" 
+            className="hidden" 
+            ref={fileInputRef} 
+            onChange={handleUpload} 
+          />
+          <Button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isUploading}
+            variant="outline"
+            className="h-9 px-4 rounded-sm gap-2 text-xs font-bold uppercase tracking-wider bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100 hover:text-amber-800"
+          >
+            {isUploading ? <ArrowsClockwise size={14} className="animate-spin" weight="bold" /> : <ArrowCounterClockwise size={14} weight="bold" />}
+            Restaurar desde ZIP
           </Button>
           <Button
             onClick={() => setConfirmDialog({ open: true, type: 'create' })}
@@ -282,16 +298,6 @@ export default function BackupsPage() {
                           <Button variant="ghost" size="sm" className="h-7 px-2 text-xs hover:text-primary hover:bg-primary/5 rounded-sm"
                             onClick={() => handleDownload(b.path, b.filename)}>
                             <DownloadSimple size={14} weight="bold" className="mr-1" /> Descargar
-                          </Button>
-                          <Button variant="ghost" size="sm"
-                            className="h-7 px-2 text-xs hover:text-amber-600 hover:bg-amber-50 rounded-sm"
-                            disabled={isRestoring === b.path}
-                            onClick={() => setConfirmDialog({ open: true, type: 'restore', path: b.path, filename: b.filename })}>
-                            {isRestoring === b.path
-                              ? <ArrowsClockwise size={14} className="animate-spin mr-1" weight="bold" />
-                              : <ArrowCounterClockwise size={14} weight="bold" className="mr-1" />
-                            }
-                            Restaurar
                           </Button>
                           <Button variant="ghost" size="sm" className="h-7 px-2 text-xs text-destructive hover:bg-destructive/10 rounded-sm"
                             onClick={() => setConfirmDialog({ open: true, type: 'delete', path: b.path, filename: b.filename })}>
