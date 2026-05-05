@@ -6,6 +6,7 @@ use App\Http\Controllers\Central\AuthController;
 use App\Http\Controllers\Central\TenantController;
 use App\Http\Controllers\Central\DashboardController;
 use App\Http\Controllers\Central\LicenseController;
+use App\Http\Controllers\Central\BackupController;
 
 // Rutas Públicas Centrales
 Route::post('/central/login', [AuthController::class, 'login']);
@@ -31,4 +32,14 @@ Route::middleware('auth:sanctum')->prefix('central')->group(function () {
     
     // Dashboard Central
     Route::get('/dashboard', [DashboardController::class, 'index']);
+
+    // ── Gestión de Backups ──────────────────────────────────────────
+    Route::prefix('backups')->group(function () {
+        Route::get('/',          [BackupController::class, 'index']);      // Listar backups
+        Route::post('/',         [BackupController::class, 'store']);      // Crear backup manual
+        Route::get('/health',    [BackupController::class, 'health']);     // Estado de salud
+        Route::post('/download', [BackupController::class, 'download']);   // Descargar backup
+        Route::post('/cleanup',  [BackupController::class, 'cleanup']);    // Limpiar backups viejos
+        Route::delete('/',       [BackupController::class, 'destroy']);    // Eliminar un backup
+    });
 });

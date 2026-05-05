@@ -52,6 +52,7 @@ class TenantDatabaseSeeder extends Seeder
             // Roles & Sistema
             'ver.roles', 'crear.rol', 'editar.rol', 'eliminar.rol',
             'ajustes.sistema',
+            'gestionar.backups',
         ];
 
         foreach ($permisos as $permiso) {

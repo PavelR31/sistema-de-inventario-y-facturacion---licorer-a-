@@ -57,6 +57,10 @@ return [
             'options' => extension_loaded('pdo_mysql') ? array_filter([
                 PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
             ]) : [],
+            'dump' => [
+                'dump_binary_path' => env('MYSQL_DUMP_PATH', 'C:\\Program Files\\MariaDB 12.2\\bin'),
+                'use_single_transaction' => true,
+            ],
         ],
 
         'mariadb' => [

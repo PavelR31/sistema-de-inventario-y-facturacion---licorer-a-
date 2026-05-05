@@ -5,6 +5,8 @@ import Login from "@/pages/Auth/Login";
 import ChangePassword from "@/pages/Auth/ChangePassword";
 import BranchSelection from "@/pages/Auth/BranchSelection";
 import TenantsList from "@/pages/Central/TenantsList";
+import CentralDashboard from "@/pages/Central/CentralDashboard";
+import CentralBackups from "@/pages/Central/CentralBackups";
 import AdminDashboard from "@/pages/Admin/AdminDashboard";
 import SucursalesList from "@/pages/Admin/SucursalesList";
 import UsuariosList from "@/pages/Admin/UsuariosList";
@@ -27,6 +29,7 @@ import { Button } from "@/components/ui/button";
 import { ShieldCheck } from "lucide-react";
 
 import AjustesStock from "@/pages/Admin/AjustesStock";
+import BackupsPage from "@/pages/Admin/BackupsPage";
 
 // Placeholder Pages
 const Dashboard = () => {
@@ -37,29 +40,6 @@ const Dashboard = () => {
   if (role === 'Administrador' || role === 'Gerente') return <Navigate to="/admin" replace />;
   return <Navigate to="/pos" replace />;
 };
-
-const SuperAdminDashboard = () => (
-  <div className="space-y-8 animate-in fade-in duration-700">
-    <div>
-      <h1 className="text-4xl font-black tracking-tighter text-slate-900 mb-1">Centro de Control</h1>
-      <p className="text-slate-500 text-sm font-medium tracking-tight">Gestión global de la red de negocios.</p>
-    </div>
-    <div className="grid gap-6 md:grid-cols-3">
-      <Card className="border-none shadow-xl shadow-slate-100/50 p-8 glass">
-        <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-4">Total Negocios</h3>
-        <p className="text-4xl font-black text-slate-900 tracking-tighter">12</p>
-      </Card>
-      <Card className="border-none shadow-xl shadow-slate-100/50 p-8 glass">
-        <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-4">Ventas Globales</h3>
-        <p className="text-4xl font-black text-slate-900 tracking-tighter">$125,430</p>
-      </Card>
-      <Card className="border-none shadow-xl shadow-slate-100/50 p-8 glass">
-        <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 mb-4">Suscripciones</h3>
-        <p className="text-4xl font-black text-slate-900 tracking-tighter">10</p>
-      </Card>
-    </div>
-  </div>
-);
 
 const ProtectedRoute = ({ children, allowedRoles, requiredPermission }) => {
   const { user, roles, branch, hasRole, hasPermission, mustChangePassword } = useAuthStore();
@@ -144,7 +124,7 @@ const router = createBrowserRouter([
       // Super Admin Routes
       {
         path: "central",
-        element: <ProtectedRoute allowedRoles={['super-admin']}><SuperAdminDashboard /></ProtectedRoute>,
+        element: <ProtectedRoute allowedRoles={['super-admin']}><CentralDashboard /></ProtectedRoute>,
       },
       {
         path: "central/tenants",
@@ -153,6 +133,10 @@ const router = createBrowserRouter([
       {
         path: "central/licenses",
         element: <ProtectedRoute allowedRoles={['super-admin']}><LicenseManagement /></ProtectedRoute>,
+      },
+      {
+        path: "central/backups",
+        element: <ProtectedRoute allowedRoles={['super-admin']}><CentralBackups /></ProtectedRoute>,
       },
       // Tenant Admin Routes
       {
@@ -210,6 +194,10 @@ const router = createBrowserRouter([
       {
         path: "admin/reportes",
         element: <ProtectedRoute requiredPermission="ver.reporte-utilidades"><Reportes /></ProtectedRoute>,
+      },
+      {
+        path: "admin/backups",
+        element: <ProtectedRoute requiredPermission="ajustes.sistema"><BackupsPage /></ProtectedRoute>,
       },
       // POS Routes
       {

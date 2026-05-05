@@ -18,7 +18,8 @@ import {
   Tag,
   ChartBar,
   Key,
-  CashRegister
+  CashRegister,
+  HardDrives
 } from "@phosphor-icons/react"
 
 import {
@@ -45,6 +46,7 @@ const ALL_MENU_ITEMS = [
   { role: 'super-admin', label: "General", title: "Dashboard", url: "/central", icon: Layout },
   { role: 'super-admin', label: "General", title: "Licorerías", url: "/central/tenants", icon: Buildings },
   { role: 'super-admin', label: "General", title: "Licencias", url: "/central/licenses", icon: Key },
+  { role: 'super-admin', label: "General", title: "Respaldos", url: "/central/backups", icon: HardDrives },
   { role: 'super-admin', label: "Configuración", title: "Ajustes Globales", url: "/central/settings", icon: Gear },
 
   // Administración (acceso al panel)
@@ -72,6 +74,7 @@ const ALL_MENU_ITEMS = [
 
   // Configuración
   { permission: 'gestionar.roles',       label: "Configuración", title: "Seguridad y Ajustes", url: "/admin/settings", icon: Gear },
+  { permission: 'ajustes.sistema',        label: "Configuración", title: "Respaldos",            url: "/admin/backups",  icon: HardDrives },
 ];
 
 export function AppSidebar() {

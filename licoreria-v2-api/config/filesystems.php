@@ -56,6 +56,20 @@ return [
             'throw' => false,
         ],
 
+        /*
+        |----------------------------------------------------------------------
+        | Disco dedicado para Backups (Spatie Laravel Backup)
+        |----------------------------------------------------------------------
+        | Almacena los archivos ZIP generados por el sistema de backups.
+        | No está listado en tenancy.filesystem.disks para evitar
+        | que el bootstrapper de tenancy lo modifique.
+        */
+        'backups' => [
+            'driver' => 'local',
+            'root'   => storage_path('app/backups'),
+            'throw'  => false,
+        ],
+
     ],
 
     /*

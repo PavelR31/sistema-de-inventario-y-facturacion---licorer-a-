@@ -130,6 +130,16 @@ Route::middleware([
         // Configuraciones del Sistema
         Route::get('configuraciones', [ConfiguracionController::class, 'index']);
         Route::put('configuraciones', [ConfiguracionController::class, 'update']);
+
+        // ── Respaldos del Tenant ────────────────────────────────────────
+        Route::prefix('backups')->middleware('permission:ajustes.sistema')->group(function () {
+            Route::get('/',          [\App\Http\Controllers\Tenant\TenantBackupController::class, 'index']);
+            Route::post('/',         [\App\Http\Controllers\Tenant\TenantBackupController::class, 'store']);
+            Route::post('/upload',   [\App\Http\Controllers\Tenant\TenantBackupController::class, 'upload']);
+            Route::post('/download', [\App\Http\Controllers\Tenant\TenantBackupController::class, 'download']);
+            Route::post('/restore',  [\App\Http\Controllers\Tenant\TenantBackupController::class, 'restore']);
+            Route::delete('/',       [\App\Http\Controllers\Tenant\TenantBackupController::class, 'destroy']);
+        });
         
         // Reportes y Estadísticas
         Route::prefix('reportes')->middleware(['token_from_query', 'auth:sanctum'])->group(function () {
