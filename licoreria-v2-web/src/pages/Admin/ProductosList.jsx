@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus, Package, Search, Tag, DollarSign, Layers, ImageIcon, ImagePlus, Trash2, Pencil, LayoutGrid, List, X } from 'lucide-react';
+import { Plus, Package, Search, Tag, DollarSign, Layers, ImageIcon, ImagePlus, Trash2, Pencil, LayoutGrid, List, X, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import api, { getImageUrl } from '@/lib/api';
 import Can from '@/components/auth/Can';
@@ -35,6 +35,7 @@ export default function ProductosList() {
   const [formData, setFormData] = useState(initialFormState);
   const [editingProducto, setEditingProducto] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef(null);
 
   const fetchData = async (page = 1) => {
@@ -104,6 +105,7 @@ export default function ProductosList() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsSubmitting(true);
     try {
       await api.post('/api/productos', appendDataToFormData(formData), {
         headers: { 'Content-Type': 'multipart/form-data' }
@@ -114,11 +116,14 @@ export default function ProductosList() {
       fetchData();
     } catch (error) {
       toast.error(error.response?.data?.message || 'Error al guardar producto');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleUpdate = async (e) => {
     e.preventDefault();
+    setIsSubmitting(true);
     try {
       await api.post(`/api/productos/${editingProducto.id}`, appendDataToFormData(editingProducto, true), {
         headers: { 'Content-Type': 'multipart/form-data' }
@@ -128,6 +133,8 @@ export default function ProductosList() {
       fetchData();
     } catch (error) {
       toast.error('Error al actualizar producto');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -457,8 +464,15 @@ export default function ProductosList() {
             {renderPresentacionesForm(formData, false)}
 
             <DialogFooter className="pt-4 mt-4 border-t border-border">
-              <Button type="button" variant="ghost" onClick={() => setIsDialogOpen(false)} className="rounded-sm">Cancelar</Button>
-              <Button type="submit" className="rounded-sm">Guardar Producto</Button>
+              <Button type="button" variant="ghost" onClick={() => setIsDialogOpen(false)} className="rounded-sm" disabled={isSubmitting}>Cancelar</Button>
+              <Button type="submit" className="rounded-sm" disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Guardando...
+                  </>
+                ) : 'Guardar Producto'}
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>
@@ -510,8 +524,15 @@ export default function ProductosList() {
               {renderPresentacionesForm(editingProducto, true)}
 
               <DialogFooter className="pt-4 border-t border-border">
-                <Button type="button" variant="ghost" onClick={() => setIsEditOpen(false)} className="rounded-sm">Cancelar</Button>
-                <Button type="submit" className="rounded-sm">Actualizar</Button>
+                <Button type="button" variant="ghost" onClick={() => setIsEditOpen(false)} className="rounded-sm" disabled={isSubmitting}>Cancelar</Button>
+                <Button type="submit" className="rounded-sm" disabled={isSubmitting}>
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Actualizando...
+                    </>
+                  ) : 'Actualizar'}
+                </Button>
               </DialogFooter>
             </form>
           )}

@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
-import { Tag, Plus, PencilLine, Trash } from "@phosphor-icons/react";
+import { Tag, Plus, PencilLine, Trash, ArrowsClockwise } from "@phosphor-icons/react";
 import { toast } from 'sonner';
 import api from '@/lib/api';
 import Can from '@/components/auth/Can';
@@ -19,6 +19,7 @@ export default function CategoriasList() {
   const [editingCategoria, setEditingCategoria] = useState(null);
   const [viewMode, setViewMode] = useState('table');
   const [formData, setFormData] = useState({ nombre: '', descripcion: '' });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const fetchCategorias = async (page = 1) => {
     setIsLoading(true);
@@ -41,6 +42,7 @@ export default function CategoriasList() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsSubmitting(true);
     try {
       if (editingCategoria) {
         await api.put(`/api/categorias/${editingCategoria.id}`, formData);
@@ -55,6 +57,8 @@ export default function CategoriasList() {
       fetchCategorias();
     } catch (error) {
       toast.error('Error al guardar la categoría');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -228,8 +232,15 @@ export default function CategoriasList() {
               <Button type="button" variant="ghost" onClick={() => setIsDialogOpen(false)} className="flex-1">
                 Cancelar
               </Button>
-              <Button type="submit" className="flex-1">
-                {editingCategoria ? 'Actualizar' : 'Crear'}
+              <Button type="submit" className="flex-1" disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <>
+                    <ArrowsClockwise className="mr-2 h-4 w-4 animate-spin" />
+                    {editingCategoria ? 'Actualizando...' : 'Creando...'}
+                  </>
+                ) : (
+                  editingCategoria ? 'Actualizar' : 'Crear'
+                )}
               </Button>
             </DialogFooter>
           </form>

@@ -6,6 +6,7 @@ import Login from "@/pages/Auth/Login";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ShieldCheck, Loader2 } from "lucide-react";
+import api from '@/lib/api';
 
 // Lazy Loaded Pages
 const ChangePassword = React.lazy(() => import("@/pages/Auth/ChangePassword"));
@@ -34,6 +35,7 @@ const CajaFlow = React.lazy(() => import("@/components/layout/CajaFlow"));
 const AjustesStock = React.lazy(() => import("@/pages/Admin/AjustesStock"));
 const BackupsPage = React.lazy(() => import("@/pages/Admin/BackupsPage"));
 const ProfilePage = React.lazy(() => import("@/pages/Admin/ProfilePage"));
+const NotFoundTenant = React.lazy(() => import("@/pages/Auth/NotFoundTenant"));
 
 const LoadingFallback = () => (
   <div className="flex h-screen w-full items-center justify-center bg-background text-primary">
@@ -109,6 +111,10 @@ const router = createBrowserRouter([
   {
     path: "/impersonate",
     element: <Impersonate />,
+  },
+  {
+    path: "/not-found-tenant",
+    element: <NotFoundTenant />,
   },
   {
     path: "/select-branch",
@@ -239,10 +245,50 @@ const router = createBrowserRouter([
   },
 ]);
 
+const DomainValidator = ({ children }) => {
+  const [isValidating, setIsValidating] = React.useState(true);
+  const hostname = window.location.hostname;
+  const centralDomains = ['localhost', '127.0.0.1']; // Ajustar si hay más
+
+  React.useEffect(() => {
+    const validateDomain = async () => {
+      // Si es un dominio central, no validamos tenant
+      if (centralDomains.includes(hostname)) {
+        setIsValidating(false);
+        return;
+      }
+
+      // Si no estamos en la página de error, validamos
+      if (window.location.pathname === '/not-found-tenant') {
+        setIsValidating(false);
+        return;
+      }
+
+      try {
+        await api.get('/api/verify');
+        setIsValidating(false);
+      } catch (err) {
+        // Si falla la validación, es probable que el interceptor ya esté redirigiendo
+        // o que sea un error de conexión. En cualquier caso, no dejamos el spinner infinito.
+        console.error("Domain validation failed", err);
+        setIsValidating(false);
+      }
+    };
+
+    validateDomain();
+  }, [hostname]);
+
+  if (isValidating) return <LoadingFallback />;
+
+  return children;
+};
+
 export default function AppRouter() {
   return (
     <Suspense fallback={<LoadingFallback />}>
-      <RouterProvider router={router} />
+      <DomainValidator>
+        <RouterProvider router={router} />
+      </DomainValidator>
     </Suspense>
   );
 }

@@ -52,4 +52,25 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// Response interceptor
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 404 && error.response?.data?.error === 'tenant_not_found') {
+      window.location.href = '/not-found-tenant';
+    }
+
+    if (error.response?.status === 401) {
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('user');
+      // No redirigir si ya estamos en login
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login';
+      }
+    }
+
+    return Promise.reject(error);
+  }
+);
+
 export default api;

@@ -14,6 +14,7 @@ import {
   Crown,
   ArrowUpRight,
   Clock,
+  CalendarBlank,
 } from "@phosphor-icons/react";
 import { toast } from 'sonner';
 import api from '@/lib/api';
@@ -145,21 +146,21 @@ export default function CentralDashboard() {
         </div>
         
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 bg-white border rounded-lg px-3 py-1.5 shadow-sm">
-            <Clock size={14} className="text-muted-foreground" />
-            <div className="flex items-center gap-2 text-xs">
+          <div className="flex items-center gap-3 bg-background border rounded-lg px-3 py-1 shadow-sm">
+            <CalendarBlank size={16} className="text-muted-foreground" />
+            <div className="flex items-center gap-3 text-xs font-medium">
               <input 
                 type="date" 
                 value={startDate} 
                 onChange={(e) => setStartDate(e.target.value)}
-                className="bg-transparent border-none focus:ring-0 text-muted-foreground outline-none"
+                className="bg-transparent border-none focus:ring-0 text-foreground outline-none w-[120px]"
               />
               <span className="text-muted-foreground">—</span>
               <input 
                 type="date" 
                 value={endDate} 
                 onChange={(e) => setEndDate(e.target.value)}
-                className="bg-transparent border-none focus:ring-0 text-muted-foreground outline-none"
+                className="bg-transparent border-none focus:ring-0 text-foreground outline-none w-[120px]"
               />
             </div>
           </div>

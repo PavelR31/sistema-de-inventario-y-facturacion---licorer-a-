@@ -18,6 +18,17 @@ class Sucursal extends Model
         'estado',
     ];
 
+    protected static function booted()
+    {
+        static::created(function ($sucursal) {
+            $sucursal->cajas()->create([
+                'nombre' => 'Caja Principal - ' . $sucursal->nombre,
+                'activa' => true,
+                'balance_actual' => 0,
+            ]);
+        });
+    }
+
     public function cajas()
     {
         return $this->hasMany(Caja::class);

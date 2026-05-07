@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
-import { Plus, Pencil, Trash2, Tag, Ruler } from 'lucide-react';
+import { Plus, Pencil, Trash2, Tag, Ruler, RefreshCcw } from 'lucide-react';
 import { toast } from 'sonner';
 import api from '@/lib/api';
 import Can from '@/components/auth/Can';
@@ -19,6 +19,7 @@ export default function MedidasList() {
   const [editingMedida, setEditingMedida] = useState(null);
   const [viewMode, setViewMode] = useState('table');
   const [formData, setFormData] = useState({ nombre: '', abreviatura: '' });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const fetchMedidas = async (page = 1) => {
     setIsLoading(true);
@@ -41,6 +42,7 @@ export default function MedidasList() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsSubmitting(true);
     try {
       if (editingMedida) {
         await api.put(`/api/medidas/${editingMedida.id}`, formData);
@@ -55,6 +57,8 @@ export default function MedidasList() {
       fetchMedidas();
     } catch (error) {
       toast.error('Error al guardar la medida');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -226,11 +230,18 @@ export default function MedidasList() {
               />
             </div>
             <DialogFooter className="pt-6 border-t border-border/50 gap-2">
-              <Button type="button" variant="ghost" onClick={() => setIsDialogOpen(false)} className="text-muted-foreground rounded-sm hover:bg-muted">
+              <Button type="button" variant="ghost" onClick={() => setIsDialogOpen(false)} className="text-muted-foreground rounded-sm hover:bg-muted" disabled={isSubmitting}>
                 Cancelar
               </Button>
-              <Button type="submit" className="min-w-[120px] rounded-sm font-bold shadow-sm">
-                {editingMedida ? 'Actualizar' : 'Crear'}
+              <Button type="submit" className="min-w-[120px] rounded-sm font-bold shadow-sm" disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <>
+                    <RefreshCcw className="mr-2 h-4 w-4 animate-spin" />
+                    {editingMedida ? 'Actualizando...' : 'Creando...'}
+                  </>
+                ) : (
+                  editingMedida ? 'Actualizar' : 'Crear'
+                )}
               </Button>
             </DialogFooter>
           </form>

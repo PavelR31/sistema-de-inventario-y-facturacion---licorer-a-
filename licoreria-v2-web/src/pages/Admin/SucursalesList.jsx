@@ -20,6 +20,7 @@ export default function SucursalesList() {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [formData, setFormData] = useState({ nombre: '', direccion: '', telefono: '' });
   const [editingSucursal, setEditingSucursal] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const tenant = useAuthStore((state) => state.tenant);
 
   const fetchSucursales = async (page = 1) => {
@@ -48,6 +49,7 @@ export default function SucursalesList() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsSubmitting(true);
     try {
       await api.post('/api/sucursales', formData);
       toast.success('Sucursal creada con éxito');
@@ -56,11 +58,14 @@ export default function SucursalesList() {
       setFormData({ nombre: '', direccion: '', telefono: '' });
     } catch (error) {
       toast.error('Error al crear la sucursal');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleUpdate = async (e) => {
     e.preventDefault();
+    setIsSubmitting(true);
     try {
       await api.put(`/api/sucursales/${editingSucursal.id}`, editingSucursal);
       toast.success('Sucursal actualizada');
@@ -68,6 +73,8 @@ export default function SucursalesList() {
       fetchSucursales();
     } catch (error) {
       toast.error('Error al actualizar la sucursal');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -206,8 +213,13 @@ export default function SucursalesList() {
               <Button type="button" variant="ghost" onClick={() => setIsDialogOpen(false)} className="text-muted-foreground rounded-sm">
                 Cancelar
               </Button>
-              <Button type="submit" className="min-w-[120px] rounded-sm">
-                Guardar Sucursal
+              <Button type="submit" className="min-w-[120px] rounded-sm" disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <>
+                    <RefreshCcw className="mr-2 h-4 w-4 animate-spin" />
+                    Guardando...
+                  </>
+                ) : 'Guardar Sucursal'}
               </Button>
             </DialogFooter>
           </form>
@@ -253,8 +265,13 @@ export default function SucursalesList() {
               <Button type="button" variant="ghost" onClick={() => setIsEditOpen(false)} className="text-muted-foreground">
                 Cancelar
               </Button>
-              <Button type="submit" className="min-w-[120px] rounded-sm">
-                Actualizar Sucursal
+              <Button type="submit" className="min-w-[120px] rounded-sm" disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <>
+                    <RefreshCcw className="mr-2 h-4 w-4 animate-spin" />
+                    Actualizando...
+                  </>
+                ) : 'Actualizar Sucursal'}
               </Button>
             </DialogFooter>
           </form>

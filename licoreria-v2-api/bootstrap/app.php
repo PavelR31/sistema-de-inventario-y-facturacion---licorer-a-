@@ -13,6 +13,7 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
+        $middleware->append(\App\Http\Middleware\EnsureValidDomain::class);
         $middleware->api(prepend: [
         ]);
 
@@ -28,6 +29,22 @@ return Application::configure(basePath: dirname(__DIR__))
         //
     })
     ->withExceptions(function (Exceptions $exceptions) {
+        $exceptions->render(function (\Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedOnDomainException $e, Request $request) {
+            \Log::info('Tenant no identificado por dominio: ' . $request->getHost());
+            return response()->json([
+                'message' => 'La licorería solicitada no existe en nuestra red de Licora.',
+                'error' => 'tenant_not_found'
+            ], 404);
+        });
+
+        $exceptions->render(function (\Stancl\Tenancy\Exceptions\TenantCouldNotBeIdentifiedByPathException $e, Request $request) {
+            \Log::info('Tenant no identificado por ruta: ' . $request->getPathInfo());
+            return response()->json([
+                'message' => 'Ruta de inquilino no válida.',
+                'error' => 'tenant_not_found'
+            ], 404);
+        });
+
         $exceptions->shouldRenderJsonWhen(function (Request $request, Throwable $e) {
             if ($request->is('api/*')) {
                 return true;

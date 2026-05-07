@@ -38,6 +38,9 @@ Route::middleware([
 ])->prefix('api')->group(function () {
     
     // Auth de Tokens (para Inquilinos)
+    Route::get('/verify', function() {
+        return response()->json(['message' => 'Tenant verified', 'tenant' => tenant('name')]);
+    });
     Route::post('/login', [TenantAuthController::class, 'login']);
     Route::post('/forgot-password', [TenantAuthController::class, 'forgotPassword']);
 

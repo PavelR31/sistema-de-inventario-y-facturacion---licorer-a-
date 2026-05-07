@@ -25,6 +25,7 @@ export default function TenantsList() {
   const [createdPassword, setCreatedPassword] = useState('');
   const [isUsersModalOpen, setIsUsersModalOpen] = useState(false);
   const [selectedTenantForUsers, setSelectedTenantForUsers] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const fetchTenants = async () => {
     setIsLoading(true);
@@ -51,6 +52,7 @@ export default function TenantsList() {
 
   const handleCreateTenant = async (e) => {
     e.preventDefault();
+    setIsSubmitting(true);
     try {
       const response = await api.post('/api/central/tenants', newTenant);
       setCreatedPassword(response.data.temporary_password);
@@ -62,11 +64,14 @@ export default function TenantsList() {
     } catch (error) {
       const message = error.response?.data?.message || 'Error al crear la licorería';
       toast.error(message);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleUpdateTenant = async (e) => {
     e.preventDefault();
+    setIsSubmitting(true);
     try {
       await api.put(`/api/central/tenants/${editingTenant.id}`, editingTenant);
       toast.success('Licorería actualizada correctamente');
@@ -74,6 +79,8 @@ export default function TenantsList() {
       fetchTenants();
     } catch (error) {
       toast.error('Error al actualizar la licorería');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -154,7 +161,14 @@ export default function TenantsList() {
                     />
                   </div>
                   <DialogFooter>
-                    <Button type="submit" className="w-full">Crear Negocio</Button>
+                    <Button type="submit" className="w-full" disabled={isSubmitting}>
+                      {isSubmitting ? (
+                        <>
+                          <ArrowsClockwise className="mr-2 h-4 w-4 animate-spin" />
+                          Creando...
+                        </>
+                      ) : 'Crear Negocio'}
+                    </Button>
                   </DialogFooter>
                 </form>
               </DialogContent>

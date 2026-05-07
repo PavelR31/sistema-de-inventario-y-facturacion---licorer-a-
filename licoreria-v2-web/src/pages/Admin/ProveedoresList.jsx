@@ -23,6 +23,7 @@ export default function ProveedoresList() {
     telefono: '',
     direccion: ''
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const fetchProveedores = async (page = 1) => {
     setIsLoading(true);
@@ -45,6 +46,7 @@ export default function ProveedoresList() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsSubmitting(true);
     try {
       if (editingProveedor) {
         await api.put(`/api/proveedores/${editingProveedor.id}`, formData);
@@ -58,6 +60,8 @@ export default function ProveedoresList() {
       fetchProveedores();
     } catch (error) {
       toast.error('Error al guardar el proveedor');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -250,11 +254,18 @@ export default function ProveedoresList() {
               />
             </div>
             <DialogFooter className="pt-6 border-t border-border/50 gap-2">
-              <Button type="button" variant="ghost" className="text-muted-foreground hover:bg-muted" onClick={() => setIsDialogOpen(false)}>
+              <Button type="button" variant="ghost" className="text-muted-foreground hover:bg-muted" onClick={() => setIsDialogOpen(false)} disabled={isSubmitting}>
                 Cancelar
               </Button>
-              <Button type="submit" className="min-w-[120px] rounded-sm font-bold shadow-sm">
-                {editingProveedor ? 'Actualizar Ficha' : 'Vincular Socio'}
+              <Button type="submit" className="min-w-[120px] rounded-sm font-bold shadow-sm" disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <>
+                    <RefreshCcw className="mr-2 h-4 w-4 animate-spin" />
+                    {editingProveedor ? 'Actualizando...' : 'Guardando...'}
+                  </>
+                ) : (
+                  editingProveedor ? 'Actualizar Ficha' : 'Vincular Socio'
+                )}
               </Button>
             </DialogFooter>
           </form>

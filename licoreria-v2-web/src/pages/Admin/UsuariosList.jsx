@@ -44,6 +44,7 @@ export default function UsuariosList() {
     role: '',
     sucursal_id: 'none'
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const fetchData = async (page = 1) => {
     setIsLoading(true);
@@ -72,6 +73,7 @@ export default function UsuariosList() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsSubmitting(true);
     try {
       const payload = { 
         ...formData, 
@@ -90,6 +92,8 @@ export default function UsuariosList() {
       fetchData();
     } catch (error) {
       toast.error(error.response?.data?.message || 'Error al guardar el usuario');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -403,11 +407,18 @@ export default function UsuariosList() {
             </div>
             
             <DialogFooter className="pt-4 gap-2">
-              <Button type="button" variant="ghost" onClick={() => setIsDialogOpen(false)} className="flex-1">
+              <Button type="button" variant="ghost" onClick={() => setIsDialogOpen(false)} className="flex-1" disabled={isSubmitting}>
                 Cancelar
               </Button>
-              <Button type="submit" className="flex-1">
-                {editingUser ? 'Actualizar' : 'Crear Usuario'}
+              <Button type="submit" className="flex-1" disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <>
+                    <ArrowsClockwise className="mr-2 h-4 w-4 animate-spin" />
+                    {editingUser ? 'Actualizando...' : 'Creando...'}
+                  </>
+                ) : (
+                  editingUser ? 'Actualizar' : 'Crear Usuario'
+                )}
               </Button>
             </DialogFooter>
           </form>

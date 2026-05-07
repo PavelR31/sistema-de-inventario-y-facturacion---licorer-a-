@@ -173,11 +173,11 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-3 bg-muted/30 p-2 rounded-xl border border-muted shadow-sm">
-        <div className="flex items-center gap-1 bg-white border rounded-lg px-2 py-1 shadow-sm">
-          <Storefront size={14} className="text-muted-foreground ml-1" />
+      <div className="flex flex-wrap items-center gap-4 px-1">
+        <div className="flex items-center gap-2 bg-background border rounded-lg px-3 py-1 shadow-sm">
+          <Storefront size={16} className="text-muted-foreground" />
           <Select value={sucursalId} onValueChange={setSucursalId}>
-            <SelectTrigger className="h-7 border-none shadow-none text-xs w-[140px] focus:ring-0">
+            <SelectTrigger className="h-8 border-none shadow-none text-xs w-[180px] focus:ring-0 p-0">
               <SelectValue placeholder="Sucursal" />
             </SelectTrigger>
             <SelectContent>
@@ -189,21 +189,21 @@ export default function AdminDashboard() {
           </Select>
         </div>
 
-        <div className="flex items-center gap-2 bg-white border rounded-lg px-3 py-1 shadow-sm">
-          <Clock size={14} className="text-muted-foreground" />
-          <div className="flex items-center gap-2 text-xs">
+        <div className="flex items-center gap-3 bg-background border rounded-lg px-3 py-1 shadow-sm">
+          <CalendarBlank size={16} className="text-muted-foreground" />
+          <div className="flex items-center gap-2 text-xs font-medium">
             <input 
               type="date" 
               value={fechaInicio} 
               onChange={(e) => setFechaInicio(e.target.value)}
-              className="bg-transparent border-none focus:ring-0 text-muted-foreground outline-none"
+              className="bg-transparent border-none focus:ring-0 text-foreground outline-none w-[120px]"
             />
             <span className="text-muted-foreground">—</span>
             <input 
               type="date" 
               value={fechaFin} 
               onChange={(e) => setFechaFin(e.target.value)}
-              className="bg-transparent border-none focus:ring-0 text-muted-foreground outline-none"
+              className="bg-transparent border-none focus:ring-0 text-foreground outline-none w-[120px]"
             />
           </div>
         </div>
@@ -453,7 +453,12 @@ export default function AdminDashboard() {
                       </TableCell>
                       <TableCell className="px-6 py-4 text-right font-bold text-base tracking-tight">{formatMoney(sale.amount)}</TableCell>
                       <TableCell className="px-6 py-4 text-right">
-                        <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() => navigate(`/admin/ventas?search=${sale.id}`)}
+                        >
                           <ArrowUpRight size={16} />
                         </Button>
                       </TableCell>

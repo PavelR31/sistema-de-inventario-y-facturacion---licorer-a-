@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -16,8 +17,9 @@ export default function SalesHistory() {
   const { formatMoney } = useCurrency();
   const [ventas, setVentas] = useState([]);
   const [meta, setMeta] = useState({ current_page: 1, last_page: 1, total: 0 });
+  const [searchParams] = useSearchParams();
   const [isLoading, setIsLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
 
   // Detalle Modal
   const [selectedVenta, setSelectedVenta] = useState(null);
@@ -49,7 +51,7 @@ export default function SalesHistory() {
 
   useEffect(() => {
     fetchVentas();
-  }, []);
+  }, [searchTerm]);
 
   const openDetail = async (id) => {
     try {
