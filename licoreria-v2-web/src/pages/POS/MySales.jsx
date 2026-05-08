@@ -4,7 +4,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Search, Calendar, Eye, FileText, User, Store, CreditCard, Banknote, Trash2, AlertTriangle, Loader2 } from 'lucide-react';
+import { Search, Calendar, Eye, FileText, User, Store, CreditCard, Banknote, Trash2, AlertTriangle, Loader2, Printer } from 'lucide-react';
 import { toast } from 'sonner';
 import api from '@/lib/api';
 import { useCurrency } from '@/hooks/useCurrency';

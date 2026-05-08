@@ -19,6 +19,7 @@ export default function ProductosList() {
   const [meta, setMeta] = useState({ current_page: 1, last_page: 1, total: 0 });
   const [categorias, setCategorias] = useState([]);
   const [medidas, setMedidas] = useState([]);
+  const [empaques, setEmpaques] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [viewMode, setViewMode] = useState('table');
   const [searchTerm, setSearchTerm] = useState('');
@@ -38,13 +39,25 @@ export default function ProductosList() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef(null);
 
+  // Bulk Insert States
+  const [isBulkOpen, setIsBulkOpen] = useState(false);
+  const initialBulkProduct = { nombre: '', empaque_nombre: '', precio_venta: '', codigo_barras: '', cantidad_unidades: 1, categoria_id: '', medida_id: '', imagen: null, imagenPreview: null };
+  const [bulkProducts, setBulkProducts] = useState([initialBulkProduct]);
+  const maxBulkLimit = 30;
+
+  const openBulk = () => {
+    setBulkProducts([initialBulkProduct]);
+    setIsBulkOpen(true);
+  };
+
   const fetchData = async (page = 1) => {
     setIsLoading(true);
     try {
-      const [prodRes, catRes, medRes] = await Promise.all([
+      const [prodRes, catRes, medRes, empRes] = await Promise.all([
         api.get('/api/productos', { params: { page, search: searchTerm } }),
         api.get('/api/categorias', { params: { per_page: 100 } }),
-        api.get('/api/medidas')
+        api.get('/api/medidas'),
+        api.get('/api/empaques')
       ]);
       setProductos(prodRes.data.data ?? prodRes.data);
       if (prodRes.data.last_page) {
@@ -56,6 +69,7 @@ export default function ProductosList() {
       }
       setCategorias(catRes.data.data ?? catRes.data);
       setMedidas(medRes.data);
+      setEmpaques(empRes.data.data ?? empRes.data);
     } catch (error) {
       toast.error('Error al cargar datos');
     } finally {
@@ -86,7 +100,11 @@ export default function ProductosList() {
     data.append('nombre', dataObj.nombre);
 
     if (dataObj.categoria_id) data.append('categoria_id', dataObj.categoria_id);
+    else data.append('categoria_id', '');
+
     if (dataObj.medida_id) data.append('medida_id', dataObj.medida_id);
+    else data.append('medida_id', '');
+
     if (dataObj.imagen || dataObj.nueva_imagen) data.append('imagen', dataObj.imagen || dataObj.nueva_imagen);
 
     if (dataObj.presentaciones && dataObj.presentaciones.length > 0) {
@@ -133,6 +151,42 @@ export default function ProductosList() {
       fetchData();
     } catch (error) {
       toast.error('Error al actualizar producto');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleBulkSubmit = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    try {
+      const formData = new FormData();
+      bulkProducts.forEach((bp, index) => {
+        formData.append(`productos[${index}][nombre]`, bp.nombre);
+        if (bp.categoria_id) formData.append(`productos[${index}][categoria_id]`, bp.categoria_id);
+        if (bp.medida_id) formData.append(`productos[${index}][medida_id]`, bp.medida_id);
+        if (bp.codigo_barras) formData.append(`productos[${index}][sku]`, bp.codigo_barras);
+        formData.append(`productos[${index}][activo]`, 1);
+
+        if (bp.imagen) {
+          formData.append(`productos[${index}][imagen]`, bp.imagen);
+        }
+
+        formData.append(`productos[${index}][presentaciones][0][nombre]`, bp.empaque_nombre || 'Unidad');
+        formData.append(`productos[${index}][presentaciones][0][cantidad_unidades]`, bp.cantidad_unidades || 1);
+        formData.append(`productos[${index}][presentaciones][0][precio_venta]`, bp.precio_venta);
+        if (bp.codigo_barras) formData.append(`productos[${index}][presentaciones][0][codigo_barras]`, bp.codigo_barras);
+        formData.append(`productos[${index}][presentaciones][0][es_principal]`, 1);
+      });
+
+      const res = await api.post('/api/productos/bulk', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      toast.success(res.data.message || 'Productos creados');
+      setIsBulkOpen(false);
+      fetchData();
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'Error al guardar productos masivos');
     } finally {
       setIsSubmitting(false);
     }
@@ -222,18 +276,43 @@ export default function ProductosList() {
         <div key={idx} className="bg-muted/30 p-3 rounded-sm border border-border space-y-2">
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="text-[10px] uppercase text-muted-foreground mb-1 block">Empaque / Nombre</label>
-              <Input
-                placeholder="Ej. Six-Pack, Caja 24" className="h-8 text-xs bg-background"
-                value={pres.nombre || ''} onChange={e => updatePresentacion(idx, 'nombre', e.target.value, isEdit)} required
-              />
+              <label className="text-[10px] uppercase text-muted-foreground mb-1 block">Empaque</label>
+              <Select 
+                value={pres.nombre || "none"} 
+                onValueChange={(val) => {
+                  const selectedEmpaque = empaques.find(e => e.nombre === val);
+                  if (selectedEmpaque) {
+                    if (isEdit) {
+                      const newPres = [...editingProducto.presentaciones];
+                      newPres[idx].nombre = selectedEmpaque.nombre;
+                      newPres[idx].cantidad_unidades = selectedEmpaque.cantidad_unidades;
+                      setEditingProducto({ ...editingProducto, presentaciones: newPres });
+                    } else {
+                      const newPres = [...formData.presentaciones];
+                      newPres[idx].nombre = selectedEmpaque.nombre;
+                      newPres[idx].cantidad_unidades = selectedEmpaque.cantidad_unidades;
+                      setFormData({ ...formData, presentaciones: newPres });
+                    }
+                  }
+                }}
+              >
+                <SelectTrigger className="h-8 text-xs bg-background">
+                  <SelectValue placeholder="Seleccione..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none" disabled>Seleccione un empaque</SelectItem>
+                  {empaques.map(e => (
+                    <SelectItem key={e.id} value={e.nombre}>{e.nombre}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div>
                 <label className="text-[10px] uppercase text-muted-foreground mb-1 block">Unidades</label>
                 <Input
-                  type="number" min="1" placeholder="6" className="h-8 text-xs bg-background"
-                  value={pres.cantidad_unidades || ''} onChange={e => updatePresentacion(idx, 'cantidad_unidades', e.target.value, isEdit)} required
+                  type="number" className="h-8 text-xs bg-muted cursor-not-allowed"
+                  value={pres.cantidad_unidades || ''} readOnly disabled
                 />
               </div>
               <div>
@@ -275,9 +354,14 @@ export default function ProductosList() {
         searchPlaceholder="Buscar por nombre o código..."
         action={
           <Can permission="crear.producto">
-            <Button onClick={() => setIsDialogOpen(true)} className="rounded-sm shadow-sm">
-              <Plus className="mr-2 h-4 w-4" /> Nuevo Producto
-            </Button>
+            <div className="flex gap-2">
+              <Button onClick={openBulk} variant="secondary" className="rounded-sm shadow-sm border border-border">
+                <Layers className="mr-2 h-4 w-4" /> Carga Masiva
+              </Button>
+              <Button onClick={() => setIsDialogOpen(true)} className="rounded-sm shadow-sm">
+                <Plus className="mr-2 h-4 w-4" /> Nuevo Producto
+              </Button>
+            </div>
           </Can>
         }
       />
@@ -536,6 +620,175 @@ export default function ProductosList() {
               </DialogFooter>
             </form>
           )}
+        </DialogContent>
+      </Dialog>
+      {/* Dialog Carga Masiva */}
+      <Dialog open={isBulkOpen} onOpenChange={setIsBulkOpen}>
+        <DialogContent className="max-w-[95vw] lg:max-w-[1200px] max-h-[90vh] overflow-y-auto bg-card">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-semibold text-foreground flex items-center gap-2">
+              <Layers className="h-5 w-5" /> Carga Masiva de Productos
+            </DialogTitle>
+            <DialogDescription>
+              Agrega múltiples productos rápidamente de manera tabular. Límite: {maxBulkLimit} productos por carga. Las presentaciones detalladas o imágenes pueden agregarse después al editar cada producto individualmente.
+            </DialogDescription>
+          </DialogHeader>
+
+          <form onSubmit={handleBulkSubmit} className="space-y-4 pt-2">
+            <div className="border border-border rounded-lg overflow-x-auto">
+              <Table>
+                <TableHeader className="bg-muted/50">
+                  <TableRow>
+                    <TableHead className="w-10">#</TableHead>
+                    <TableHead className="w-[60px] text-center">Img</TableHead>
+                    <TableHead className="min-w-[150px]">Nombre *</TableHead>
+                    <TableHead className="w-[120px]">Empaque *</TableHead>
+                    <TableHead className="w-[100px]">Precio *</TableHead>
+                    <TableHead className="w-[120px]">Cod. Barras</TableHead>
+                    <TableHead className="w-[130px]">Categoría</TableHead>
+                    <TableHead className="w-[130px]">Medida</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {bulkProducts.map((bp, index) => (
+                    <TableRow key={index} className="hover:bg-transparent">
+                      <TableCell className="text-muted-foreground text-xs text-center">{index + 1}</TableCell>
+                      <TableCell className="p-2">
+                        <div className="relative h-8 w-8 rounded bg-muted/30 border border-dashed border-border flex items-center justify-center overflow-hidden shrink-0 cursor-pointer hover:border-primary transition-colors">
+                          <input 
+                            type="file" className="absolute inset-0 opacity-0 cursor-pointer" accept="image/*"
+                            onChange={(e) => {
+                              const file = e.target.files[0];
+                              if (file) {
+                                const newBulk = [...bulkProducts];
+                                newBulk[index].imagen = file;
+                                newBulk[index].imagenPreview = URL.createObjectURL(file);
+                                setBulkProducts(newBulk);
+                              }
+                            }}
+                          />
+                          {bp.imagenPreview ? <img src={bp.imagenPreview} className="h-full w-full object-cover" /> : <ImagePlus className="h-4 w-4 text-muted-foreground/50" />}
+                        </div>
+                      </TableCell>
+                      <TableCell className="p-2">
+                        <Input
+                          placeholder="Nombre del producto"
+                          value={bp.nombre}
+                          onChange={(e) => {
+                            const newBulk = [...bulkProducts];
+                            newBulk[index].nombre = e.target.value;
+                            setBulkProducts(newBulk);
+                          }}
+                          required
+                          className="h-8 text-xs bg-background"
+                        />
+                      </TableCell>
+                      <TableCell className="p-2">
+                        <Select 
+                          value={bp.empaque_nombre || "none"} 
+                          onValueChange={(val) => {
+                            const selectedEmpaque = empaques.find(e => e.nombre === val);
+                            if (selectedEmpaque) {
+                              const newBulk = [...bulkProducts];
+                              newBulk[index].empaque_nombre = selectedEmpaque.nombre;
+                              newBulk[index].cantidad_unidades = selectedEmpaque.cantidad_unidades;
+                              setBulkProducts(newBulk);
+                            }
+                          }}
+                          required
+                        >
+                          <SelectTrigger className="h-8 text-xs bg-background">
+                            <SelectValue placeholder="Empaque" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none" disabled>Empaque</SelectItem>
+                            {empaques.map(e => (
+                              <SelectItem key={e.id} value={e.nombre}>{e.nombre} ({e.cantidad_unidades}u)</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                      <TableCell className="p-2">
+                        <Input
+                          type="number" step="0.01" min="0"
+                          placeholder="0.00"
+                          value={bp.precio_venta}
+                          onChange={(e) => {
+                            const newBulk = [...bulkProducts];
+                            newBulk[index].precio_venta = e.target.value;
+                            setBulkProducts(newBulk);
+                          }}
+                          required
+                          className="h-8 text-xs bg-background"
+                        />
+                      </TableCell>
+                      <TableCell className="p-2">
+                        <Input
+                          placeholder="Opcional"
+                          value={bp.codigo_barras}
+                          onChange={(e) => {
+                            const newBulk = [...bulkProducts];
+                            newBulk[index].codigo_barras = e.target.value;
+                            setBulkProducts(newBulk);
+                          }}
+                          className="h-8 text-xs bg-background font-mono"
+                        />
+                      </TableCell>
+                      <TableCell className="p-2">
+                        <Select value={bp.categoria_id || "none"} onValueChange={(v) => {
+                          const newBulk = [...bulkProducts];
+                          newBulk[index].categoria_id = v === "none" ? "" : v;
+                          setBulkProducts(newBulk);
+                        }}>
+                          <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Categoría" /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">Ninguna</SelectItem>
+                            {categorias.map(c => <SelectItem key={c.id} value={c.id.toString()}>{c.nombre}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                      <TableCell className="p-2">
+                        <Select value={bp.medida_id || "none"} onValueChange={(v) => {
+                          const newBulk = [...bulkProducts];
+                          newBulk[index].medida_id = v === "none" ? "" : v;
+                          setBulkProducts(newBulk);
+                        }}>
+                          <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Medida" /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">Ninguna</SelectItem>
+                            {medidas.map(m => <SelectItem key={m.id} value={m.id.toString()}>{m.abreviatura}</SelectItem>)}
+                          </SelectContent>
+                        </Select>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+
+            <div className="flex justify-between items-center py-2">
+              <Button
+                type="button" variant="outline" size="sm"
+                className="rounded-sm text-xs font-medium border-dashed border-border/70"
+                disabled={bulkProducts.length >= maxBulkLimit}
+                onClick={() => {
+                  if (bulkProducts.length < maxBulkLimit) {
+                    setBulkProducts([...bulkProducts, { ...initialBulkProduct }]);
+                  }
+                }}
+              >
+                <Plus className="mr-1 h-3 w-3" /> Agregar Fila ({bulkProducts.length}/{maxBulkLimit})
+              </Button>
+            </div>
+
+            <DialogFooter className="pt-4 border-t border-border">
+              <Button type="button" variant="ghost" onClick={() => setIsBulkOpen(false)} className="rounded-sm" disabled={isSubmitting}>Cancelar</Button>
+              <Button type="submit" className="rounded-sm gap-2" disabled={isSubmitting || bulkProducts.length === 0}>
+                {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Layers className="h-4 w-4" />}
+                Guardar {bulkProducts.length} Productos
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
     </div>

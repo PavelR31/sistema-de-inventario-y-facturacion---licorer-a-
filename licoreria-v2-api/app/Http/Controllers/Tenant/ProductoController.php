@@ -94,6 +94,66 @@ class ProductoController extends Controller
         return response()->json($producto->load('medida', 'presentaciones'), 201);
     }
 
+    public function storeBulk(Request $request)
+    {
+        $request->validate([
+            'productos' => 'required|array|min:1|max:50',
+            'productos.*.categoria_id' => 'nullable|exists:categorias,id',
+            'productos.*.medida_id' => 'nullable|exists:medidas,id',
+            'productos.*.nombre' => 'required|string|max:150',
+            'productos.*.descripcion' => 'nullable|string',
+            'productos.*.sku' => 'nullable|string|max:50|distinct', // check unique in DB later to avoid multiple errors
+            'productos.*.upc' => 'nullable|string|max:50|distinct',
+            'productos.*.activo' => 'boolean',
+            'productos.*.imagen' => 'nullable|image|max:2048',
+            'productos.*.presentaciones' => 'nullable|array',
+            'productos.*.presentaciones.*.nombre' => 'required|string|max:50',
+            'productos.*.presentaciones.*.cantidad_unidades' => 'required|integer|min:1',
+            'productos.*.presentaciones.*.precio_venta' => 'required|numeric|min:0',
+            'productos.*.presentaciones.*.codigo_barras' => 'nullable|string|max:50',
+            'productos.*.presentaciones.*.es_principal' => 'boolean',
+        ]);
+
+        $createdProducts = [];
+
+        \DB::beginTransaction();
+        try {
+            foreach ($request->productos as $prodData) {
+                // Check uniqueness manually to fail fast
+                if (!empty($prodData['sku']) && Producto::where('sku', $prodData['sku'])->exists()) {
+                    throw new \Exception("El SKU {$prodData['sku']} ya existe.");
+                }
+                if (!empty($prodData['upc']) && Producto::where('upc', $prodData['upc'])->exists()) {
+                    throw new \Exception("El UPC {$prodData['upc']} ya existe.");
+                }
+
+                $data = collect($prodData)->except(['presentaciones', 'imagen'])->toArray();
+                
+                if (isset($prodData['imagen']) && $prodData['imagen'] instanceof \Illuminate\Http\UploadedFile) {
+                    $path = $prodData['imagen']->store('productos', 'public');
+                    $data['imagen_ruta'] = $path;
+                }
+
+                $producto = Producto::create($data);
+
+                if (!empty($prodData['presentaciones'])) {
+                    $producto->presentaciones()->createMany($prodData['presentaciones']);
+                }
+
+                $createdProducts[] = $producto;
+            }
+            \DB::commit();
+        } catch (\Exception $e) {
+            \DB::rollBack();
+            return response()->json(['message' => 'Error al insertar productos: ' . $e->getMessage()], 422);
+        }
+
+        return response()->json([
+            'message' => count($createdProducts) . ' productos creados exitosamente.',
+            'productos' => $createdProducts
+        ], 201);
+    }
+
     public function show(Producto $producto)
     {
         return response()->json($producto->load('categoria', 'medida', 'presentaciones', 'sucursales'));

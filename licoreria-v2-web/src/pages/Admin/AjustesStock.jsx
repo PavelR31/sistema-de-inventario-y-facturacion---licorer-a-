@@ -273,7 +273,7 @@ export default function AjustesStock() {
                       <SelectValue placeholder="Selecciona si es unidad suelta o un empaque" />
                     </SelectTrigger>
                     <SelectContent className="bg-card">
-                       <SelectItem value="null">Unidad Suelta (Descuenta/Agrega solo 1 unid por cantidad)</SelectItem>
+
                        {selectedProduct?.presentaciones?.map(pres => (
                           <SelectItem key={pres.id} value={pres.id.toString()}>
                              {pres.nombre} (Contiene {pres.cantidad_unidades} unid.) — {pres.stock_sucursal} empaques disp.

@@ -7,6 +7,7 @@ use App\Http\Controllers\Central\TenantController;
 use App\Http\Controllers\Central\DashboardController;
 use App\Http\Controllers\Central\LicenseController;
 use App\Http\Controllers\Central\BackupController;
+use App\Http\Controllers\Central\SystemHealthController;
 
 // Rutas Públicas Centrales
 Route::post('/central/login', [AuthController::class, 'login']);
@@ -32,7 +33,8 @@ Route::middleware('auth:sanctum')->prefix('central')->group(function () {
     Route::post('/tenants/{tenant}/users/{user}/impersonate', [\App\Http\Controllers\Central\TenantUserController::class, 'impersonate']);
     
     // Gestión de Licencias
-    Route::get('/plans', [LicenseController::class, 'plans']);
+    Route::apiResource('plans', \App\Http\Controllers\Central\PlanController::class)->except(['show']);
+    Route::get('/plans-all', [\App\Http\Controllers\Central\PlanController::class, 'index']); // include inactive
     Route::apiResource('licenses', LicenseController::class)->only(['index', 'show']);
     Route::post('/licenses/{tenant}/renew', [LicenseController::class, 'renew']);
     Route::post('/licenses/{tenant}/suspend', [LicenseController::class, 'suspend']);
@@ -40,6 +42,10 @@ Route::middleware('auth:sanctum')->prefix('central')->group(function () {
     
     // Dashboard Central
     Route::get('/dashboard', [DashboardController::class, 'index']);
+    Route::get('health-metrics', [SystemHealthController::class, 'getHealthMetrics']);
+    Route::post('health-action', [SystemHealthController::class, 'runAction']);
+    Route::get('settings', [\App\Http\Controllers\Central\CentralSettingController::class, 'index']);
+    Route::post('settings', [\App\Http\Controllers\Central\CentralSettingController::class, 'update']);
 
     // ── Gestión de Backups ──────────────────────────────────────────
     Route::prefix('backups')->group(function () {
@@ -53,3 +59,5 @@ Route::middleware('auth:sanctum')->prefix('central')->group(function () {
         Route::post('/restore-tenant', [BackupController::class, 'restoreTenant']); // Restaurar tenant especifico
     });
 });
+
+Route::get('/public/system-status', [\App\Http\Controllers\Central\CentralSettingController::class, 'publicStatus']);

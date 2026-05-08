@@ -14,13 +14,16 @@ const BranchSelection = React.lazy(() => import("@/pages/Auth/BranchSelection"))
 const Impersonate = React.lazy(() => import("@/pages/Auth/Impersonate"));
 const TenantsList = React.lazy(() => import("@/pages/Central/TenantsList"));
 const CentralDashboard = React.lazy(() => import("@/pages/Central/CentralDashboard"));
+const CentralMonitoring = React.lazy(() => import("@/pages/Central/CentralMonitoring"));
 const CentralBackups = React.lazy(() => import("@/pages/Central/CentralBackups"));
+const CentralSettings = React.lazy(() => import("@/pages/Central/CentralSettings"));
 const AdminDashboard = React.lazy(() => import("@/pages/Admin/AdminDashboard"));
 const SucursalesList = React.lazy(() => import("@/pages/Admin/SucursalesList"));
 const UsuariosList = React.lazy(() => import("@/pages/Admin/UsuariosList"));
 const ProductosList = React.lazy(() => import("@/pages/Admin/ProductosList"));
 const CategoriasList = React.lazy(() => import("@/pages/Admin/CategoriasList"));
 const MedidasList = React.lazy(() => import("@/pages/Admin/MedidasList"));
+const EmpaquesList = React.lazy(() => import("@/pages/Admin/EmpaquesList"));
 const ProveedoresList = React.lazy(() => import("@/pages/Admin/ProveedoresList"));
 const LicenseManagement = React.lazy(() => import("@/pages/Central/LicenseManagement"));
 const NuevaCompra = React.lazy(() => import("@/pages/Admin/NuevaCompra"));
@@ -161,6 +164,14 @@ const router = createBrowserRouter([
         path: "central/backups",
         element: <ProtectedRoute allowedRoles={['super-admin']}><CentralBackups /></ProtectedRoute>,
       },
+      {
+        path: "central/settings",
+        element: <ProtectedRoute allowedRoles={['super-admin']}><CentralSettings /></ProtectedRoute>,
+      },
+      {
+        path: "central/monitoring",
+        element: <ProtectedRoute allowedRoles={['super-admin']}><CentralMonitoring /></ProtectedRoute>,
+      },
       // Tenant Admin Routes
       {
         path: "admin",
@@ -189,6 +200,10 @@ const router = createBrowserRouter([
       {
         path: "admin/medidas",
         element: <ProtectedRoute requiredPermission="ver.productos"><MedidasList /></ProtectedRoute>,
+      },
+      {
+        path: "admin/empaques",
+        element: <ProtectedRoute requiredPermission="ver.productos"><EmpaquesList /></ProtectedRoute>,
       },
       {
         path: "admin/inventario",

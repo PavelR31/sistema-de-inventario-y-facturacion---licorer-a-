@@ -19,7 +19,9 @@ import {
   ChartBar,
   Key,
   CashRegister,
-  HardDrives
+  HardDrives,
+  Heartbeat,
+  Stack
 } from "@phosphor-icons/react"
 
 import {
@@ -48,6 +50,7 @@ const ALL_MENU_ITEMS = [
   { role: 'super-admin', label: "General", title: "Licorerías", url: "/central/tenants", icon: Buildings },
   { role: 'super-admin', label: "General", title: "Licencias", url: "/central/licenses", icon: Key },
   { role: 'super-admin', label: "General", title: "Respaldos", url: "/central/backups", icon: HardDrives },
+  { role: 'super-admin', label: "General", title: "Monitoreo", url: "/central/monitoring", icon: Heartbeat },
   { role: 'super-admin', label: "Configuración", title: "Ajustes Globales", url: "/central/settings", icon: Gear },
 
   // Administración (acceso al panel)
@@ -60,6 +63,7 @@ const ALL_MENU_ITEMS = [
   { permission: 'ver.productos',         label: "Inventario", title: "Productos",         url: "/admin/productos",   icon: Package },
   { permission: 'gestionar.categorias',  label: "Inventario", title: "Categorías",        url: "/admin/categorias",  icon: ShieldCheck },
   { permission: 'ver.productos',         label: "Inventario", title: "Medidas",           url: "/admin/medidas",     icon: Tag },
+  { permission: 'ver.productos',         label: "Inventario", title: "Empaques",          url: "/admin/empaques",    icon: Stack },
   { permission: 'gestionar.proveedores', label: "Inventario", title: "Proveedores",       url: "/admin/proveedores", icon: Truck },
   { permission: 'ajustar.stock',         label: "Inventario", title: "Ajustes de Stock",  url: "/admin/inventario",  icon: ClockCounterClockwise },
 

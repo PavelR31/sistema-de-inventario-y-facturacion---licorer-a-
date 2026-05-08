@@ -718,12 +718,11 @@ export default function POS() {
         </div>
       </div>
 
-      {/* Payment Modal Redesign */}
       <Dialog open={isPaymentModalOpen} onOpenChange={setIsPaymentModalOpen}>
-        <DialogContent className="sm:max-w-md border border-border shadow-2xl rounded-[2.5rem] p-0 overflow-hidden bg-card">
+        <DialogContent className="sm:max-w-md border border-border shadow-xl rounded-sm p-0 overflow-hidden bg-card">
           <div className="p-10 space-y-8">
             <div className="text-center space-y-3">
-              <div className="h-16 w-16 bg-muted text-primary rounded-[1.5rem] flex items-center justify-center mx-auto mb-4 border border-border">
+              <div className="h-16 w-16 bg-muted text-primary rounded-sm flex items-center justify-center mx-auto mb-4 border border-border">
                 <CreditCard className="h-8 w-8" weight="regular" />
               </div>
               <h2 className="text-2xl font-black text-foreground tracking-tight">Finalizar Operación</h2>
@@ -737,14 +736,14 @@ export default function POS() {
               <div className="grid grid-cols-2 gap-4">
                 <button 
                   onClick={() => setPaymentMethod('efectivo')}
-                  className={`flex flex-col items-center justify-center p-6 rounded-2xl border-2 transition-all gap-3 ${paymentMethod === 'efectivo' ? 'border-primary bg-primary/5 text-primary' : 'border-slate-50 text-slate-300'}`}
+                  className={`flex flex-col items-center justify-center p-6 rounded-sm border-2 transition-all gap-3 ${paymentMethod === 'efectivo' ? 'border-primary bg-primary/5 text-primary' : 'border-slate-50 text-slate-300'}`}
                 >
                   <Money className="h-8 w-8" weight="regular" />
                   <span className="text-[10px] font-bold uppercase tracking-widest">Efectivo</span>
                 </button>
                 <button 
                   onClick={() => setPaymentMethod('tarjeta')}
-                  className={`flex flex-col items-center justify-center p-6 rounded-2xl border-2 transition-all gap-3 ${paymentMethod === 'tarjeta' ? 'border-primary bg-primary/5 text-primary' : 'border-slate-50 text-slate-300'}`}
+                  className={`flex flex-col items-center justify-center p-6 rounded-sm border-2 transition-all gap-3 ${paymentMethod === 'tarjeta' ? 'border-primary bg-primary/5 text-primary' : 'border-slate-50 text-slate-300'}`}
                 >
                   <CreditCard className="h-8 w-8" weight="regular" />
                   <span className="text-[10px] font-bold uppercase tracking-widest">Tarjeta</span>
@@ -764,14 +763,14 @@ export default function POS() {
                       type="number" 
                       value={montoPagado}
                       onChange={(e) => setMontoPagado(e.target.value)}
-                      className="h-18 bg-muted border-border text-3xl font-black text-foreground text-center rounded-2xl shadow-inner focus-visible:ring-primary/20 pl-14"
+                      className="h-18 bg-muted border-border text-3xl font-black text-foreground text-center rounded-sm shadow-inner focus-visible:ring-primary/20 pl-14"
                       placeholder="0.00"
                       autoFocus
                     />
                 </div>
                 <div className="grid grid-cols-4 gap-2">
                     {bills.slice(-4).map(bill => (
-                        <button key={bill} onClick={() => quickPay(bill)} className="h-10 rounded-lg bg-muted hover:bg-primary hover:text-primary-foreground text-[10px] font-black transition-all border border-border">
+                        <button key={bill} onClick={() => quickPay(bill)} className="h-10 rounded-sm bg-muted hover:bg-primary hover:text-primary-foreground text-[10px] font-black transition-all border border-border">
                             +{bill}
                         </button>
                     ))}
@@ -780,11 +779,11 @@ export default function POS() {
             )}
 
             <div className="flex gap-4 pt-4">
-                <Button variant="ghost" className="flex-1 h-14 rounded-2xl font-black uppercase tracking-widest text-[10px] text-muted-foreground/60 hover:bg-muted" onClick={() => setIsPaymentModalOpen(false)}>
+                <Button variant="ghost" className="flex-1 h-14 rounded-sm font-black uppercase tracking-widest text-[10px] text-muted-foreground/60 hover:bg-muted" onClick={() => setIsPaymentModalOpen(false)}>
                     Cancelar
                 </Button>
                 <Button 
-                    className="flex-[2] h-14 rounded-2xl bg-primary hover:bg-primary/90 font-black uppercase tracking-widest text-xs shadow-xl shadow-primary/20 gap-2"
+                    className="flex-[2] h-14 rounded-sm bg-primary hover:bg-primary/90 font-black uppercase tracking-widest text-xs shadow-xl shadow-primary/20 gap-2"
                     onClick={handleProcessSale}
                     disabled={isProcessing}
                 >
@@ -798,7 +797,7 @@ export default function POS() {
 
       {/* Receipt Modal: Formal & Clean */}
       <Dialog open={isReceiptModalOpen} onOpenChange={setIsReceiptModalOpen}>
-        <DialogContent className="sm:max-w-md border border-border shadow-2xl rounded-2xl p-0 overflow-hidden bg-card">
+        <DialogContent className="sm:max-w-md border border-border shadow-xl rounded-sm p-0 overflow-hidden bg-card">
           <div className="p-10 flex flex-col items-center text-center">
             <div className="h-20 w-20 bg-green-500/10 text-green-500 rounded-full flex items-center justify-center mb-6 animate-in fade-in duration-500 border border-green-500/20">
                <CheckCircle className="h-12 w-12" weight="fill" />
@@ -806,7 +805,7 @@ export default function POS() {
             <h2 className="text-2xl font-black text-foreground tracking-tight">Venta Completada</h2>
             <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.2em] mt-2 opacity-60">{new Date().toLocaleString()}</p>
             
-            <div className="w-full mt-10 p-8 rounded-2xl bg-muted/30 border border-border space-y-4">
+            <div className="w-full mt-10 p-8 rounded-sm bg-muted/30 border border-border space-y-4">
                 <div className="flex justify-between items-center text-[10px] font-black text-muted-foreground uppercase tracking-widest border-b border-border pb-3">
                     <span>Folio</span>
                     <span className="text-foreground">{lastSale?.numero_factura || '#----'}</span>
@@ -818,10 +817,10 @@ export default function POS() {
             </div>
 
             <div className="w-full mt-10 grid grid-cols-2 gap-4">
-                <Button variant="outline" className="h-14 rounded-xl border-border bg-card hover:bg-muted font-black uppercase tracking-widest text-[10px] gap-2 text-muted-foreground" onClick={handlePrint}>
+                <Button variant="outline" className="h-14 rounded-sm border-border bg-card hover:bg-muted font-black uppercase tracking-widest text-[10px] gap-2 text-muted-foreground" onClick={handlePrint}>
                     <Printer className="h-4 w-4" /> Imprimir Ticket
                 </Button>
-                <Button className="h-14 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-widest text-[10px] shadow-lg shadow-primary/20" onClick={() => { 
+                <Button className="h-14 rounded-sm bg-primary hover:bg-primary/90 text-primary-foreground font-black uppercase tracking-widest text-[10px] shadow-lg shadow-primary/20" onClick={() => { 
                     setIsReceiptModalOpen(false); 
                     clearCart(); 
                 }}>
@@ -839,11 +838,11 @@ export default function POS() {
         open={!!selectedProductForPresentation} 
         onOpenChange={(open) => !open && setSelectedProductForPresentation(null)}
       >
-        <DialogContent className="sm:max-w-md border border-border shadow-2xl rounded-[2rem] p-0 overflow-hidden bg-card">
+        <DialogContent className="sm:max-w-md border border-border shadow-xl rounded-sm p-0 overflow-hidden bg-card">
           {selectedProductForPresentation && (
             <div className="p-8 space-y-6">
               <div className="text-center space-y-2">
-                <div className="h-16 w-16 bg-muted text-primary rounded-2xl flex items-center justify-center mx-auto mb-4 border border-border">
+                <div className="h-16 w-16 bg-muted text-primary rounded-sm flex items-center justify-center mx-auto mb-4 border border-border">
                   <Package className="h-8 w-8" weight="regular" />
                 </div>
                 <h2 className="text-xl font-black text-foreground tracking-tight leading-tight">
@@ -855,26 +854,7 @@ export default function POS() {
               </div>
 
               <div className="space-y-3 max-h-[50vh] overflow-y-auto pr-2 no-scrollbar">
-                {/* Base Unit Option */}
-                <button
-                  onClick={() => {
-                    addToCart(selectedProductForPresentation, null);
-                    setSelectedProductForPresentation(null);
-                  }}
-                  className="w-full flex items-center justify-between p-4 rounded-xl border-2 border-border hover:border-primary hover:bg-primary/5 transition-all group text-left bg-card"
-                >
-                  <div>
-                    <span className="block text-sm font-black text-foreground group-hover:text-primary transition-colors">
-                      Unidad Suelta
-                    </span>
-                    <span className="block text-[10px] font-black text-muted-foreground uppercase tracking-widest mt-1 opacity-60">
-                      Descuenta 1 unidad
-                    </span>
-                  </div>
-                  <span className="text-lg font-black text-foreground tracking-tighter">
-                    {formatMoney(selectedProductForPresentation.precio_venta)}
-                  </span>
-                </button>
+
 
                 {/* Presentations Options — only show if they have stock */}
                 {selectedProductForPresentation.presentaciones
@@ -886,7 +866,7 @@ export default function POS() {
                         addToCart(selectedProductForPresentation, pres);
                         setSelectedProductForPresentation(null);
                       }}
-                      className="w-full flex items-center justify-between p-4 rounded-xl border-2 border-border hover:border-primary hover:bg-primary/5 transition-all group text-left bg-card"
+                      className="w-full flex items-center justify-between p-4 rounded-sm border-2 border-border hover:border-primary hover:bg-primary/5 transition-all group text-left bg-card"
                     >
                       <div>
                         <span className="block text-sm font-black text-foreground group-hover:text-primary transition-colors">
@@ -912,7 +892,7 @@ export default function POS() {
                 )}
               </div>
               
-              <Button variant="ghost" className="w-full h-12 rounded-xl text-[10px] font-black text-muted-foreground uppercase tracking-widest hover:bg-muted" onClick={() => setSelectedProductForPresentation(null)}>
+              <Button variant="ghost" className="w-full h-12 rounded-sm text-[10px] font-black text-muted-foreground uppercase tracking-widest hover:bg-muted" onClick={() => setSelectedProductForPresentation(null)}>
                 Cancelar
               </Button>
             </div>
@@ -931,10 +911,10 @@ export default function POS() {
 
       {/* Modal de Egresos */}
       <Dialog open={isEgresoModalOpen} onOpenChange={setIsEgresoModalOpen}>
-        <DialogContent className="sm:max-w-[400px] border border-border shadow-2xl rounded-[2rem] p-0 overflow-hidden bg-card">
+        <DialogContent className="sm:max-w-[400px] border border-border shadow-xl rounded-sm p-0 overflow-hidden bg-card">
           <div className="p-8 space-y-6">
             <div className="flex items-center gap-4">
-              <div className="h-12 w-12 rounded-2xl bg-destructive/10 text-destructive flex items-center justify-center border border-destructive/20">
+              <div className="h-12 w-12 rounded-sm bg-destructive/10 text-destructive flex items-center justify-center border border-destructive/20">
                 <Money className="h-6 w-6" weight="fill" />
               </div>
               <div className="flex-1">
@@ -952,7 +932,7 @@ export default function POS() {
                     type="number" 
                     step="0.01"
                     placeholder="0.00"
-                    className="h-14 bg-muted border-border text-2xl font-black text-foreground pl-12 rounded-xl focus-visible:ring-destructive/20"
+                    className="h-14 bg-muted border-border text-2xl font-black text-foreground pl-12 rounded-sm focus-visible:ring-destructive/20"
                     value={egresoMonto}
                     onChange={(e) => setEgresoMonto(e.target.value)}
                     required
@@ -964,7 +944,7 @@ export default function POS() {
                 <label className="text-[10px] font-black uppercase text-muted-foreground tracking-widest px-1">Motivo / Descripción</label>
                 <Input 
                   placeholder="Ej. Pago de hielo, proveedores..."
-                  className="h-14 bg-muted border-border text-sm font-bold text-foreground rounded-xl focus-visible:ring-destructive/20"
+                  className="h-14 bg-muted border-border text-sm font-bold text-foreground rounded-sm focus-visible:ring-destructive/20"
                   value={egresoMotivo}
                   onChange={(e) => setEgresoMotivo(e.target.value)}
                   required
@@ -972,10 +952,10 @@ export default function POS() {
               </div>
 
               <div className="flex gap-3 pt-4">
-                <Button type="button" variant="ghost" className="flex-1 h-12 rounded-xl text-[10px] font-black text-muted-foreground uppercase tracking-widest" onClick={() => setIsEgresoModalOpen(false)}>
+                <Button type="button" variant="ghost" className="flex-1 h-12 rounded-sm text-[10px] font-black text-muted-foreground uppercase tracking-widest" onClick={() => setIsEgresoModalOpen(false)}>
                   Cancelar
                 </Button>
-                <Button type="submit" variant="destructive" className="flex-[2] h-12 rounded-xl bg-destructive hover:bg-destructive/90 font-black uppercase tracking-widest text-[10px] shadow-lg shadow-destructive/20" disabled={isRecordingEgreso}>
+                <Button type="submit" variant="destructive" className="flex-[2] h-12 rounded-sm bg-destructive hover:bg-destructive/90 font-black uppercase tracking-widest text-[10px] shadow-lg shadow-destructive/20" disabled={isRecordingEgreso}>
                   {isRecordingEgreso ? <CircleNotch className="h-4 w-4 animate-spin" /> : 'Confirmar Salida'}
                 </Button>
               </div>

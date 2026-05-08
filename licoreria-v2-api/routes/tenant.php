@@ -75,6 +75,7 @@ Route::middleware([
         // Productos
         Route::get('productos', [ProductoController::class, 'index'])->middleware('permission:ver.productos');
         Route::get('productos/buscar-barcode', [ProductoController::class, 'buscarPorBarcode'])->middleware('permission:ver.productos');
+        Route::post('productos/bulk', [ProductoController::class, 'storeBulk'])->middleware('permission:crear.producto');
         Route::post('productos', [ProductoController::class, 'store'])->middleware('permission:crear.producto');
         Route::get('productos/{producto}', [ProductoController::class, 'show'])->middleware('permission:ver.productos');
         Route::post('productos/{producto}', [ProductoController::class, 'update'])->middleware('permission:editar.producto'); // POST con _method=PUT
@@ -124,6 +125,7 @@ Route::middleware([
         Route::apiResource('cajas', CajaController::class);
         Route::apiResource('proveedores', ProveedorController::class);
         Route::apiResource('medidas', MedidaController::class);
+        Route::apiResource('empaques', \App\Http\Controllers\Tenant\EmpaqueController::class)->except(['show']);
         
         // Sesiones de Caja (Trabajo)
         Route::get('caja-sesiones/active', [\App\Http\Controllers\Tenant\CajaSesionController::class, 'active']);
