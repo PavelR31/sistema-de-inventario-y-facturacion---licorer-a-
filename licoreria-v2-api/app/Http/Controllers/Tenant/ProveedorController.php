@@ -53,10 +53,19 @@ class ProveedorController extends Controller
 
     public function destroy(Proveedor $proveedor)
     {
-        if ($proveedor->compras()->count() > 0) {
-            return response()->json(['message' => 'No se puede eliminar un proveedor con historial de compras.'], 422);
-        }
         $proveedor->delete();
         return response()->json(['message' => 'Proveedor eliminado con éxito.']);
+    }
+
+    public function destroyBulk(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array|min:1',
+            'ids.*' => 'integer|exists:proveedores,id',
+        ]);
+
+        $deleted = Proveedor::whereIn('id', $request->ids)->delete();
+
+        return response()->json(['message' => "$deleted proveedor(es) eliminado(s) correctamente."]);
     }
 }

@@ -110,9 +110,12 @@ class Tenant extends BaseTenant implements TenantWithDatabase
             return $this->run(function () {
                 $query = \DB::table('users');
                 
-                // Si la tabla tiene la columna active, filtramos, si no contamos todos
                 if (\Schema::hasColumn('users', 'active')) {
                     $query->where('active', true);
+                }
+                
+                if (\Schema::hasColumn('users', 'deleted_at')) {
+                    $query->whereNull('deleted_at');
                 }
                 
                 return $query->count();
@@ -144,7 +147,11 @@ class Tenant extends BaseTenant implements TenantWithDatabase
     {
         try {
             return $this->run(function () {
-                return \DB::table('sucursales')->count();
+                $query = \DB::table('sucursales');
+                if (\Schema::hasColumn('sucursales', 'deleted_at')) {
+                    $query->whereNull('deleted_at');
+                }
+                return $query->count();
             });
         } catch (\Throwable $e) {
             return 0;

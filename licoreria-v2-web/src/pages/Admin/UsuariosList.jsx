@@ -25,6 +25,8 @@ import DataPagination from '@/components/ui/data-pagination';
 import PageHeader from '@/components/layout/PageHeader';
 import { useAuthStore } from '@/store/useAuthStore';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Loader2 } from 'lucide-react';
 
 export default function UsuariosList() {
   const currentUser = useAuthStore(state => state.user);
@@ -45,6 +47,10 @@ export default function UsuariosList() {
     sucursal_id: 'none'
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Bulk Delete States
+  const [selected, setSelected] = useState([]);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
   const fetchData = async (page = 1) => {
     setIsLoading(true);
@@ -116,16 +122,43 @@ export default function UsuariosList() {
 
   const handleDelete = async (id) => {
     if (currentUser?.id === id) {
-        toast.error('No puedes eliminar tu propio usuario');
+        toast.error('No puedes deshabilitar tu propio usuario');
         return;
     }
-    if (!confirm('¿Estás seguro de eliminar este usuario?')) return;
+    if (!confirm('¿Estás seguro de deshabilitar (enviar a la papelera) este usuario?')) return;
     try {
       await api.delete(`/api/users/${id}`);
-      toast.success('Usuario eliminado');
+      toast.success('Usuario deshabilitado correctamente');
       fetchData();
     } catch (error) {
-      toast.error(error.response?.data?.message || 'No se pudo eliminar el usuario');
+      toast.error(error.response?.data?.message || 'No se pudo deshabilitar el usuario');
+    }
+  };
+
+  const filteredUsers = users.filter(user =>
+    user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    user.email.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const toggleSelect = (id) => setSelected(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  const toggleSelectAll = () => setSelected(selected.length === filteredUsers.length ? [] : filteredUsers.map(u => u.id));
+  const allSelected = filteredUsers.length > 0 && selected.length === filteredUsers.length;
+
+  const handleBulkDelete = async () => {
+    if (selected.includes(currentUser?.id)) {
+      toast.error('Has seleccionado tu propio usuario, el cual no será deshabilitado.');
+    }
+    if (!window.confirm(`¿Deshabilitar ${selected.length} usuario(s) del sistema? (Pasarán a la papelera)`)) return;
+    setIsBulkDeleting(true);
+    try {
+      const res = await api.delete('/api/users/bulk', { data: { ids: selected } });
+      toast.success(res.data.message.replace('eliminado', 'deshabilitado'));
+      setSelected([]);
+      fetchData();
+    } catch (e) {
+      toast.error(e.response?.data?.message || 'Error al deshabilitar');
+    } finally {
+      setIsBulkDeleting(false);
     }
   };
 
@@ -143,10 +176,7 @@ export default function UsuariosList() {
     }
   };
 
-  const filteredUsers = users.filter(user =>
-    user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.email.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-10">
@@ -159,11 +189,21 @@ export default function UsuariosList() {
         onSearchChange={setSearchTerm}
         searchPlaceholder="Buscar por nombre o email..."
         action={
-          <Can permission="crear.usuario">
-            <Button onClick={() => { resetForm(); setIsDialogOpen(true); }} className="gap-2 shadow-sm">
-              <Plus weight="bold" className="h-4 w-4" /> Nuevo Usuario
-            </Button>
-          </Can>
+          <div className="flex gap-2">
+            {selected.length > 0 && (
+              <Can permission="eliminar.usuario">
+                <Button variant="destructive" className="rounded-sm gap-2" onClick={handleBulkDelete} disabled={isBulkDeleting}>
+                  {isBulkDeleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash className="h-4 w-4" />}
+                  Deshabilitar {selected.length}
+                </Button>
+              </Can>
+            )}
+            <Can permission="crear.usuario">
+              <Button onClick={() => { resetForm(); setIsDialogOpen(true); }} className="gap-2 shadow-sm rounded-sm">
+                <Plus weight="bold" className="h-4 w-4" /> Nuevo Usuario
+              </Button>
+            </Can>
+          </div>
         }
       />
 
@@ -173,6 +213,9 @@ export default function UsuariosList() {
             <Table>
               <TableHeader className="bg-muted/50">
                 <TableRow>
+                  <TableHead className="w-10 px-4">
+                    <Checkbox checked={allSelected} onCheckedChange={toggleSelectAll} />
+                  </TableHead>
                   <TableHead className="px-6 py-4 font-bold text-[10px] uppercase tracking-widest">Usuario</TableHead>
                   <TableHead className="font-bold text-[10px] uppercase tracking-widest">Email</TableHead>
                   <TableHead className="font-bold text-[10px] uppercase tracking-widest">Rol</TableHead>
@@ -185,6 +228,7 @@ export default function UsuariosList() {
                 {isLoading ? (
                   [...Array(5)].map((_, i) => (
                     <TableRow key={i}>
+                      <TableCell className="px-4"><div className="h-4 w-4 bg-muted animate-pulse rounded"></div></TableCell>
                       <TableCell className="px-6 py-4"><div className="h-4 w-32 bg-muted animate-pulse rounded"></div></TableCell>
                       <TableCell className="py-4"><div className="h-4 w-40 bg-muted animate-pulse rounded"></div></TableCell>
                       <TableCell className="py-4"><div className="h-4 w-20 bg-muted animate-pulse rounded"></div></TableCell>
@@ -195,13 +239,16 @@ export default function UsuariosList() {
                   ))
                 ) : filteredUsers.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="h-32 text-center text-muted-foreground text-xs italic">
+                    <TableCell colSpan={7} className="h-32 text-center text-muted-foreground text-xs italic">
                       No se encontraron usuarios
                     </TableCell>
                   </TableRow>
                 ) : (
                   filteredUsers.map((user) => (
-                    <TableRow key={user.id} className="hover:bg-muted/30 transition-colors group">
+                    <TableRow key={user.id} className={`hover:bg-muted/30 transition-colors group ${selected.includes(user.id) ? 'bg-primary/5' : ''}`}>
+                      <TableCell className="px-4">
+                        <Checkbox checked={selected.includes(user.id)} onCheckedChange={() => toggleSelect(user.id)} />
+                      </TableCell>
                       <TableCell className="px-6 py-4">
                         <div className="flex items-center gap-3">
                           <Avatar className="h-8 w-8 border">
@@ -270,7 +317,11 @@ export default function UsuariosList() {
               <div key={i} className="h-44 bg-card rounded-xl border animate-pulse shadow-sm"></div>
             ))
           ) : filteredUsers.map(user => (
-            <Card key={user.id} className="border shadow-sm group hover:shadow-md transition-all overflow-hidden relative">
+            <Card 
+              key={user.id} 
+              onClick={() => toggleSelect(user.id)}
+              className={`border shadow-sm group hover:shadow-md transition-all overflow-hidden relative cursor-pointer ${selected.includes(user.id) ? 'ring-2 ring-primary bg-primary/5' : ''}`}
+            >
               <div className={`absolute top-0 left-0 right-0 h-1 ${user.active !== false ? 'bg-primary' : 'bg-muted'}`} />
               <CardContent className="p-5">
                 <div className="flex items-start justify-between mb-4">

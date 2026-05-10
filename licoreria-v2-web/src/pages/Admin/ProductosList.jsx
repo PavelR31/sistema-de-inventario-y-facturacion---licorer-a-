@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Plus, Package, Search, Tag, DollarSign, Layers, ImageIcon, ImagePlus, Trash2, Pencil, LayoutGrid, List, X, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import api, { getImageUrl } from '@/lib/api';
@@ -39,6 +40,10 @@ export default function ProductosList() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef(null);
 
+  // Bulk Select/Delete States
+  const [selected, setSelected] = useState([]);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+
   // Bulk Insert States
   const [isBulkOpen, setIsBulkOpen] = useState(false);
   const initialBulkProduct = { nombre: '', empaque_nombre: '', precio_venta: '', codigo_barras: '', cantidad_unidades: 1, categoria_id: '', medida_id: '', imagen: null, imagenPreview: null };
@@ -48,6 +53,24 @@ export default function ProductosList() {
   const openBulk = () => {
     setBulkProducts([initialBulkProduct]);
     setIsBulkOpen(true);
+  };
+
+  const toggleSelect = (id) => setSelected(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  const toggleSelectAll = () => setSelected(selected.length === productos.length ? [] : productos.map(p => p.id));
+
+  const handleBulkDelete = async () => {
+    if (!window.confirm(`¿Eliminar ${selected.length} producto(s) seleccionado(s)?`)) return;
+    setIsBulkDeleting(true);
+    try {
+      const res = await api.delete('/api/productos/bulk', { data: { ids: selected } });
+      toast.success(res.data.message);
+      setSelected([]);
+      fetchData();
+    } catch (e) {
+      toast.error(e.response?.data?.message || 'Error al eliminar productos');
+    } finally {
+      setIsBulkDeleting(false);
+    }
   };
 
   const fetchData = async (page = 1) => {
@@ -353,16 +376,24 @@ export default function ProductosList() {
         onSearchChange={setSearchTerm}
         searchPlaceholder="Buscar por nombre o código..."
         action={
-          <Can permission="crear.producto">
-            <div className="flex gap-2">
+          <div className="flex gap-2">
+            {selected.length > 0 && (
+              <Can permission="eliminar.producto">
+                <Button variant="destructive" className="rounded-sm shadow-sm gap-2" onClick={handleBulkDelete} disabled={isBulkDeleting}>
+                  {isBulkDeleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                  Eliminar {selected.length}
+                </Button>
+              </Can>
+            )}
+            <Can permission="crear.producto">
               <Button onClick={openBulk} variant="secondary" className="rounded-sm shadow-sm border border-border">
                 <Layers className="mr-2 h-4 w-4" /> Carga Masiva
               </Button>
               <Button onClick={() => setIsDialogOpen(true)} className="rounded-sm shadow-sm">
                 <Plus className="mr-2 h-4 w-4" /> Nuevo Producto
               </Button>
-            </div>
-          </Can>
+            </Can>
+          </div>
         }
       />
 
@@ -373,6 +404,9 @@ export default function ProductosList() {
               <Table>
                 <TableHeader className="bg-muted/50">
                   <TableRow>
+                    <TableHead className="w-10 px-4">
+                      <Checkbox checked={productos.length > 0 && selected.length === productos.length} onCheckedChange={toggleSelectAll} />
+                    </TableHead>
                     <TableHead className="w-[300px] py-4 px-6 font-semibold text-foreground/80">Producto y Medida</TableHead>
                     <TableHead className="font-semibold text-foreground/80">Categoría</TableHead>
                     <TableHead className="font-semibold text-foreground/80">Empaques</TableHead>
@@ -384,15 +418,18 @@ export default function ProductosList() {
                   {isLoading ? (
                     [...Array(5)].map((_, i) => (
                       <TableRow key={i}>
-                        <TableCell colSpan={5} className="px-6 py-4"><div className="h-10 bg-muted/50 animate-pulse rounded"></div></TableCell>
+                        <TableCell colSpan={6} className="px-6 py-4"><div className="h-10 bg-muted/50 animate-pulse rounded"></div></TableCell>
                       </TableRow>
                     ))
                   ) : productos.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={5} className="h-32 text-center text-muted-foreground font-medium">No se encontraron productos</TableCell>
+                      <TableCell colSpan={6} className="h-32 text-center text-muted-foreground font-medium">No se encontraron productos</TableCell>
                     </TableRow>
                   ) : productos.map((p) => (
-                    <TableRow key={p.id} className="hover:bg-muted/30 transition-colors group">
+                    <TableRow key={p.id} className={`hover:bg-muted/30 transition-colors group ${selected.includes(p.id) ? 'bg-primary/5' : ''}`}>
+                      <TableCell className="px-4">
+                        <Checkbox checked={selected.includes(p.id)} onCheckedChange={() => toggleSelect(p.id)} />
+                      </TableCell>
                       <TableCell className="py-4 px-6">
                         <div className="flex items-center gap-3">
                           <div className="bg-background h-10 w-10 shrink-0 rounded-sm flex items-center justify-center border border-border/50 overflow-hidden">
@@ -472,7 +509,11 @@ export default function ProductosList() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 animate-in fade-in zoom-in duration-300">
           {productos.map(p => (
-            <Card key={p.id} className="group overflow-hidden border shadow-sm hover:shadow-lg transition-all duration-300 bg-card">
+            <Card
+              key={p.id}
+              onClick={() => toggleSelect(p.id)}
+              className={`group overflow-hidden border shadow-sm hover:shadow-lg transition-all duration-300 bg-card cursor-pointer ${selected.includes(p.id) ? 'ring-2 ring-primary bg-primary/5' : ''}`}
+            >
               <div className="aspect-[16/10] bg-muted/20 relative p-4 flex justify-center">
                 {(p.imagen_url || p.imagen_ruta) ? (
                   <FallbackImage
@@ -483,13 +524,18 @@ export default function ProductosList() {
                     fallbackClass="h-12 w-12 text-muted-foreground/20 opacity-50 m-auto"
                   />
                 ) : <Package className="h-12 w-12 text-muted-foreground/20 opacity-50 m-auto" />}
+                {selected.includes(p.id) && (
+                  <div className="absolute top-2 left-2 h-5 w-5 rounded bg-primary flex items-center justify-center">
+                    <svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
+                  </div>
+                )}
               </div>
               <div className="p-4">
                 <p className="text-[10px] font-bold text-primary uppercase mb-1">{p.categoria?.nombre || 'General'}</p>
                 <h3 className="font-semibold text-foreground">{p.nombre} <span className="text-muted-foreground text-xs">{p.medida?.abreviatura}</span></h3>
                 <div className="flex justify-between items-center mt-4 pt-4 border-t border-border/50">
                   <span className="text-xs font-bold text-muted-foreground">{p.stock_total || 0} Unidades</span>
-                  <Button size="icon-sm" variant="ghost" onClick={() => openEdit(p)} className="text-muted-foreground hover:text-foreground transition-colors"><Pencil className="w-4 h-4" /></Button>
+                  <Button size="icon-sm" variant="ghost" onClick={(e) => { e.stopPropagation(); openEdit(p); }} className="text-muted-foreground hover:text-foreground transition-colors"><Pencil className="w-4 h-4" /></Button>
                 </div>
               </div>
             </Card>

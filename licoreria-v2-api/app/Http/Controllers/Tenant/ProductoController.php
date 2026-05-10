@@ -231,6 +231,18 @@ class ProductoController extends Controller
         return response()->json(['message' => 'Producto eliminado de catálogo global.']);
     }
 
+    public function destroyBulk(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array|min:1',
+            'ids.*' => 'integer|exists:productos,id',
+        ]);
+
+        $deleted = Producto::whereIn('id', $request->ids)->delete();
+
+        return response()->json(['message' => "$deleted producto(s) eliminado(s) correctamente."]);
+    }
+
     /**
      * Busca un producto por código de barras (sku, upc, o código de presentación).
      * Usado por el POS para escaneo automático.

@@ -44,12 +44,19 @@ class MedidaController extends Controller
 
     public function destroy(Medida $medida)
     {
-        if ($medida->productos()->exists()) {
-            return response()->json(['message' => 'No se puede eliminar la medida porque tiene productos asociados.'], 400);
-        }
-
         $medida->delete();
-
         return response()->json(null, 204);
+    }
+
+    public function destroyBulk(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array|min:1',
+            'ids.*' => 'integer|exists:medidas,id',
+        ]);
+
+        $deleted = Medida::whereIn('id', $request->ids)->delete();
+
+        return response()->json(['message' => "$deleted medida(s) eliminada(s) correctamente."]);
     }
 }

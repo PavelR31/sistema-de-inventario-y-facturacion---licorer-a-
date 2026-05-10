@@ -57,13 +57,20 @@ class CajaController extends Controller
 
     public function destroy(Caja $caja)
     {
-        // Verificar si tiene sesiones antes de eliminar o simplemente desactivar
-        if ($caja->sesiones()->exists()) {
-            return response()->json(['message' => 'No se puede eliminar una caja con historial de sesiones.'], 422);
-        }
-
         $caja->delete();
         return response()->json(null, 204);
+    }
+
+    public function destroyBulk(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array|min:1',
+            'ids.*' => 'integer|exists:cajas,id',
+        ]);
+
+        $deleted = Caja::whereIn('id', $request->ids)->delete();
+
+        return response()->json(['message' => "$deleted caja(s) eliminada(s) correctamente."]);
     }
 
     public function sesiones(Caja $caja)

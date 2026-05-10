@@ -43,4 +43,16 @@ class EmpaqueController extends Controller
         $empaque->delete();
         return response()->json(['message' => 'Empaque eliminado correctamente.']);
     }
+
+    public function destroyBulk(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array|min:1',
+            'ids.*' => 'integer|exists:empaques,id',
+        ]);
+
+        $deleted = Empaque::whereIn('id', $request->ids)->delete();
+
+        return response()->json(['message' => "$deleted empaque(s) eliminado(s) correctamente."]);
+    }
 }
