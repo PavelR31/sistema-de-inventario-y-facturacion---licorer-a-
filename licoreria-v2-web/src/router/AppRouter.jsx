@@ -6,19 +6,24 @@ import Login from "@/pages/Auth/Login";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ShieldCheck, Loader2 } from "lucide-react";
+import api from '@/lib/api';
 
 // Lazy Loaded Pages
 const ChangePassword = React.lazy(() => import("@/pages/Auth/ChangePassword"));
 const BranchSelection = React.lazy(() => import("@/pages/Auth/BranchSelection"));
+const Impersonate = React.lazy(() => import("@/pages/Auth/Impersonate"));
 const TenantsList = React.lazy(() => import("@/pages/Central/TenantsList"));
 const CentralDashboard = React.lazy(() => import("@/pages/Central/CentralDashboard"));
+const CentralMonitoring = React.lazy(() => import("@/pages/Central/CentralMonitoring"));
 const CentralBackups = React.lazy(() => import("@/pages/Central/CentralBackups"));
+const CentralSettings = React.lazy(() => import("@/pages/Central/CentralSettings"));
 const AdminDashboard = React.lazy(() => import("@/pages/Admin/AdminDashboard"));
 const SucursalesList = React.lazy(() => import("@/pages/Admin/SucursalesList"));
 const UsuariosList = React.lazy(() => import("@/pages/Admin/UsuariosList"));
 const ProductosList = React.lazy(() => import("@/pages/Admin/ProductosList"));
 const CategoriasList = React.lazy(() => import("@/pages/Admin/CategoriasList"));
 const MedidasList = React.lazy(() => import("@/pages/Admin/MedidasList"));
+const EmpaquesList = React.lazy(() => import("@/pages/Admin/EmpaquesList"));
 const ProveedoresList = React.lazy(() => import("@/pages/Admin/ProveedoresList"));
 const LicenseManagement = React.lazy(() => import("@/pages/Central/LicenseManagement"));
 const NuevaCompra = React.lazy(() => import("@/pages/Admin/NuevaCompra"));
@@ -33,6 +38,7 @@ const CajaFlow = React.lazy(() => import("@/components/layout/CajaFlow"));
 const AjustesStock = React.lazy(() => import("@/pages/Admin/AjustesStock"));
 const BackupsPage = React.lazy(() => import("@/pages/Admin/BackupsPage"));
 const ProfilePage = React.lazy(() => import("@/pages/Admin/ProfilePage"));
+const NotFoundTenant = React.lazy(() => import("@/pages/Auth/NotFoundTenant"));
 
 const LoadingFallback = () => (
   <div className="flex h-screen w-full items-center justify-center bg-background text-primary">
@@ -106,6 +112,14 @@ const router = createBrowserRouter([
     element: <Login />,
   },
   {
+    path: "/impersonate",
+    element: <Impersonate />,
+  },
+  {
+    path: "/not-found-tenant",
+    element: <NotFoundTenant />,
+  },
+  {
     path: "/select-branch",
     element: (
       <ProtectedRoute>
@@ -150,6 +164,14 @@ const router = createBrowserRouter([
         path: "central/backups",
         element: <ProtectedRoute allowedRoles={['super-admin']}><CentralBackups /></ProtectedRoute>,
       },
+      {
+        path: "central/settings",
+        element: <ProtectedRoute allowedRoles={['super-admin']}><CentralSettings /></ProtectedRoute>,
+      },
+      {
+        path: "central/monitoring",
+        element: <ProtectedRoute allowedRoles={['super-admin']}><CentralMonitoring /></ProtectedRoute>,
+      },
       // Tenant Admin Routes
       {
         path: "admin",
@@ -178,6 +200,10 @@ const router = createBrowserRouter([
       {
         path: "admin/medidas",
         element: <ProtectedRoute requiredPermission="ver.productos"><MedidasList /></ProtectedRoute>,
+      },
+      {
+        path: "admin/empaques",
+        element: <ProtectedRoute requiredPermission="ver.productos"><EmpaquesList /></ProtectedRoute>,
       },
       {
         path: "admin/inventario",
@@ -234,10 +260,50 @@ const router = createBrowserRouter([
   },
 ]);
 
+const DomainValidator = ({ children }) => {
+  const [isValidating, setIsValidating] = React.useState(true);
+  const hostname = window.location.hostname;
+  const centralDomains = ['localhost', '127.0.0.1']; // Ajustar si hay más
+
+  React.useEffect(() => {
+    const validateDomain = async () => {
+      // Si es un dominio central, no validamos tenant
+      if (centralDomains.includes(hostname)) {
+        setIsValidating(false);
+        return;
+      }
+
+      // Si no estamos en la página de error, validamos
+      if (window.location.pathname === '/not-found-tenant') {
+        setIsValidating(false);
+        return;
+      }
+
+      try {
+        await api.get('/api/verify');
+        setIsValidating(false);
+      } catch (err) {
+        // Si falla la validación, es probable que el interceptor ya esté redirigiendo
+        // o que sea un error de conexión. En cualquier caso, no dejamos el spinner infinito.
+        console.error("Domain validation failed", err);
+        setIsValidating(false);
+      }
+    };
+
+    validateDomain();
+  }, [hostname]);
+
+  if (isValidating) return <LoadingFallback />;
+
+  return children;
+};
+
 export default function AppRouter() {
   return (
     <Suspense fallback={<LoadingFallback />}>
-      <RouterProvider router={router} />
+      <DomainValidator>
+        <RouterProvider router={router} />
+      </DomainValidator>
     </Suspense>
   );
 }

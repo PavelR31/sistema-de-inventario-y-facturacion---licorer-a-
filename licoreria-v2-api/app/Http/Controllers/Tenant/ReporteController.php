@@ -203,37 +203,27 @@ class ReporteController extends Controller
         $fechaInicio = $request->fecha_inicio ?? now()->startOfMonth()->toDateString();
         $fechaFin    = $request->fecha_fin    ?? now()->toDateString();
 
-        // Obtener todos los usuarios que tienen permiso para vender o el rol de vendedor/admin
-        // Para simplificar y ser precisos, buscaremos usuarios que tengan al menos ALGUN registro de actividad
-        // o simplemente todos los usuarios activos si queremos una comparativa total.
-        // El usuario pidió: "que pueda vender y tenga permiso para vender"
-        
-        $query = \App\Models\User::query()
-            ->select('users.id', 'users.name', 'users.sucursal_id')
-            ->with('sucursal:id,nombre')
-            ->withCount(['ventas as num_ventas' => function ($q) use ($fechaInicio, $fechaFin, $sucursalId) {
-                $q->where('estado', 'vigente')
-                  ->whereBetween(DB::raw('DATE(created_at)'), [$fechaInicio, $fechaFin]);
-                if ($sucursalId) {
-                    $q->where('sucursal_id', $sucursalId);
-                }
-            }])
-            ->withSum(['ventas as total_ventas' => function ($q) use ($fechaInicio, $fechaFin, $sucursalId) {
-                $q->where('estado', 'vigente')
-                  ->whereBetween(DB::raw('DATE(created_at)'), [$fechaInicio, $fechaFin]);
-                if ($sucursalId) {
-                    $q->where('sucursal_id', $sucursalId);
-                }
-            }], 'total')
+        $query = Venta::join('users', 'ventas.user_id', '=', 'users.id')
+            ->join('sucursales', 'ventas.sucursal_id', '=', 'sucursales.id')
+            ->where('ventas.estado', 'vigente')
+            ->whereBetween(DB::raw('DATE(ventas.created_at)'), [$fechaInicio, $fechaFin])
+            ->select(
+                'users.name',
+                'sucursales.nombre as sucursal_nombre',
+                DB::raw('COUNT(ventas.id) as num_ventas'),
+                DB::raw('SUM(ventas.total) as total_ventas')
+            )
+            ->groupBy('users.id', 'users.name', 'sucursales.id', 'sucursales.nombre')
             ->orderByDesc('total_ventas');
 
-        $result = $query->get()->map(function($user) {
-            $user->total_ventas = $user->total_ventas ?? 0;
-            $user->num_ventas = $user->num_ventas ?? 0;
-            $user->ticket_promedio = $user->num_ventas > 0 ? round($user->total_ventas / $user->num_ventas, 2) : 0;
-            
-            $user->sucursal_nombre = $user->sucursal?->nombre ?? 'Sin Asignar';
-            return $user;
+        if ($sucursalId) {
+            $query->where('ventas.sucursal_id', $sucursalId);
+        }
+
+        $result = $query->get()->map(function($row) {
+            $row->total_ventas = round($row->total_ventas, 2);
+            $row->ticket_promedio = $row->num_ventas > 0 ? round($row->total_ventas / $row->num_ventas, 2) : 0;
+            return $row;
         });
 
         return response()->json([

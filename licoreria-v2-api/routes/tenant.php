@@ -38,7 +38,11 @@ Route::middleware([
 ])->prefix('api')->group(function () {
     
     // Auth de Tokens (para Inquilinos)
+    Route::get('/verify', function() {
+        return response()->json(['message' => 'Tenant verified', 'tenant' => tenant('name')]);
+    });
     Route::post('/login', [TenantAuthController::class, 'login']);
+    Route::post('/forgot-password', [TenantAuthController::class, 'forgotPassword']);
 
     // Rutas protegidas (Requieren autenticación del empleado via Sanctum y licencia activa)
     Route::middleware(['auth:sanctum', 'tenant.license'])->group(function () {
@@ -59,6 +63,7 @@ Route::middleware([
         Route::post('sucursales', [SucursalController::class, 'store'])->middleware('permission:crear.sucursal');
         Route::get('sucursales/{sucursal}', [SucursalController::class, 'show'])->middleware('permission:ver.sucursales');
         Route::put('sucursales/{sucursal}', [SucursalController::class, 'update'])->middleware('permission:editar.sucursal');
+        Route::delete('sucursales/bulk', [SucursalController::class, 'destroyBulk'])->middleware('permission:eliminar.sucursal');
         Route::delete('sucursales/{sucursal}', [SucursalController::class, 'destroy'])->middleware('permission:eliminar.sucursal');
 
         // Categorias
@@ -66,11 +71,14 @@ Route::middleware([
         Route::post('categorias', [CategoriaController::class, 'store'])->middleware('permission:crear.categoria');
         Route::get('categorias/{categoria}', [CategoriaController::class, 'show']);
         Route::put('categorias/{categoria}', [CategoriaController::class, 'update'])->middleware('permission:editar.categoria');
+        Route::delete('categorias/bulk', [CategoriaController::class, 'destroyBulk'])->middleware('permission:eliminar.categoria');
         Route::delete('categorias/{categoria}', [CategoriaController::class, 'destroy'])->middleware('permission:eliminar.categoria');
 
         // Productos
         Route::get('productos', [ProductoController::class, 'index'])->middleware('permission:ver.productos');
         Route::get('productos/buscar-barcode', [ProductoController::class, 'buscarPorBarcode'])->middleware('permission:ver.productos');
+        Route::post('productos/bulk', [ProductoController::class, 'storeBulk'])->middleware('permission:crear.producto');
+        Route::delete('productos/bulk', [ProductoController::class, 'destroyBulk'])->middleware('permission:eliminar.producto');
         Route::post('productos', [ProductoController::class, 'store'])->middleware('permission:crear.producto');
         Route::get('productos/{producto}', [ProductoController::class, 'show'])->middleware('permission:ver.productos');
         Route::post('productos/{producto}', [ProductoController::class, 'update'])->middleware('permission:editar.producto'); // POST con _method=PUT
@@ -89,6 +97,7 @@ Route::middleware([
         Route::post('proveedores', [ProveedorController::class, 'store'])->middleware('permission:crear.proveedor');
         Route::get('proveedores/{proveedor}', [ProveedorController::class, 'show'])->middleware('permission:ver.proveedores');
         Route::put('proveedores/{proveedor}', [ProveedorController::class, 'update'])->middleware('permission:editar.proveedor');
+        Route::delete('proveedores/bulk', [ProveedorController::class, 'destroyBulk'])->middleware('permission:eliminar.proveedor');
         Route::delete('proveedores/{proveedor}', [ProveedorController::class, 'destroy'])->middleware('permission:eliminar.proveedor');
 
         // Compras
@@ -106,6 +115,7 @@ Route::middleware([
         Route::get('users/{user}', [UserController::class, 'show'])->middleware('permission:ver.usuarios');
         Route::put('users/{user}', [UserController::class, 'update'])->middleware('permission:editar.usuario');
         Route::patch('users/{user}/toggle-active', [UserController::class, 'toggleActive'])->middleware('permission:editar.usuario');
+        Route::delete('users/bulk', [UserController::class, 'destroyBulk'])->middleware('permission:eliminar.usuario');
         Route::delete('users/{user}', [UserController::class, 'destroy'])->middleware('permission:eliminar.usuario');
 
         // Roles y Permisos
@@ -117,9 +127,13 @@ Route::middleware([
         Route::delete('roles/{role}', [RoleController::class, 'destroy'])->middleware('permission:eliminar.rol');
 
         // Cajas Físicas
+        Route::delete('cajas/bulk', [CajaController::class, 'destroyBulk']);
         Route::apiResource('cajas', CajaController::class);
         Route::apiResource('proveedores', ProveedorController::class);
+        Route::delete('medidas/bulk', [MedidaController::class, 'destroyBulk'])->middleware('permission:eliminar.producto');
         Route::apiResource('medidas', MedidaController::class);
+        Route::delete('empaques/bulk', [\App\Http\Controllers\Tenant\EmpaqueController::class, 'destroyBulk'])->middleware('permission:eliminar.producto');
+        Route::apiResource('empaques', \App\Http\Controllers\Tenant\EmpaqueController::class)->except(['show']);
         
         // Sesiones de Caja (Trabajo)
         Route::get('caja-sesiones/active', [\App\Http\Controllers\Tenant\CajaSesionController::class, 'active']);

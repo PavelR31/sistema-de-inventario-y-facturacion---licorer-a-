@@ -80,4 +80,16 @@ class SucursalController extends Controller
 
         return response()->json(['message' => 'Sucursal eliminada.']);
     }
+
+    public function destroyBulk(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array|min:1',
+            'ids.*' => 'integer|exists:sucursales,id',
+        ]);
+
+        $deleted = Sucursal::whereIn('id', $request->ids)->delete();
+
+        return response()->json(['message' => "$deleted sucursal(es) eliminada(s) correctamente."]);
+    }
 }

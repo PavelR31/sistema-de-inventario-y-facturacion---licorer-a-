@@ -11,6 +11,7 @@ import { useAuthStore } from '@/store/useAuthStore';
 import Can from '@/components/auth/Can';
 import DataPagination from '@/components/ui/data-pagination';
 import PageHeader from '@/components/layout/PageHeader';
+import { Loader2 } from 'lucide-react';
 
 export default function SucursalesList() {
   const [sucursales, setSucursales] = useState([]);
@@ -20,7 +21,12 @@ export default function SucursalesList() {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [formData, setFormData] = useState({ nombre: '', direccion: '', telefono: '' });
   const [editingSucursal, setEditingSucursal] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const tenant = useAuthStore((state) => state.tenant);
+
+  // Bulk Delete States
+  const [selected, setSelected] = useState([]);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
   const fetchSucursales = async (page = 1) => {
     setIsLoading(true);
@@ -48,6 +54,7 @@ export default function SucursalesList() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsSubmitting(true);
     try {
       await api.post('/api/sucursales', formData);
       toast.success('Sucursal creada con éxito');
@@ -56,11 +63,14 @@ export default function SucursalesList() {
       setFormData({ nombre: '', direccion: '', telefono: '' });
     } catch (error) {
       toast.error('Error al crear la sucursal');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleUpdate = async (e) => {
     e.preventDefault();
+    setIsSubmitting(true);
     try {
       await api.put(`/api/sucursales/${editingSucursal.id}`, editingSucursal);
       toast.success('Sucursal actualizada');
@@ -68,6 +78,8 @@ export default function SucursalesList() {
       fetchSucursales();
     } catch (error) {
       toast.error('Error al actualizar la sucursal');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -79,6 +91,23 @@ export default function SucursalesList() {
       fetchSucursales();
     } catch (error) {
       toast.error('No se pudo eliminar la sucursal');
+    }
+  };
+
+  const toggleSelect = (id) => setSelected(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+
+  const handleBulkDelete = async () => {
+    if (!window.confirm(`¿Eliminar ${selected.length} sucursal(es)?`)) return;
+    setIsBulkDeleting(true);
+    try {
+      const res = await api.delete('/api/sucursales/bulk', { data: { ids: selected } });
+      toast.success(res.data.message);
+      setSelected([]);
+      fetchSucursales();
+    } catch (e) {
+      toast.error(e.response?.data?.message || 'Error al eliminar');
+    } finally {
+      setIsBulkDeleting(false);
     }
   };
 
@@ -94,11 +123,21 @@ export default function SucursalesList() {
         subtitle="Gestión de puntos de venta"
         icon={Store}
         action={
-          <Can permission="crear.sucursal">
-            <Button onClick={() => setIsDialogOpen(true)} className="rounded-sm">
-              <Plus className="mr-2 h-4 w-4" /> Nueva Sucursal
-            </Button>
-          </Can>
+          <div className="flex gap-2">
+            {selected.length > 0 && (
+              <Can permission="eliminar.sucursal">
+                <Button variant="destructive" className="rounded-sm gap-2" onClick={handleBulkDelete} disabled={isBulkDeleting}>
+                  {isBulkDeleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                  Eliminar {selected.length}
+                </Button>
+              </Can>
+            )}
+            <Can permission="crear.sucursal">
+              <Button onClick={() => setIsDialogOpen(true)} className="rounded-sm">
+                <Plus className="mr-2 h-4 w-4" /> Nueva Sucursal
+              </Button>
+            </Can>
+          </div>
         }
       />
 
@@ -114,7 +153,11 @@ export default function SucursalesList() {
           </div>
         ) : (
           sucursales.map((sucursal) => (
-            <Card key={sucursal.id} className="group overflow-hidden border shadow-sm hover:shadow-xl hover:shadow-primary/5 transition-all duration-300 bg-card">
+            <Card 
+              key={sucursal.id} 
+              onClick={() => toggleSelect(sucursal.id)}
+              className={`group overflow-hidden border shadow-sm hover:shadow-xl hover:shadow-primary/5 transition-all duration-300 bg-card cursor-pointer ${selected.includes(sucursal.id) ? 'ring-2 ring-primary bg-primary/5' : ''}`}
+            >
               <CardHeader className="pb-3 px-6 pt-6">
                 <div className="flex justify-between items-start">
                   <div className="h-10 w-10 rounded-sm bg-primary/5 text-primary flex items-center justify-center border border-primary/10 transition-colors">
@@ -132,7 +175,7 @@ export default function SucursalesList() {
                       <Can permission="eliminar.sucursal">
                         <Button 
                           variant="ghost" size="icon-sm" className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-sm"
-                          onClick={() => handleDelete(sucursal.id)}
+                          onClick={(e) => { e.stopPropagation(); handleDelete(sucursal.id); }}
                         >
                           <Trash2 className="w-4 h-4 text-destructive" />
                         </Button>
@@ -206,8 +249,13 @@ export default function SucursalesList() {
               <Button type="button" variant="ghost" onClick={() => setIsDialogOpen(false)} className="text-muted-foreground rounded-sm">
                 Cancelar
               </Button>
-              <Button type="submit" className="min-w-[120px] rounded-sm">
-                Guardar Sucursal
+              <Button type="submit" className="min-w-[120px] rounded-sm" disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <>
+                    <RefreshCcw className="mr-2 h-4 w-4 animate-spin" />
+                    Guardando...
+                  </>
+                ) : 'Guardar Sucursal'}
               </Button>
             </DialogFooter>
           </form>
@@ -253,8 +301,13 @@ export default function SucursalesList() {
               <Button type="button" variant="ghost" onClick={() => setIsEditOpen(false)} className="text-muted-foreground">
                 Cancelar
               </Button>
-              <Button type="submit" className="min-w-[120px] rounded-sm">
-                Actualizar Sucursal
+              <Button type="submit" className="min-w-[120px] rounded-sm" disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <>
+                    <RefreshCcw className="mr-2 h-4 w-4 animate-spin" />
+                    Actualizando...
+                  </>
+                ) : 'Actualizar Sucursal'}
               </Button>
             </DialogFooter>
           </form>

@@ -21,7 +21,12 @@ import {
   Storefront,
   ArrowsClockwise,
   TrendUp,
-  TrendDown
+  TrendDown,
+  XCircle,
+  Package,
+  ArrowsLeftRight,
+  Clock,
+  ArrowRight
 } from "@phosphor-icons/react";
 import { 
   Area, 
@@ -168,10 +173,46 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      <div className="flex items-center gap-1 bg-muted/50 p-1 rounded-lg border w-fit shadow-sm">
-        <Button variant="secondary" size="sm" className="h-8 rounded-md text-xs font-semibold px-4">Vista general</Button>
-        <Button variant="ghost" size="sm" className="h-8 rounded-md text-xs font-semibold px-4 text-muted-foreground" onClick={() => navigate('/admin/reportes')}>Analíticas</Button>
-        <Button variant="ghost" size="sm" className="h-8 rounded-md text-xs font-semibold px-4 text-muted-foreground" onClick={() => navigate('/admin/reportes')}>Reportes</Button>
+      <div className="flex flex-wrap items-center gap-4 px-1">
+        <div className="flex items-center gap-2 bg-background border rounded-lg px-3 py-1 shadow-sm">
+          <Storefront size={16} className="text-muted-foreground" />
+          <Select value={sucursalId} onValueChange={setSucursalId}>
+            <SelectTrigger className="h-8 border-none shadow-none text-xs w-[180px] focus:ring-0 p-0">
+              <SelectValue placeholder="Sucursal" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todas las sucursales</SelectItem>
+              {sucursales.map(s => (
+                <SelectItem key={s.id} value={s.id.toString()}>{s.nombre}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="flex items-center gap-3 bg-background border rounded-lg px-3 py-1 shadow-sm">
+          <CalendarBlank size={16} className="text-muted-foreground" />
+          <div className="flex items-center gap-2 text-xs font-medium">
+            <input 
+              type="date" 
+              value={fechaInicio} 
+              onChange={(e) => setFechaInicio(e.target.value)}
+              className="bg-transparent border-none focus:ring-0 text-foreground outline-none w-[120px]"
+            />
+            <span className="text-muted-foreground">—</span>
+            <input 
+              type="date" 
+              value={fechaFin} 
+              onChange={(e) => setFechaFin(e.target.value)}
+              className="bg-transparent border-none focus:ring-0 text-foreground outline-none w-[120px]"
+            />
+          </div>
+        </div>
+
+        <div className="ml-auto flex items-center gap-1">
+          <Button variant="secondary" size="sm" className="h-8 rounded-md text-[10px] font-bold uppercase tracking-wider px-4">Vista general</Button>
+          <Button variant="ghost" size="sm" className="h-8 rounded-md text-[10px] font-bold uppercase tracking-wider px-4 text-muted-foreground" onClick={() => navigate('/admin/reportes')}>Analíticas</Button>
+          <Button variant="ghost" size="sm" className="h-8 rounded-md text-[10px] font-bold uppercase tracking-wider px-4 text-muted-foreground" onClick={() => navigate('/admin/reportes')}>Reportes</Button>
+        </div>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -284,41 +325,72 @@ export default function AdminDashboard() {
           </CardContent>
         </Card>
 
-        <Card className="col-span-full lg:col-span-3 border shadow-none">
-          <CardHeader>
-            <CardTitle className="text-lg font-bold">Colaboradores de Sucursal</CardTitle>
-            <CardDescription className="text-xs">Personal activo con acceso al sistema.</CardDescription>
+        <Card className="col-span-full lg:col-span-3 border shadow-none overflow-hidden flex flex-col">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-lg font-bold">Actividad Reciente</CardTitle>
+                <CardDescription className="text-xs">Línea de tiempo de acciones en la sucursal.</CardDescription>
+              </div>
+              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary transition-colors" onClick={fetchStats}>
+                <ArrowsClockwise size={16} />
+              </Button>
+            </div>
           </CardHeader>
-          <CardContent className="space-y-6">
-            {users.length === 0 ? (
-               <div className="flex flex-col items-center justify-center py-10 text-muted-foreground">
-                  <Users size={32} weight="thin" />
-                  <p className="text-xs mt-2 uppercase tracking-widest font-black opacity-30">Sin colaboradores</p>
+          <CardContent className="flex-1 overflow-y-auto max-h-[400px] pr-2 scrollbar-thin">
+            {!stats?.timeline || stats.timeline.length === 0 ? (
+               <div className="flex flex-col items-center justify-center py-20 text-muted-foreground/40">
+                  <Clock size={40} weight="thin" />
+                  <p className="text-[10px] mt-4 uppercase tracking-[0.2em] font-black">Sin actividad reciente</p>
                </div>
             ) : (
-              users.slice(0, 4).map((member, i) => (
-                <div key={i} className="flex items-center justify-between group cursor-pointer hover:bg-muted/30 p-2 -mx-2 rounded-lg transition-colors" onClick={() => navigate('/admin/usuarios')}>
-                  <div className="flex items-center gap-3">
-                    <Avatar className="h-9 w-9 border shadow-sm">
-                      <AvatarFallback className={`text-[11px] font-bold ${i % 2 === 0 ? 'bg-primary/10 text-primary' : 'bg-green-100/20 text-green-600'}`}>
-                        {member.name.charAt(0).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex flex-col">
-                      <span className="text-sm font-semibold">{member.name}</span>
-                      <span className="text-xs text-muted-foreground truncate max-w-[150px]">{member.email}</span>
+              <div className="space-y-6 relative before:absolute before:left-[17px] before:top-2 before:bottom-2 before:w-[2px] before:bg-muted/50">
+                {stats.timeline.map((item, i) => {
+                  const isLast = i === stats.timeline.length - 1;
+                  return (
+                    <div key={item.id} className="relative pl-10 group">
+                      {/* Timeline Node */}
+                      <div className={`absolute left-0 top-1 h-9 w-9 rounded-full border-4 border-background flex items-center justify-center z-10 shadow-sm transition-transform group-hover:scale-110 ${
+                        item.type === 'venta' ? 'bg-emerald-500 text-white' :
+                        item.type === 'anulacion' ? 'bg-rose-500 text-white' :
+                        item.type === 'compra' ? 'bg-blue-500 text-white' :
+                        'bg-slate-500 text-white'
+                      }`}>
+                        {item.icon === 'receipt' && <Receipt size={16} weight="bold" />}
+                        {item.icon === 'x-circle' && <XCircle size={16} weight="bold" />}
+                        {item.icon === 'package' && <Package size={16} weight="bold" />}
+                        {item.icon === 'arrows-left-right' && <ArrowsLeftRight size={16} weight="bold" />}
+                      </div>
+
+                      <div className="flex flex-col gap-1">
+                        <div className="flex items-center justify-between">
+                          <h4 className="text-sm font-bold text-foreground leading-none">{item.title}</h4>
+                          <span className="text-[10px] font-medium text-muted-foreground bg-muted px-1.5 py-0.5 rounded uppercase">
+                            {new Date(item.time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </div>
+                        <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
+                          {item.description}
+                        </p>
+                        {item.amount && (
+                          <div className="mt-1">
+                             <Badge variant="secondary" className="text-[10px] font-black tracking-tight px-1.5 py-0 h-4 bg-muted/50 border-none">
+                                {formatMoney(item.amount)}
+                             </Badge>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                  <Badge variant="secondary" className="text-[10px] font-bold uppercase tracking-widest px-2 py-0.5">
-                    {member.roles?.[0]?.name || 'Usuario'}
-                  </Badge>
-                </div>
-              ))
+                  );
+                })}
+              </div>
             )}
-            <Button variant="outline" className="w-full h-9 border-dashed mt-4 text-[10px] font-black uppercase tracking-widest" onClick={() => navigate('/admin/usuarios')}>
-              Gestionar colaboradores
-            </Button>
           </CardContent>
+          <div className="p-4 border-t bg-muted/5 mt-auto">
+            <Button variant="ghost" className="w-full h-8 text-[10px] font-black uppercase tracking-widest gap-2 group" onClick={() => navigate('/admin/reportes')}>
+              Ver historial completo <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+            </Button>
+          </div>
         </Card>
       </div>
 
@@ -381,7 +453,12 @@ export default function AdminDashboard() {
                       </TableCell>
                       <TableCell className="px-6 py-4 text-right font-bold text-base tracking-tight">{formatMoney(sale.amount)}</TableCell>
                       <TableCell className="px-6 py-4 text-right">
-                        <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() => navigate(`/admin/ventas?search=${sale.id}`)}
+                        >
                           <ArrowUpRight size={16} />
                         </Button>
                       </TableCell>

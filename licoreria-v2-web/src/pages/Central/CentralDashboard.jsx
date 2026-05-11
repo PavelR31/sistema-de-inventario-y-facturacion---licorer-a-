@@ -14,9 +14,24 @@ import {
   Crown,
   ArrowUpRight,
   Clock,
+  CalendarBlank,
 } from "@phosphor-icons/react";
 import { toast } from 'sonner';
 import api from '@/lib/api';
+import {
+  LineChart,
+  Line,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  Cell
+} from 'recharts';
 import { useNavigate } from 'react-router-dom';
 
 const iconMap = {
@@ -27,13 +42,17 @@ export default function CentralDashboard() {
   const navigate = useNavigate();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [startDate, setStartDate] = useState(new Date(new Date().setMonth(new Date().getMonth() - 5)).toISOString().split('T')[0]);
+  const [endDate, setEndDate] = useState(new Date().toISOString().split('T')[0]);
 
-  useEffect(() => { fetchDashboard(); }, []);
+  useEffect(() => { fetchDashboard(); }, [startDate, endDate]);
 
   const fetchDashboard = async () => {
     setLoading(true);
     try {
-      const res = await api.get('/api/central/dashboard');
+      const res = await api.get('/api/central/dashboard', {
+        params: { start_date: startDate, end_date: endDate }
+      });
       setData(res.data);
     } catch (e) {
       toast.error('Error al cargar el dashboard');
@@ -102,6 +121,20 @@ export default function CentralDashboard() {
       color: 'text-emerald-600',
       sub: data?.backup?.total_size || '0 B',
     },
+    {
+      title: 'Ventas Hoy',
+      val: `$${(data?.global_sales?.sales_today || 0).toLocaleString()}`,
+      icon: ChartLineUp,
+      color: 'text-indigo-600',
+      sub: `Mes: $${(data?.global_sales?.sales_this_month || 0).toLocaleString()}`,
+    },
+    {
+      title: 'Ventas Totales',
+      val: `$${(data?.global_sales?.total_historical || 0).toLocaleString()}`,
+      icon: ShieldCheck,
+      color: 'text-sky-600',
+      sub: 'Plataforma Global',
+    },
   ];
 
   return (
@@ -111,31 +144,107 @@ export default function CentralDashboard() {
           <h1 className="text-2xl font-bold tracking-tight">Centro de Control</h1>
           <p className="text-muted-foreground text-sm">Gestión global de la red de negocios</p>
         </div>
-        <Button onClick={fetchDashboard} disabled={loading} variant="outline" size="icon">
-          <ArrowsClockwise size={14} className={loading ? 'animate-spin' : ''} />
-        </Button>
+        
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 bg-background border rounded-lg px-3 py-1 shadow-sm">
+            <CalendarBlank size={16} className="text-muted-foreground" />
+            <div className="flex items-center gap-3 text-xs font-medium">
+              <input 
+                type="date" 
+                value={startDate} 
+                onChange={(e) => setStartDate(e.target.value)}
+                className="bg-transparent border-none focus:ring-0 text-foreground outline-none w-[120px]"
+              />
+              <span className="text-muted-foreground">—</span>
+              <input 
+                type="date" 
+                value={endDate} 
+                onChange={(e) => setEndDate(e.target.value)}
+                className="bg-transparent border-none focus:ring-0 text-foreground outline-none w-[120px]"
+              />
+            </div>
+          </div>
+          <Button onClick={fetchDashboard} disabled={loading} variant="outline" size="icon">
+            <ArrowsClockwise size={14} className={loading ? 'animate-spin' : ''} />
+          </Button>
+        </div>
       </div>
 
       {/* KPIs */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         {kpis.map((kpi, i) => {
           const Icon = kpi.icon;
           return (
             <Card key={i} className="border shadow-none">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{kpi.title}</CardTitle>
-                <Icon size={18} className={kpi.color} />
+                <CardTitle className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">{kpi.title}</CardTitle>
+                <Icon size={16} className={kpi.color} />
               </CardHeader>
               <CardContent>
-                <div className={`text-2xl font-bold ${kpi.color === 'text-amber-600' && data?.expiring_soon > 0 ? 'text-amber-600' : ''}`}>
+                <div className={`text-xl font-bold ${kpi.color === 'text-amber-600' && data?.expiring_soon > 0 ? 'text-amber-600' : ''}`}>
                   {kpi.val}
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">{kpi.sub}</p>
+                <p className="text-[10px] text-muted-foreground mt-0.5 truncate">{kpi.sub}</p>
               </CardContent>
             </Card>
           );
         })}
       </div>
+
+      {/* Chart Section */}
+      <Card className="border shadow-none">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-base font-semibold">Tendencia de Ventas Globales</CardTitle>
+              <CardDescription>Movimiento de los últimos 6 meses</CardDescription>
+            </div>
+            <Badge variant="outline" className="font-mono text-indigo-600 border-indigo-100 bg-indigo-50/50">
+              BIG DATA
+            </Badge>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="h-[300px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={data?.global_sales?.monthly_trend || []}>
+                <defs>
+                  <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#4f46e5" stopOpacity={0.1}/>
+                    <stop offset="95%" stopColor="#4f46e5" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <XAxis 
+                  dataKey="month" 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tick={{fontSize: 10, fill: '#94a3b8'}}
+                  dy={10}
+                />
+                <YAxis 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tick={{fontSize: 10, fill: '#94a3b8'}}
+                  tickFormatter={(val) => `$${val}`}
+                />
+                <Tooltip 
+                  contentStyle={{ borderRadius: '12px', border: '1px solid #f1f5f9', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}
+                  labelStyle={{ fontWeight: 'bold', fontSize: '12px' }}
+                />
+                <Area 
+                  type="monotone" 
+                  dataKey="total" 
+                  stroke="#4f46e5" 
+                  strokeWidth={3}
+                  fillOpacity={1} 
+                  fill="url(#colorTotal)" 
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Main Content */}
       <div className="grid gap-6 lg:grid-cols-7">

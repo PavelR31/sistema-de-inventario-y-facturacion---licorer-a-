@@ -7,6 +7,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\BackupCompletedMail;
 use Symfony\Component\Process\Process;
 use ZipArchive;
 
@@ -99,6 +101,23 @@ class TenantBackupController extends Controller
             // Limpiar
             @unlink($sqlPath);
             @unlink($zipPath);
+
+            // Enviar correo de notificación
+            try {
+                $adminEmail = tenant('email');
+                $tenantName = tenant('name') ?? $tenantId;
+                $sizeHuman = $this->humanFileSize($disk->size($destination));
+                
+                if ($adminEmail) {
+                    Mail::to($adminEmail)->send(new BackupCompletedMail(
+                        $tenantName,
+                        $zipFilename,
+                        $sizeHuman
+                    ));
+                }
+            } catch (\Exception $e) {
+                Log::error("Error enviando correo de backup: " . $e->getMessage());
+            }
 
             Log::info("Backup creado para tenant {$tenantId} (db: {$dbName})", [
                 'user_id' => $request->user()->id,

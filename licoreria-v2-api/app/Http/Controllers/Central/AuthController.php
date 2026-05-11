@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\ResetPasswordMail;
 
 class AuthController extends Controller
 {
@@ -99,5 +101,35 @@ class AuthController extends Controller
         $request->user()->currentAccessToken()->delete();
 
         return response()->json(['message' => 'Sesión cerrada con éxito.']);
+    }
+
+    public function forgotPassword(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+        ]);
+
+        $user = User::where('email', $request->email)->where('is_super_admin', true)->first();
+
+        if (!$user) {
+            return response()->json([
+                'message' => 'Si el correo está registrado, recibirás una nueva contraseña en breve.',
+            ]);
+        }
+
+        $newPassword = \Illuminate\Support\Str::random(10);
+        $user->password = Hash::make($newPassword);
+        $user->must_change_password = true;
+        $user->save();
+
+        try {
+            Mail::to($user->email)->send(new ResetPasswordMail($user->name, $newPassword));
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Error enviando correo de reset SuperAdmin: ' . $e->getMessage());
+        }
+
+        return response()->json([
+            'message' => 'Si el correo está registrado, recibirás una nueva contraseña en breve.',
+        ]);
     }
 }

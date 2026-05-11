@@ -159,7 +159,7 @@ export default function NuevaCompra() {
             <div className="space-y-1.5">
               <label className="text-xs font-bold uppercase text-muted-foreground">Proveedor</label>
               <Select value={selectedProveedor} onValueChange={setSelectedProveedor}>
-              <SelectTrigger className="rounded-sm">
+                <SelectTrigger className="rounded-sm">
                   <SelectValue placeholder="Seleccionar proveedor" />
                 </SelectTrigger>
                 <SelectContent>
@@ -385,20 +385,7 @@ export default function NuevaCompra() {
               </div>
 
               <div className="space-y-3 max-h-[50vh] overflow-y-auto pr-2 no-scrollbar">
-                {/* Base Unit Option */}
-                <button
-                  onClick={() => confirmAddToCart(selectedProductForPresentation, null)}
-                  className="w-full flex items-center justify-between p-4 rounded-sm border border-border hover:border-primary hover:bg-muted/30 transition-all group text-left bg-card"
-                >
-                  <div>
-                    <span className="block text-sm font-bold text-foreground">
-                      Unidad Suelta
-                    </span>
-                    <span className="block text-[10px] font-bold text-muted-foreground uppercase tracking-wider mt-1">
-                      Agrega 1 unidad al inventario
-                    </span>
-                  </div>
-                </button>
+
 
                 {/* Presentations Options */}
                 {selectedProductForPresentation.presentaciones?.map(pres => (

@@ -362,7 +362,7 @@ export default function CentralBackups() {
 
       {/* Dialogs */}
       <Dialog open={confirmDialog.open} onOpenChange={(o) => setConfirmDialog({ ...confirmDialog, open: o })}>
-        <DialogContent aria-describedby={undefined}>
+        <DialogContent aria-describedby={undefined} className="border-none shadow-xl rounded-sm p-6 bg-white">
           <DialogHeader>
             <DialogTitle>
               {confirmDialog.type === 'create' && 'Crear Backup'}

@@ -316,7 +316,7 @@ export default function BackupsPage() {
 
       {/* Confirm Dialog */}
       <Dialog open={confirmDialog.open} onOpenChange={(open) => setConfirmDialog({ ...confirmDialog, open })}>
-        <DialogContent aria-describedby={undefined}>
+        <DialogContent aria-describedby={undefined} className="border border-border shadow-xl rounded-sm p-6 bg-card">
           <DialogHeader>
             <DialogTitle className={
               confirmDialog.type === 'delete' ? 'text-destructive' :

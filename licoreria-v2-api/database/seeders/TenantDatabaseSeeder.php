@@ -80,5 +80,18 @@ class TenantDatabaseSeeder extends Seeder
             'ver.productos', 'ver.categorias', 'ver.sucursales',
             'realizar.egresos', 'aplicar.descuento',
         ]);
+
+        // Empaques por defecto
+        $defaultEmpaques = [
+            ['nombre' => 'Unidad', 'cantidad_unidades' => 1],
+            ['nombre' => 'Six-Pack', 'cantidad_unidades' => 6],
+            ['nombre' => 'Doce-Pack', 'cantidad_unidades' => 12],
+            ['nombre' => 'Caja', 'cantidad_unidades' => 24],
+            ['nombre' => 'Plancha / Paca', 'cantidad_unidades' => 24],
+        ];
+
+        foreach ($defaultEmpaques as $emp) {
+            \App\Models\Tenant\Empaque::firstOrCreate(['nombre' => $emp['nombre']], $emp);
+        }
     }
 }

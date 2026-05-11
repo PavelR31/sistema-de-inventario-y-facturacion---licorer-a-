@@ -71,18 +71,31 @@ export default function Login() {
   const [forgotEmail, setForgotEmail] = useState('');
   const [isSubmittingForgot, setIsSubmittingForgot] = useState(false);
 
-  const handleForgotPassword = (e) => {
+  const handleForgotPassword = async (e) => {
     e.preventDefault();
     setIsSubmittingForgot(true);
-    // Simular envío de correo
-    setTimeout(() => {
+    
+    try {
+      const isCentral = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      // Por ahora implementamos la del tenant, que es la solicitada
+      const endpoint = isCentral ? '/api/central/forgot-password' : '/api/forgot-password';
+      
+      const response = await api.post(endpoint, { email: forgotEmail });
+      
       toast.success('Correo enviado', {
-        description: `Se ha enviado un enlace de recuperación a ${forgotEmail}`,
+        description: response.data.message || 'Se ha enviado una nueva contraseña a tu correo.',
       });
-      setIsSubmittingForgot(false);
+      
       setIsForgotOpen(false);
       setForgotEmail('');
-    }, 1500);
+    } catch (error) {
+      console.error('Forgot Password Error:', error);
+      toast.error('Error', {
+        description: error.response?.data?.message || 'No se pudo procesar la solicitud.',
+      });
+    } finally {
+      setIsSubmittingForgot(false);
+    }
   };
 
   return (

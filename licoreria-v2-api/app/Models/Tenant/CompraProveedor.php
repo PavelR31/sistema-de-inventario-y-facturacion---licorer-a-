@@ -33,4 +33,9 @@ class CompraProveedor extends Model
     {
         return $this->hasMany(DetalleCompra::class, 'compra_id');
     }
+
+    public function user()
+    {
+        return $this->belongsTo(\App\Models\User::class);
+    }
 }

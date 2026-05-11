@@ -4,12 +4,13 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
-import { Plus, ArrowsClockwise, Trash, Globe, Key, PencilLine, CheckCircle } from "@phosphor-icons/react";
+import { Plus, ArrowsClockwise, Trash, Globe, Key, PencilLine, CheckCircle, User } from "@phosphor-icons/react";
 import { toast } from 'sonner';
 import api from '@/lib/api';
 import PageHeader from '@/components/layout/PageHeader';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import { TenantUsersModal } from './TenantUsersModal';
 
 export default function TenantsList() {
   const [tenants, setTenants] = useState([]);
@@ -22,6 +23,9 @@ export default function TenantsList() {
   const [editingTenant, setEditingTenant] = useState(null);
   const [lastCreatedTenant, setLastCreatedTenant] = useState(null);
   const [createdPassword, setCreatedPassword] = useState('');
+  const [isUsersModalOpen, setIsUsersModalOpen] = useState(false);
+  const [selectedTenantForUsers, setSelectedTenantForUsers] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const fetchTenants = async () => {
     setIsLoading(true);
@@ -48,6 +52,7 @@ export default function TenantsList() {
 
   const handleCreateTenant = async (e) => {
     e.preventDefault();
+    setIsSubmitting(true);
     try {
       const response = await api.post('/api/central/tenants', newTenant);
       setCreatedPassword(response.data.temporary_password);
@@ -59,11 +64,14 @@ export default function TenantsList() {
     } catch (error) {
       const message = error.response?.data?.message || 'Error al crear la licorería';
       toast.error(message);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleUpdateTenant = async (e) => {
     e.preventDefault();
+    setIsSubmitting(true);
     try {
       await api.put(`/api/central/tenants/${editingTenant.id}`, editingTenant);
       toast.success('Licorería actualizada correctamente');
@@ -71,6 +79,8 @@ export default function TenantsList() {
       fetchTenants();
     } catch (error) {
       toast.error('Error al actualizar la licorería');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -91,6 +101,11 @@ export default function TenantsList() {
   const openEditDialog = (tenant) => {
     setEditingTenant({ ...tenant });
     setIsEditOpen(true);
+  };
+
+  const openUsersModal = (tenant) => {
+    setSelectedTenantForUsers(tenant);
+    setIsUsersModalOpen(true);
   };
 
   return (
@@ -146,7 +161,14 @@ export default function TenantsList() {
                     />
                   </div>
                   <DialogFooter>
-                    <Button type="submit" className="w-full">Crear Negocio</Button>
+                    <Button type="submit" className="w-full" disabled={isSubmitting}>
+                      {isSubmitting ? (
+                        <>
+                          <ArrowsClockwise className="mr-2 h-4 w-4 animate-spin" />
+                          Creando...
+                        </>
+                      ) : 'Crear Negocio'}
+                    </Button>
                   </DialogFooter>
                 </form>
               </DialogContent>
@@ -210,6 +232,15 @@ export default function TenantsList() {
                           title="Gestionar Licencia"
                         >
                           <Key size={16} />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8 text-muted-foreground hover:text-primary transition-colors"
+                          onClick={() => openUsersModal(tenant)}
+                          title="Gestionar Usuarios"
+                        >
+                          <User size={16} />
                         </Button>
                         <Button 
                           variant="ghost" 
@@ -318,6 +349,13 @@ export default function TenantsList() {
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Modal de Usuarios del Tenant */}
+      <TenantUsersModal 
+        isOpen={isUsersModalOpen} 
+        onClose={setIsUsersModalOpen} 
+        tenant={selectedTenantForUsers} 
+      />
     </div>
   );
 }

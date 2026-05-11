@@ -12,9 +12,11 @@ import api from '@/lib/api';
 import Can from '@/components/auth/Can';
 import DataPagination from '@/components/ui/data-pagination';
 import PageHeader from '@/components/layout/PageHeader';
+import { useAuthStore } from '@/store/useAuthStore';
 import { format } from 'date-fns';
 
 export default function AjustesStock() {
+  const { branch } = useAuthStore();
   const [ajustes, setAjustes] = useState([]);
   const [meta, setMeta] = useState({ current_page: 1, last_page: 1, total: 0 });
   const [isLoading, setIsLoading] = useState(true);
@@ -72,7 +74,7 @@ export default function AjustesStock() {
     setIsSubmitting(true);
     try {
       // Clean nullable presentacion_id
-      const payload = { ...formData };
+      const payload = { ...formData, sucursal_id: branch?.id };
       if (payload.presentacion_id === 'null' || !payload.presentacion_id) {
         delete payload.presentacion_id;
       }
@@ -273,7 +275,7 @@ export default function AjustesStock() {
                       <SelectValue placeholder="Selecciona si es unidad suelta o un empaque" />
                     </SelectTrigger>
                     <SelectContent className="bg-card">
-                       <SelectItem value="null">Unidad Suelta (Descuenta/Agrega solo 1 unid por cantidad)</SelectItem>
+
                        {selectedProduct?.presentaciones?.map(pres => (
                           <SelectItem key={pres.id} value={pres.id.toString()}>
                              {pres.nombre} (Contiene {pres.cantidad_unidades} unid.) — {pres.stock_sucursal} empaques disp.

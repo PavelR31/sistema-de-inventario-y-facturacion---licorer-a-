@@ -21,6 +21,8 @@ import {
 import api from '@/lib/api';
 import { useCurrency } from '@/hooks/useCurrency';
 import PageHeader from '@/components/layout/PageHeader';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Loader2 } from 'lucide-react';
 
 export default function CajasList() {
   const { branch } = useAuthStore();
@@ -37,6 +39,10 @@ export default function CajasList() {
     balance_actual: 0,
     activa: true
   });
+  
+  // Bulk Delete States
+  const [selected, setSelected] = useState([]);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
 
   useEffect(() => {
     if (branch?.id) fetchCajas();
@@ -87,6 +93,29 @@ export default function CajasList() {
     }
   };
 
+  const filteredCajas = cajas.filter(c => 
+    c.nombre.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const toggleSelect = (id) => setSelected(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  const toggleSelectAll = () => setSelected(selected.length === filteredCajas.length ? [] : filteredCajas.map(c => c.id));
+  const allSelected = filteredCajas.length > 0 && selected.length === filteredCajas.length;
+
+  const handleBulkDelete = async () => {
+    if (!window.confirm(`¿Eliminar ${selected.length} caja(s)?`)) return;
+    setIsBulkDeleting(true);
+    try {
+      const res = await api.delete('/api/cajas/bulk', { data: { ids: selected } });
+      toast.success(res.data.message);
+      setSelected([]);
+      fetchCajas();
+    } catch (e) {
+      toast.error(e.response?.data?.message || 'Error al eliminar masivamente');
+    } finally {
+      setIsBulkDeleting(false);
+    }
+  };
+
   const openEdit = (caja) => {
     setEditingCaja(caja);
     setFormData({
@@ -97,9 +126,7 @@ export default function CajasList() {
     setIsOpen(true);
   };
 
-  const filteredCajas = cajas.filter(c => 
-    c.nombre.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500 pb-10">
@@ -111,16 +138,24 @@ export default function CajasList() {
         onSearchChange={setSearchTerm}
         searchPlaceholder="Buscar por nombre..."
         action={
-          <Button
-            onClick={() => {
-              setEditingCaja(null);
-              setFormData({ nombre: '', balance_actual: 0, activa: true });
-              setIsOpen(true);
-            }}
-            className="gap-2 shadow-sm"
-          >
-            <Plus weight="bold" className="h-4 w-4" /> Nueva Caja
-          </Button>
+          <div className="flex gap-2">
+            {selected.length > 0 && (
+              <Button variant="destructive" className="rounded-sm gap-2" onClick={handleBulkDelete} disabled={isBulkDeleting}>
+                {isBulkDeleting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash className="h-4 w-4" />}
+                Eliminar {selected.length}
+              </Button>
+            )}
+            <Button
+              onClick={() => {
+                setEditingCaja(null);
+                setFormData({ nombre: '', balance_actual: 0, activa: true });
+                setIsOpen(true);
+              }}
+              className="gap-2 shadow-sm rounded-sm"
+            >
+              <Plus weight="bold" className="h-4 w-4" /> Nueva Caja
+            </Button>
+          </div>
         }
       />
 
@@ -129,6 +164,9 @@ export default function CajasList() {
           <Table>
             <TableHeader className="bg-muted/50">
               <TableRow>
+                <TableHead className="w-10 px-4">
+                  <Checkbox checked={allSelected} onCheckedChange={toggleSelectAll} />
+                </TableHead>
                 <TableHead className="px-6 py-4 font-bold text-[10px] uppercase tracking-widest">Estado</TableHead>
                 <TableHead className="font-bold text-[10px] uppercase tracking-widest">Caja / Gaveta</TableHead>
                 <TableHead className="font-bold text-[10px] uppercase tracking-widest">Saldo Actual</TableHead>
@@ -145,13 +183,16 @@ export default function CajasList() {
                 </TableRow>
               ) : filteredCajas.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={4} className="h-40 text-center text-muted-foreground text-xs italic">
+                  <TableCell colSpan={5} className="h-40 text-center text-muted-foreground text-xs italic">
                     No hay cajas registradas en esta sucursal.
                   </TableCell>
                 </TableRow>
               ) : (
                 filteredCajas.map((caja) => (
-                  <TableRow key={caja.id} className="hover:bg-muted/30 transition-colors group">
+                  <TableRow key={caja.id} className={`hover:bg-muted/30 transition-colors group ${selected.includes(caja.id) ? 'bg-primary/5' : ''}`}>
+                    <TableCell className="px-4">
+                      <Checkbox checked={selected.includes(caja.id)} onCheckedChange={() => toggleSelect(caja.id)} />
+                    </TableCell>
                     <TableCell className="px-6 py-4">
                       {caja.activa ? (
                         <Badge variant="outline" className="text-[10px] font-bold uppercase tracking-widest bg-green-500/10 text-green-600 border-green-600/20 gap-1.5 py-1">

@@ -29,6 +29,13 @@ class UserController extends Controller
             ], 403);
         }
 
+        $trashedUser = User::onlyTrashed()->where('email', $request->email)->first();
+        if ($trashedUser) {
+            return response()->json([
+                'message' => 'Este correo ya pertenece a un usuario eliminado (deshabilitado). Por favor, ve a la sección de eliminados y restáuralo en lugar de crear uno nuevo.',
+            ], 422);
+        }
+
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
@@ -51,6 +58,15 @@ class UserController extends Controller
 
     public function update(Request $request, User $user)
     {
+        if ($request->has('email')) {
+            $trashedUser = User::onlyTrashed()->where('email', $request->email)->first();
+            if ($trashedUser && $trashedUser->id !== $user->id) {
+                return response()->json([
+                    'message' => 'Este correo ya pertenece a un usuario eliminado (deshabilitado).',
+                ], 422);
+            }
+        }
+
         $request->validate([
             'name' => 'string|max:255',
             'email' => 'string|email|max:255|unique:users,email,' . $user->id,
@@ -81,6 +97,23 @@ class UserController extends Controller
 
         $user->delete();
         return response()->json(['message' => 'Usuario eliminado correctamente.']);
+    }
+
+    public function destroyBulk(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array|min:1',
+            'ids.*' => 'integer|exists:users,id',
+        ]);
+
+        // Filtrar el ID del usuario actual para no auto-eliminarse
+        $ids = array_filter($request->ids, function ($id) {
+            return $id !== auth()->id();
+        });
+
+        $deleted = User::whereIn('id', $ids)->delete();
+
+        return response()->json(['message' => "$deleted usuario(s) eliminado(s) correctamente."]);
     }
 
     public function toggleActive(User $user)

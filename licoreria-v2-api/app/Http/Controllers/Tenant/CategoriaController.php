@@ -53,4 +53,16 @@ class CategoriaController extends Controller
 
         return response()->json(['message' => 'Categoría eliminada con éxito.']);
     }
+
+    public function destroyBulk(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array|min:1',
+            'ids.*' => 'integer|exists:categorias,id',
+        ]);
+
+        $deleted = Categoria::whereIn('id', $request->ids)->delete();
+
+        return response()->json(['message' => "$deleted categoría(s) eliminada(s) correctamente."]);
+    }
 }
